@@ -4,7 +4,7 @@ dotenv.config();
 
 const sequelize = new Sequelize({
   dialect: "postgres",
-  host: "https://school-crm-tslj.onrender.com",
+  host: "school-crm-tslj.onrender.com",
   username: process.env.DB_USERNAME as string,
   password: process.env.DB_PASSWORD as string,
   database: process.env.DB_DB_NAME as string,
