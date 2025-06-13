@@ -1,49 +1,48 @@
 name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
+
 jobs:
   build-and-deploy:
     runs-on: self-hosted
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
       - name: Install Dependencies
         run: npm install
+
       - name: Build TypeScript
         run: npm run build
+
+      - name: Create .env file from secret
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+
       - name: Build Docker Image
         run: docker build -t my-express-app:latest .
+
       - name: Save Docker Image
         run: docker save my-express-app:latest | gzip > my-express-app.tar.gz
+
       - name: Copy Docker Image to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: shuhrat
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'my-express-app.tar.gz'
-          target: '/home/shuhrat/app'
-      - name: Copy docker-compose.yml to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: shuhrat
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'docker-compose.yml'
-          target: '/home/shuhrat/app'
-      - name: Copy .env to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: shuhrat
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: '.env'
-          target: '/home/shuhrat/app'
+          source: |
+            my-express-app.tar.gz
+            .env
+          target: /home/shuhrat/app
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
@@ -53,5 +52,6 @@ jobs:
           script: |
             cd /home/shuhrat/app
             gunzip -c my-express-app.tar.gz | docker load
-            docker-compose down || true
-            docker-compose up -d
+            docker stop my-express-app || true
+            docker rm my-express-app || true
+            docker run -d --name my-express-app --env-file .env -p 3000:3000 my-express-app:latest
