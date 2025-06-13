@@ -60,11 +60,10 @@ jobs:
           ENV_ALLOWED_ORIGINS: ${{ secrets.ENV_ALLOWED_ORIGINS }}
 
       - name: Save Docker image
-        run: docker save my-express-app:latest | gzip > my-express-app.tar.gz
-
-      - name: Clean up old files
         run: |
-          rm -f my-express-app.tar.gz docker-compose.yml schema.sql || true
+          docker save my-express-app:latest | gzip > my-express-app.tar.gz
+          if [ ! -f "my-express-app.tar.gz" ]; then echo "Error: Failed to save Docker image"; exit 1; fi
+          ls -la
 
       - name: Verify files exist
         run: |
