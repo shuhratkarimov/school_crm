@@ -8,4 +8,5 @@ export interface ICreateGroupDto {
   img_url?: string;
   students_amount: number;
   paid_students_amount: number;
+  monthly_fee: string
 }

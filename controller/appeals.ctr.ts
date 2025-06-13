@@ -2,7 +2,7 @@ import TelegramBot from "node-telegram-bot-api";
 import Appeal from "../Models/appeal_model";
 import { Request, Response } from "express";
 import { Op } from "sequelize";
-import Student from "../Models/student_model";
+import {Student} from "../Models/index";
 import { validate as isUUID } from "uuid";
 import fs from "fs";
 
@@ -15,7 +15,51 @@ if (!botToken) {
 }
 
 let regex: RegExp = /^[a-zA-Z0-9!@#$%^&*()_+-{}~`, ."':;?//\|]*$/;
-let bot = new TelegramBot(botToken as string, { polling: true });
+let bot = new TelegramBot(botToken as string, {
+  polling: {
+    autoStart: true,
+    interval: 300,
+    params: {
+      timeout: 10,
+    },
+  },
+});
+
+export const sendTelegramMessage = async (req: Request, res: Response) => {
+  const { userId, message, requestId } = req.body;
+  if (!userId || !message || !requestId) {
+    return res.status(400).json({ message: "Foydalanuvchi ID, xabar va request ID kerak" });
+  }
+
+  try {
+    const formattedMessage = `
+*Intellectual Progress Star O'quv Markazi*
+
+Hurmatli mijozimiz!
+
+Sizga quyidagi xabar yuborildi:
+_${message}_
+
+Iltimos, ushbu xabarga e'tibor bering va zarur bo'lsa, javob bering. Biz har doim sizning qulayligingiz uchun tayyormiz!
+
+Hurmat bilan,
+*Intellectual Progress Star Jamoasi*
+📅 ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}
+    `.trim();
+
+    await bot.sendMessage(userId, formattedMessage, { parse_mode: "Markdown" });
+    const appeal = await Appeal.findOne({ where: { id: requestId } });
+    if (!appeal) {
+      return res.status(404).json({ message: "Murojaat topilmadi" });
+    }
+    appeal.answer = message;
+    await appeal.save();
+    return res.status(200).json({ message: "Xabar yuborildi va bazaga saqlandi ✅" });
+  } catch (error) {
+    console.error("Telegramga xabar yuborishda xatolik:", error);
+    return res.status(500).json({ message: "Xabar yuborishda xatolik yuz berdi" });
+  }
+};
 
 const loadMessages = (lang: string) => {
   try {
@@ -31,14 +75,19 @@ bot.onText(/\/start/, async (msg) => {
   let lang = "uz";
 
   try {
-    const findStudent = await Student.findOne({ where: { telegram_user_id: chatId } });
+    const findStudent = await Student.findOne({
+      where: { telegram_user_id: chatId },
+    });
     if (!findStudent) {
       const messages = loadMessages(lang);
       return bot.sendMessage(chatId, messages.welcome);
     }
     lang = findStudent.dataValues.language || "uz";
     const messages = loadMessages(lang);
-    return bot.sendMessage(chatId, messages.start.replace("{name}", findStudent.dataValues.first_name));
+    return bot.sendMessage(
+      chatId,
+      messages.start.replace("{name}", findStudent.dataValues.first_name)
+    );
   } catch (error) {
     console.error("Error fetching student: ", error);
     const messages = loadMessages(lang);
@@ -50,15 +99,15 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
   let lang = "uz";
-  
+
   if (!text || typeof text !== "string" || !regex.test(text)) {
     const messages = loadMessages(lang);
     return bot.sendMessage(chatId, messages.enter_text);
   }
-  
+
   try {
-    if (isUUID(text)) {
-      const findStudent = await Student.findOne({ where: { id: text } });
+    if (text.startsWith("ID")) {
+      const findStudent = await Student.findOne({ where: { studental_id: text.slice(2) } });      
       if (!findStudent) {
         const messages = loadMessages(lang);
         return bot.sendMessage(chatId, messages.incorrect_id);
@@ -66,9 +115,14 @@ bot.on("message", async (msg) => {
       await findStudent.update({ telegram_user_id: chatId });
       lang = findStudent.dataValues.language || "uz";
       const messages = loadMessages(lang);
-      return bot.sendMessage(chatId, messages.start.replace("{name}", findStudent.dataValues.first_name));
+      return bot.sendMessage(
+        chatId,
+        messages.start.replace("{name}", findStudent.dataValues.first_name)
+      );
     }
-    const findStudent = await Student.findOne({ where: { telegram_user_id: chatId } });
+    const findStudent = await Student.findOne({
+      where: { telegram_user_id: chatId },
+    });
     if (text === "/start") {
       return;
     }
@@ -78,7 +132,7 @@ bot.on("message", async (msg) => {
     }
     lang = findStudent.dataValues.language || "uz";
     const messages = loadMessages(lang);
-    
+
     await Appeal.create({
       pupil_id: findStudent.dataValues.id,
       message: text,
@@ -101,16 +155,21 @@ export const getAppeals = async (
   try {
     const lang = req.headers["accept-language"] || "uz";
     const messages = loadMessages(lang);
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const appeals = await Appeal.findAll({
       where: {
-        createdAt: {
-          [Op.gte]: today, 
+        created_at: {
+          [Op.gte]: today,
         },
       },
+      include: [{
+        model: Student,
+        as: "student",
+        attributes: ["first_name", "last_name", "group_id", "phone_number"]
+      }]
     });
 
     if (appeals.length === 0) {
@@ -135,7 +194,7 @@ export const getLastTenDayAppeals = async (
   try {
     const lang = req.headers["accept-language"] || "uz";
     const messages = loadMessages(lang);
-    
+
     const startOfDay = new Date();
     startOfDay.setDate(startOfDay.getDate() - 10);
     startOfDay.setHours(0, 0, 0, 0);
@@ -146,6 +205,11 @@ export const getLastTenDayAppeals = async (
           [Op.gte]: startOfDay,
         },
       },
+      include: [{
+        model: Student,
+        as: "student",
+        attributes: ["first_name", "last_name", "group_id", "phone_number"]
+      }]
     });
 
     if (appeals.length === 0) {
@@ -161,4 +225,20 @@ export const getLastTenDayAppeals = async (
     const messages = loadMessages(lang);
     return res.status(500).json({ message: messages.server_error });
   }
-};
+}
+
+export async function deleteAppeal( req: Request,
+  res: Response
+): Promise<Response | void>{
+  try {
+    await Appeal.destroy({where: {id: req.params.id}})
+    return res.status(200).json({
+      message: "Deleted successfully!"
+    });
+  } catch (error) {
+    console.error(error);
+    const lang = req.headers["accept-language"] || "uz";
+    const messages = loadMessages(lang);
+    return res.status(500).json({ message: messages.server_error });
+  }
+}

@@ -58,8 +58,8 @@ async function createTeacher(
       birth_date,
       phone_number,
       subject,
-      img_url,
       got_salary_for_this_month,
+      salary_amount
     } = req.body as ICreateTeacherDto;
     const teacher = await Teacher.create({
       first_name,
@@ -68,8 +68,8 @@ async function createTeacher(
       birth_date,
       phone_number,
       subject,
-      img_url,
       got_salary_for_this_month,
+      salary_amount
     });
     res.status(200).json(teacher);
   } catch (error: any) {
@@ -91,8 +91,8 @@ async function updateTeacher(
       birth_date,
       phone_number,
       subject,
-      img_url,
       got_salary_for_this_month,
+      salary_amount
     } = req.body as IUpdateTeacherDto;
     const teacher = await Teacher.findByPk(req.params.id as string);
     if (!teacher) {
@@ -105,7 +105,7 @@ async function updateTeacher(
       birth_date,
       phone_number,
       subject,
-      img_url,
+      salary_amount,
       got_salary_for_this_month,
     });
     res.status(200).json(teacher);

@@ -1,5 +1,5 @@
-import { Model, DataTypes } from "sequelize";
-import sequelize from "../config/database.config";
+import { Model, DataTypes } from 'sequelize';
+import sequelize from '../config/database.config';
 
 class User extends Model {}
 User.init(
@@ -28,7 +28,7 @@ User.init(
     role: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "user",
+      defaultValue: 'user',
     },
     verification_code: {
       type: DataTypes.BIGINT,
@@ -41,18 +41,16 @@ User.init(
     },
     timestamp: {
       type: DataTypes.DATE,
-      allowNull: true
+      allowNull: true,
     },
   },
   {
     sequelize,
-    tableName: "users",
+    tableName: 'users',
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   }
 );
-
-User.sync({force: false})
 
 export default User;

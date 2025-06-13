@@ -1,8 +1,7 @@
-import { DataTypes, Model } from "sequelize";
-import sequelize from "../config/database.config";
+import { Model, DataTypes } from 'sequelize';
+import sequelize from '../config/database.config';
 
 class Notification extends Model {}
-
 Notification.init(
   {
     id: {
@@ -13,6 +12,12 @@ Notification.init(
     pupil_id: {
       type: DataTypes.UUID,
       allowNull: false,
+      references: {
+        model: 'students',
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     message: {
       type: DataTypes.STRING,
@@ -23,9 +28,13 @@ Notification.init(
       defaultValue: false,
     },
   },
-  { sequelize, modelName: "notification", timestamps: true }
+  {
+    sequelize,
+    tableName: 'notifications',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }
 );
-
-Notification.sync({force: false})
 
 export default Notification;

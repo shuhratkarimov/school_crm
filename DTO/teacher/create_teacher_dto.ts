@@ -7,4 +7,5 @@ export interface ICreateTeacherDto {
   subject: string;
   img_url?: string;
   got_salary_for_this_month: boolean;
+  salary_amount: number
 }

@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GroupRouter = void 0;
+const express_1 = require("express");
+const group_ctr_1 = require("../controller/group.ctr");
+const GroupRouter = (0, express_1.Router)();
+exports.GroupRouter = GroupRouter;
+GroupRouter.get("/get_groups", group_ctr_1.getGroups);
+GroupRouter.get("/get_one_group/:id", group_ctr_1.getOneGroup);
+GroupRouter.post("/create_group", group_ctr_1.createGroup);
+GroupRouter.put("/update_group/:id", group_ctr_1.updateGroup);
+GroupRouter.delete("/delete_group/:id", group_ctr_1.deleteGroup);

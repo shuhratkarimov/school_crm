@@ -1,15 +1,23 @@
 import { NextFunction, Request, Response } from "express";
-import Group from "../Models/group_model";
 import { ICreateGroupDto } from "../DTO/group/create_group_dto";
 import { BaseError } from "../Utils/base_error";
 import { IUpdateGroupDTO } from "../DTO/group/update_group_dto";
 import Student from "../Models/student_model";
 import i18next from "../Utils/lang";
+import {Teacher, Group} from "../Models/index"
 
 async function getGroups(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"] || "uz";
-    const groups = await Group.findAll();
+    const groups = await Group.findAll({
+      include: [
+        {
+          model: Teacher,
+          as: "teacher",
+          attributes: ['id', 'first_name', 'last_name', 'phone_number', 'subject'],
+        }
+      ]
+    });
 
     if (groups.length === 0) {
       return next(BaseError.BadRequest(404, i18next.t("groups_not_found", { lng: lang })));
@@ -52,6 +60,7 @@ async function createGroup(req: Request, res: Response, next: NextFunction): Pro
       img_url,
       students_amount,
       paid_students_amount,
+      monthly_fee
     } = req.body as ICreateGroupDto;
 
     const group = await Group.create({
@@ -61,9 +70,9 @@ async function createGroup(req: Request, res: Response, next: NextFunction): Pro
       end_time,
       teacher_id,
       teacher_phone,
-      img_url,
       students_amount,
       paid_students_amount,
+      monthly_fee
     });
 
     res.status(201).json({
@@ -86,9 +95,9 @@ async function updateGroup(req: Request, res: Response, next: NextFunction): Pro
       end_time,
       teacher_id,
       teacher_phone,
-      img_url,
       students_amount,
       paid_students_amount,
+      monthly_fee
     } = req.body as IUpdateGroupDTO;
 
     const group = await Group.findByPk(req.params.id as string);
@@ -104,9 +113,9 @@ async function updateGroup(req: Request, res: Response, next: NextFunction): Pro
       end_time,
       teacher_id,
       teacher_phone,
-      img_url,
       students_amount,
       paid_students_amount,
+      monthly_fee
     });
 
     res.status(200).json({

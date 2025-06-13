@@ -1,47 +1,67 @@
-import { Model, DataTypes } from "sequelize"
-import sequelize from "../config/database.config";
+import { Model, DataTypes } from 'sequelize';
+import sequelize from '../config/database.config';
 
-class Teacher extends Model {}
-Teacher.init({
-  id: {
-    type: DataTypes.UUID,
-    primaryKey: true,
-    allowNull: false,
-    defaultValue: DataTypes.UUIDV4,
+class Group extends Model {}
+Group.init(
+  {
+    id: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4,
+    },
+    group_subject: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    days: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    start_time: {
+      type: DataTypes.TIME,
+      allowNull: false,
+    },
+    end_time: {
+      type: DataTypes.TIME,
+      allowNull: false,
+    },
+    teacher_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'teachers',
+        key: 'id',
+      },
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
+    },
+    teacher_phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    monthly_fee: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    students_amount: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    paid_students_amount: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
   },
-  first_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  last_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  father_name: DataTypes.STRING,
-  birth_date: {
-    type: DataTypes.DATEONLY,
-    allowNull: false,
-  },
-  phone_number: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false,
-  },
-  subject: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  img_url: DataTypes.STRING,
-  got_salary_for_this_month: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-  },
-}, {
-  sequelize,
-  tableName: 'teachers',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
-});
+  {
+    sequelize,
+    tableName: 'groups',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }
+);
 
-export default Teacher
+export default Group;
