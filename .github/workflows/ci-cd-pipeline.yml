@@ -88,6 +88,7 @@ jobs:
           port: 22
           source: 'my-express-app.tar.gz'
           target: '/home/shuhrat/app'
+          overwrite: true
 
       - name: Copy docker-compose.yml to VPS
         uses: appleboy/scp-action@master
@@ -98,6 +99,7 @@ jobs:
           port: 22
           source: 'docker-compose.yml'
           target: '/home/shuhrat/app'
+          overwrite: true
 
       - name: Copy schema.sql to VPS
         uses: appleboy/scp-action@master
@@ -108,6 +110,7 @@ jobs:
           port: 22
           source: 'schema.sql'
           target: '/home/shuhrat/app'
+          overwrite: true
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
@@ -118,11 +121,9 @@ jobs:
           port: 22
           script: |
             cd /home/shuhrat/app
-            rm -f my-express-app.tar.gz docker-compose.yml schema.sql || true
+            df -h
             docker system prune -f || true
-            gunzip -c my-express-app.tar.gz | docker load
-            docker-compose down || true
-            docker-compose up -d db
-            sleep 10
-            cat schema.sql | docker exec -i app_db_1 psql -U postgres -d crm
+            if [ -f "my-express-app.tar.gz" ]; then gunzip -c my-express-app.tar.gz | docker load; else echo "Error: my-express-app.tar.gz not found"; exit 1; fi
+            if [ -f "docker-compose.yml" ]; then docker-compose down || true; docker-compose up -d db; sleep 10; else echo "Error: docker-compose.yml not found"; exit 1; fi
+            if [ -f "schema.sql" ]; then cat schema.sql | docker exec -i app_db_1 psql -U postgres -d crm; else echo "Error: schema.sql not found"; exit 1; fi
             docker-compose up -d
