@@ -62,6 +62,10 @@ jobs:
       - name: Save Docker image
         run: docker save my-express-app:latest | gzip > my-express-app.tar.gz
 
+      - name: Clean up old files
+        run: |
+          rm -f my-express-app.tar.gz docker-compose.yml schema.sql || true
+
       - name: Verify files exist
         run: |
           ls -la
@@ -115,6 +119,8 @@ jobs:
           port: 22
           script: |
             cd /home/shuhrat/app
+            rm -f my-express-app.tar.gz docker-compose.yml schema.sql || true
+            docker system prune -f || true
             gunzip -c my-express-app.tar.gz | docker load
             docker-compose down || true
             docker-compose up -d db
