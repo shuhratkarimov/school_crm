@@ -5,7 +5,7 @@ on:
       - main
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,7 +22,42 @@ jobs:
         run: npm run build
 
       - name: Build Docker image
-        run: docker build -t my-express-app:latest .
+        run: |
+          docker build \
+            --build-arg ENV_PORT=${{ secrets.ENV_PORT }} \
+            --build-arg ENV_DB_HOST=${{ secrets.ENV_DB_HOST }} \
+            --build-arg ENV_DB_USERNAME=${{ secrets.ENV_DB_USERNAME }} \
+            --build-arg ENV_DB_PASSWORD=${{ secrets.ENV_DB_PASSWORD }} \
+            --build-arg ENV_DB_DB_NAME=${{ secrets.ENV_DB_DB_NAME }} \
+            --build-arg ENV_DB_PORT=${{ secrets.ENV_DB_PORT }} \
+            --build-arg ENV_ACCESS_SECRET_KEY=${{ secrets.ENV_ACCESS_SECRET_KEY }} \
+            --build-arg ENV_ACCESS_EXPIRING_TIME=${{ secrets.ENV_ACCESS_EXPIRING_TIME }} \
+            --build-arg ENV_REFRESH_SECRET_KEY=${{ secrets.ENV_REFRESH_SECRET_KEY }} \
+            --build-arg ENV_REFRESH_EXPIRING_TIME=${{ secrets.ENV_REFRESH_EXPIRING_TIME }} \
+            --build-arg ENV_VERIFIER_EMAIL=${{ secrets.ENV_VERIFIER_EMAIL }} \
+            --build-arg ENV_VERIFIER_GOOGLE_PASS_KEY=${{ secrets.ENV_VERIFIER_GOOGLE_PASS_KEY }} \
+            --build-arg ENV_BOT_TOKEN=${{ secrets.ENV_BOT_TOKEN }} \
+            --build-arg ENV_SMS_FIRST=${{ secrets.ENV_SMS_FIRST }} \
+            --build-arg ENV_SMS_SECOND=${{ secrets.ENV_SMS_SECOND }} \
+            --build-arg ENV_ALLOWED_ORIGINS=${{ secrets.ENV_ALLOWED_ORIGINS }} \
+            -t my-express-app:latest .
+        env:
+          ENV_PORT: ${{ secrets.ENV_PORT }}
+          ENV_DB_HOST: ${{ secrets.ENV_DB_HOST }}
+          ENV_DB_USERNAME: ${{ secrets.ENV_DB_USERNAME }}
+          ENV_DB_PASSWORD: ${{ secrets.ENV_DB_PASSWORD }}
+          ENV_DB_DB_NAME: ${{ secrets.ENV_DB_DB_NAME }}
+          ENV_DB_PORT: ${{ secrets.ENV_DB_PORT }}
+          ENV_ACCESS_SECRET_KEY: ${{ secrets.ENV_ACCESS_SECRET_KEY }}
+          ENV_ACCESS_EXPIRING_TIME: ${{ secrets.ENV_ACCESS_EXPIRING_TIME }}
+          ENV_REFRESH_SECRET_KEY: ${{ secrets.ENV_REFRESH_SECRET_KEY }}
+          ENV_REFRESH_EXPIRING_TIME: ${{ secrets.ENV_REFRESH_EXPIRING_TIME }}
+          ENV_VERIFIER_EMAIL: ${{ secrets.ENV_VERIFIER_EMAIL }}
+          ENV_VERIFIER_GOOGLE_PASS_KEY: ${{ secrets.ENV_VERIFIER_GOOGLE_PASS_KEY }}
+          ENV_BOT_TOKEN: ${{ secrets.ENV_BOT_TOKEN }}
+          ENV_SMS_FIRST: ${{ secrets.ENV_SMS_FIRST }}
+          ENV_SMS_SECOND: ${{ secrets.ENV_SMS_SECOND }}
+          ENV_ALLOWED_ORIGINS: ${{ secrets.ENV_ALLOWED_ORIGINS }}
 
       - name: Save Docker image
         run: docker save my-express-app:latest | gzip > my-express-app.tar.gz
@@ -73,5 +108,5 @@ jobs:
             docker-compose down || true
             docker-compose up -d db
             sleep 10
-            cat schema.sql | docker exec -i backend-db-1 psql -U postgres -d crm
+            cat schema.sql | docker exec -i app_db_1 psql -U postgres -d crm
             docker-compose up -d
