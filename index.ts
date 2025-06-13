@@ -44,8 +44,6 @@ app.use(CenterRouter);
 // Error handling
 app.use(errorMiddleware as any);
 
-console.log("Test CI CD");
-
 
 // Server start
 const start = async () => {
@@ -55,6 +53,7 @@ const start = async () => {
 
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
+      console.log("Test CI CD");
     });
   } catch (error) {
     console.error('❌ Unable to start the server:', error);

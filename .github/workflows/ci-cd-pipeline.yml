@@ -59,6 +59,14 @@ jobs:
           ENV_SMS_SECOND: ${{ secrets.ENV_SMS_SECOND }}
           ENV_ALLOWED_ORIGINS: ${{ secrets.ENV_ALLOWED_ORIGINS }}
 
+      - name: Check disk space
+        run: df -h || echo "Disk space check failed"
+
+      - name: Clean up disk space
+        run: |
+          docker system prune -f || true
+          rm -rf /tmp/*.tar.gz || true
+
       - name: Save Docker image
         run: |
           docker save my-express-app:latest | gzip > my-express-app.tar.gz
