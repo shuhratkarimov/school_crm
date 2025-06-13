@@ -16,6 +16,12 @@ NotificationToCenter.init({
     center_id: {
         type: sequelize_1.DataTypes.UUID,
         allowNull: false,
+        references: {
+            model: 'centers',
+            key: 'id',
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
     },
     message: {
         type: sequelize_1.DataTypes.STRING,
@@ -25,6 +31,11 @@ NotificationToCenter.init({
         type: sequelize_1.DataTypes.BOOLEAN,
         defaultValue: false,
     },
-}, { sequelize: database_config_1.default, modelName: "notificationToCenter", timestamps: true });
-NotificationToCenter.sync({ force: false });
+}, {
+    sequelize: database_config_1.default,
+    tableName: 'notificationsToCenter',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+});
 exports.default = NotificationToCenter;

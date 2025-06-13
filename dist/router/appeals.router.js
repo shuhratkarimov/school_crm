@@ -7,3 +7,5 @@ const AppealRouter = (0, express_1.Router)();
 exports.AppealRouter = AppealRouter;
 AppealRouter.get("/get_appeals", appeals_ctr_1.getAppeals);
 AppealRouter.get("/get_last_ten_day_appeals", appeals_ctr_1.getLastTenDayAppeals);
+AppealRouter.post("/send_telegram_message", appeals_ctr_1.sendTelegramMessage);
+AppealRouter.delete("/delete_appeal/:id", appeals_ctr_1.deleteAppeal);

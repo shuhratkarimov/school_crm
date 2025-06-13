@@ -1,23 +1,14 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLastTenDayAppeals = exports.getAppeals = void 0;
+exports.getLastTenDayAppeals = exports.getAppeals = exports.sendTelegramMessage = void 0;
+exports.deleteAppeal = deleteAppeal;
 const node_telegram_bot_api_1 = __importDefault(require("node-telegram-bot-api"));
 const appeal_model_1 = __importDefault(require("../Models/appeal_model"));
 const sequelize_1 = require("sequelize");
-const student_model_1 = __importDefault(require("../Models/student_model"));
-const uuid_1 = require("uuid");
+const index_1 = require("../Models/index");
 const fs_1 = __importDefault(require("fs"));
 let botToken = process.env.BOT_TOKEN;
 appeal_model_1.default.sync({ force: false });
@@ -34,6 +25,41 @@ let bot = new node_telegram_bot_api_1.default(botToken, {
         },
     },
 });
+const sendTelegramMessage = async (req, res) => {
+    const { userId, message, requestId } = req.body;
+    if (!userId || !message || !requestId) {
+        return res.status(400).json({ message: "Foydalanuvchi ID, xabar va request ID kerak" });
+    }
+    try {
+        const formattedMessage = `
+*Intellectual Progress Star O'quv Markazi*
+
+Hurmatli mijozimiz!
+
+Sizga quyidagi xabar yuborildi:
+_${message}_
+
+Iltimos, ushbu xabarga e'tibor bering va zarur bo'lsa, javob bering. Biz har doim sizning qulayligingiz uchun tayyormiz!
+
+Hurmat bilan,
+*Intellectual Progress Star Jamoasi*
+📅 ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}
+    `.trim();
+        await bot.sendMessage(userId, formattedMessage, { parse_mode: "Markdown" });
+        const appeal = await appeal_model_1.default.findOne({ where: { id: requestId } });
+        if (!appeal) {
+            return res.status(404).json({ message: "Murojaat topilmadi" });
+        }
+        appeal.answer = message;
+        await appeal.save();
+        return res.status(200).json({ message: "Xabar yuborildi va bazaga saqlandi ✅" });
+    }
+    catch (error) {
+        console.error("Telegramga xabar yuborishda xatolik:", error);
+        return res.status(500).json({ message: "Xabar yuborishda xatolik yuz berdi" });
+    }
+};
+exports.sendTelegramMessage = sendTelegramMessage;
 const loadMessages = (lang) => {
     try {
         return JSON.parse(fs_1.default.readFileSync(`./locales/${lang}.json`, "utf8"));
@@ -43,11 +69,11 @@ const loadMessages = (lang) => {
         return JSON.parse(fs_1.default.readFileSync("./locales/uz.json", "utf8"));
     }
 };
-bot.onText(/\/start/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     let lang = "uz";
     try {
-        const findStudent = yield student_model_1.default.findOne({
+        const findStudent = await index_1.Student.findOne({
             where: { telegram_user_id: chatId },
         });
         if (!findStudent) {
@@ -63,8 +89,8 @@ bot.onText(/\/start/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
         const messages = loadMessages(lang);
         return bot.sendMessage(chatId, messages.error);
     }
-}));
-bot.on("message", (msg) => __awaiter(void 0, void 0, void 0, function* () {
+});
+bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
     let lang = "uz";
@@ -73,18 +99,18 @@ bot.on("message", (msg) => __awaiter(void 0, void 0, void 0, function* () {
         return bot.sendMessage(chatId, messages.enter_text);
     }
     try {
-        if ((0, uuid_1.validate)(text)) {
-            const findStudent = yield student_model_1.default.findOne({ where: { id: text } });
+        if (text.startsWith("ID")) {
+            const findStudent = await index_1.Student.findOne({ where: { studental_id: text.slice(2) } });
             if (!findStudent) {
                 const messages = loadMessages(lang);
                 return bot.sendMessage(chatId, messages.incorrect_id);
             }
-            yield findStudent.update({ telegram_user_id: chatId });
+            await findStudent.update({ telegram_user_id: chatId });
             lang = findStudent.dataValues.language || "uz";
             const messages = loadMessages(lang);
             return bot.sendMessage(chatId, messages.start.replace("{name}", findStudent.dataValues.first_name));
         }
-        const findStudent = yield student_model_1.default.findOne({
+        const findStudent = await index_1.Student.findOne({
             where: { telegram_user_id: chatId },
         });
         if (text === "/start") {
@@ -96,7 +122,7 @@ bot.on("message", (msg) => __awaiter(void 0, void 0, void 0, function* () {
         }
         lang = findStudent.dataValues.language || "uz";
         const messages = loadMessages(lang);
-        yield appeal_model_1.default.create({
+        await appeal_model_1.default.create({
             pupil_id: findStudent.dataValues.id,
             message: text,
             telegram_user_id: chatId,
@@ -110,19 +136,24 @@ bot.on("message", (msg) => __awaiter(void 0, void 0, void 0, function* () {
         const messages = loadMessages(lang);
         return bot.sendMessage(chatId, messages.error);
     }
-}));
-const getAppeals = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+const getAppeals = async (req, res) => {
     try {
         const lang = req.headers["accept-language"] || "uz";
         const messages = loadMessages(lang);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const appeals = yield appeal_model_1.default.findAll({
+        const appeals = await appeal_model_1.default.findAll({
             where: {
                 created_at: {
                     [sequelize_1.Op.gte]: today,
                 },
             },
+            include: [{
+                    model: index_1.Student,
+                    as: "student",
+                    attributes: ["first_name", "last_name", "group_id", "phone_number"]
+                }]
         });
         if (appeals.length === 0) {
             return res.status(404).json({
@@ -137,21 +168,26 @@ const getAppeals = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const messages = loadMessages(lang);
         return res.status(500).json({ message: messages.server_error });
     }
-});
+};
 exports.getAppeals = getAppeals;
-const getLastTenDayAppeals = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getLastTenDayAppeals = async (req, res) => {
     try {
         const lang = req.headers["accept-language"] || "uz";
         const messages = loadMessages(lang);
         const startOfDay = new Date();
         startOfDay.setDate(startOfDay.getDate() - 10);
         startOfDay.setHours(0, 0, 0, 0);
-        const appeals = yield appeal_model_1.default.findAll({
+        const appeals = await appeal_model_1.default.findAll({
             where: {
                 created_at: {
                     [sequelize_1.Op.gte]: startOfDay,
                 },
             },
+            include: [{
+                    model: index_1.Student,
+                    as: "student",
+                    attributes: ["first_name", "last_name", "group_id", "phone_number"]
+                }]
         });
         if (appeals.length === 0) {
             return res.status(404).json({
@@ -166,5 +202,19 @@ const getLastTenDayAppeals = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const messages = loadMessages(lang);
         return res.status(500).json({ message: messages.server_error });
     }
-});
+};
 exports.getLastTenDayAppeals = getLastTenDayAppeals;
+async function deleteAppeal(req, res) {
+    try {
+        await appeal_model_1.default.destroy({ where: { id: req.params.id } });
+        return res.status(200).json({
+            message: "Deleted successfully!"
+        });
+    }
+    catch (error) {
+        console.error(error);
+        const lang = req.headers["accept-language"] || "uz";
+        const messages = loadMessages(lang);
+        return res.status(500).json({ message: messages.server_error });
+    }
+}

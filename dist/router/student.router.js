@@ -6,6 +6,7 @@ const student_ctr_1 = require("../controller/student.ctr");
 const StudentsRouter = (0, express_1.Router)();
 exports.StudentsRouter = StudentsRouter;
 StudentsRouter.get("/get_students", student_ctr_1.getStudents);
+StudentsRouter.get("/get_studentsByQuery", student_ctr_1.getOneGroupStudents);
 StudentsRouter.post("/make_attendance/:id", student_ctr_1.makeAttendance);
 StudentsRouter.get("/get_one_student/:id", student_ctr_1.getOneStudent);
 StudentsRouter.get("/get_stats", student_ctr_1.getMonthlyStudentStats);

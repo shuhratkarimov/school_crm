@@ -32,7 +32,7 @@ User.init({
     role: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
-        defaultValue: "user",
+        defaultValue: 'user',
     },
     verification_code: {
         type: sequelize_1.DataTypes.BIGINT,
@@ -45,14 +45,13 @@ User.init({
     },
     timestamp: {
         type: sequelize_1.DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
     },
 }, {
     sequelize: database_config_1.default,
-    tableName: "users",
+    tableName: 'users',
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
 });
-User.sync({ force: false });
 exports.default = User;

@@ -14,9 +14,4 @@ const sequelize = new sequelize_1.Sequelize({
     database: process.env.DB_DB_NAME,
     logging: false,
 });
-sequelize
-    .authenticate()
-    .then(() => console.log("Database connected successfully!"))
-    .catch((err) => console.log("Unable to connect to database", err));
-sequelize.sync({ force: false });
 exports.default = sequelize;

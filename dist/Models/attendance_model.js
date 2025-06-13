@@ -20,7 +20,9 @@ Attendance.init({
         references: {
             model: 'groups',
             key: 'id',
-        }
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
     },
     date: {
         type: sequelize_1.DataTypes.DATE,
@@ -29,7 +31,7 @@ Attendance.init({
     },
     came_students: {
         type: sequelize_1.DataTypes.JSONB,
-        allowNull: false
+        allowNull: false,
     },
 }, {
     sequelize: database_config_1.default,
@@ -38,5 +40,4 @@ Attendance.init({
     createdAt: 'created_at',
     updatedAt: 'updated_at',
 });
-Attendance.sync({ force: false });
 exports.default = Attendance;

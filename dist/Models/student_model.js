@@ -14,53 +14,52 @@ Student.init({
         allowNull: false,
         defaultValue: sequelize_1.DataTypes.UUIDV4,
     },
-    first_name: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    last_name: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    father_name: sequelize_1.DataTypes.STRING,
-    mother_name: sequelize_1.DataTypes.STRING,
-    birth_date: {
-        type: sequelize_1.DataTypes.DATEONLY,
-        allowNull: false,
-    },
-    phone_number: sequelize_1.DataTypes.STRING,
     group_id: {
         type: sequelize_1.DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: 'groups',
             key: 'id',
         },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
     },
     teacher_id: {
         type: sequelize_1.DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: 'teachers',
             key: 'id',
         },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
     },
-    paid_for_this_month: {
-        type: sequelize_1.DataTypes.BOOLEAN,
+    full_name: {
+        type: sequelize_1.DataTypes.STRING,
         allowNull: false,
-        defaultValue: false
     },
-    parents_phone_number: sequelize_1.DataTypes.STRING,
-    telegram_user_id: {
-        type: sequelize_1.DataTypes.BIGINT,
-        unique: true,
+    phone: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
     },
-    came_in_school: {
-        type: sequelize_1.DataTypes.DATE,
+    parent_phone: {
+        type: sequelize_1.DataTypes.STRING,
         allowNull: true,
     },
-    img_url: sequelize_1.DataTypes.STRING,
-    left_school: sequelize_1.DataTypes.DATE,
+    payment_status: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    balance: {
+        type: sequelize_1.DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    telegram_id: {
+        type: sequelize_1.DataTypes.BIGINT,
+        allowNull: true,
+    },
 }, {
     sequelize: database_config_1.default,
     tableName: 'students',

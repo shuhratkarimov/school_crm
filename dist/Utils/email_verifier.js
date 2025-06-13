@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -15,21 +6,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-function sendVerificationEmail(username, email, randomCode) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const transporter = nodemailer_1.default.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.VERIFIER_EMAIL,
-                pass: process.env.VERIFIER_GOOGLE_PASS_KEY,
-            },
-        });
-        yield transporter.sendMail({
-            from: `Verifying service of ${process.env.VERIFIER_EMAIL}>`,
-            to: email,
-            subject: "Verifying email",
-            text: "to sign up",
-            html: `<div
+async function sendVerificationEmail(username, email, randomCode) {
+    const transporter = nodemailer_1.default.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.VERIFIER_EMAIL,
+            pass: process.env.VERIFIER_GOOGLE_PASS_KEY,
+        },
+    });
+    await transporter.sendMail({
+        from: `Verifying service of ${process.env.VERIFIER_EMAIL}>`,
+        to: email,
+        subject: "Verifying email",
+        text: "to sign up",
+        html: `<div
       style="
         font-family: Arial, sans-serif;
         max-width: 600px;
@@ -93,7 +83,6 @@ function sendVerificationEmail(username, email, randomCode) {
       </footer>
     </div>
     `,
-        });
     });
 }
 exports.default = sendVerificationEmail;

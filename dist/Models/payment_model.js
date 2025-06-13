@@ -21,6 +21,8 @@ Payment.init({
             model: 'students',
             key: 'id',
         },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
     },
     payment_amount: {
         type: sequelize_1.DataTypes.BIGINT,
@@ -28,6 +30,18 @@ Payment.init({
         validate: {
             min: 0,
         },
+    },
+    payment_type: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    },
+    received: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    },
+    for_which_month: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
     },
 }, {
     sequelize: database_config_1.default,

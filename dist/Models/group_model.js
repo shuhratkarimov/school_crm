@@ -37,17 +37,22 @@ Group.init({
             model: 'teachers',
             key: 'id',
         },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
     },
-    teacher_phone: sequelize_1.DataTypes.STRING,
+    monthly_fee: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+    },
     students_amount: {
         type: sequelize_1.DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: 0
+        allowNull: false,
+        defaultValue: 0,
     },
     paid_students_amount: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: 0
+        defaultValue: 0,
     },
 }, {
     sequelize: database_config_1.default,
@@ -56,5 +61,4 @@ Group.init({
     createdAt: 'created_at',
     updatedAt: 'updated_at',
 });
-Group.sync({ force: false });
 exports.default = Group;
