@@ -44,6 +44,9 @@ app.use(CenterRouter);
 // Error handling
 app.use(errorMiddleware as any);
 
+console.log("Test CI CD");
+
+
 // Server start
 const start = async () => {
   try {
