@@ -36,7 +36,7 @@ Group.init(
       onDelete: 'SET NULL',
       onUpdate: 'CASCADE',
     },
-    teacher_phone: {
+    phone_number: {
       type: DataTypes.STRING,
       allowNull: true,
     },
