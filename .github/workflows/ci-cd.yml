@@ -20,14 +20,14 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./frontend
+        working-directory: .  # yoki bu qatorni butunlay olib tashlang
 
       - name: Build frontend
         run: npm run build
-        working-directory: ./frontend
+        working-directory: .  # yoki bu qatorni ham olib tashlang
 
       - name: Build frontend Docker image
-        run: docker build -t my-vite-frontend:latest ./frontend
+        run: docker build -t my-vite-frontend:latest .
 
       - name: Save frontend Docker image
         run: docker save my-vite-frontend:latest | gzip > my-vite-frontend.tar.gz
@@ -54,8 +54,8 @@ jobs:
             gunzip -c my-vite-frontend.tar.gz | docker load
 
             echo "🧹 Removing old frontend container..."
-            docker-compose stop frontend
-            docker-compose rm -f frontend
+            docker-compose stop frontend || true
+            docker-compose rm -f frontend || true
 
             echo "🚀 Recreating frontend container..."
             docker-compose up -d --force-recreate frontend
