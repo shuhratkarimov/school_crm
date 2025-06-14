@@ -5,5 +5,4 @@ docker-compose.yml
 .dockerignore
 .git
 .gitignore
-dist
 *.log
