@@ -1,19 +1,19 @@
+# --- BASE IMAGE ---
 FROM node:18
 
+# --- CREATE APP DIR ---
 WORKDIR /app
 
+# --- COPY PACKAGE FILES AND INSTALL DEPENDENCIES ---
 COPY package*.json ./
-
 RUN npm install
 
+# --- COPY REMAINING FILES AND BUILD ---
 COPY . .
-
-# .env o'rniga environment o'zgaruvchilarni sozlash
-ENV PORT=${ENV_PORT}
-ENV DATABASE_URL=${ENV_DATABASE_URL}
-ENV ALLOWED_ORIGINS=${ENV_ALLOWED_ORIGINS}
-ENV NODE_ENV=${ENV_NODE_ENV}
-
 RUN npm run build
 
-CMD ["npm", "run", "dev"]
+# --- SET ENVIRONMENT VARIABLES ---
+ENV NODE_ENV=production
+
+# --- START APPLICATION IN PRODUCTION MODE ---
+CMD ["npm", "run", "start"]
