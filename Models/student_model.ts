@@ -2,17 +2,42 @@ import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.config';
 
 class Student extends Model {}
+
 Student.init(
   {
     id: {
       type: DataTypes.UUID,
       primaryKey: true,
       allowNull: false,
-      defaultValue: DataTypes.UUIDV4,
+      defaultValue: DataTypes.UUIDV4, // gen_random_uuid() ga mos
+    },
+    first_name: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    last_name: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    father_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    mother_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    birth_date: {
+      type: DataTypes.DATEONLY, // faqat sana, vaqt yo'q
+      allowNull: false,
+    },
+    phone_number: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
     },
     group_id: {
       type: DataTypes.UUID,
-      allowNull: true,
+      allowNull: false,
       references: {
         model: 'groups',
         key: 'id',
@@ -22,7 +47,7 @@ Student.init(
     },
     teacher_id: {
       type: DataTypes.UUID,
-      allowNull: true,
+      allowNull: false,
       references: {
         model: 'teachers',
         key: 'id',
@@ -30,31 +55,41 @@ Student.init(
       onDelete: 'SET NULL',
       onUpdate: 'CASCADE',
     },
-    full_name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    phone: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    parent_phone: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    payment_status: {
+    paid_for_this_month: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     },
-    balance: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
+    parents_phone_number: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
     },
-    telegram_id: {
+    telegram_user_id: {
       type: DataTypes.BIGINT,
       allowNull: true,
+      unique: true,
+    },
+    came_in_school: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    img_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    left_school: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
