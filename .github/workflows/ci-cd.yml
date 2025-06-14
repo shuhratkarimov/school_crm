@@ -24,6 +24,13 @@ jobs:
           docker system prune -af || true
           sudo rm -rf ~/.npm/_cacache || true
 
+      - name: Create .env file from GitHub Secrets
+        run: |
+          echo "📄 Creating .env file..."
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+          # Qo‘shimcha ENV o‘zgaruvchilar bo‘lsa, shu yerga qo‘shing:
+          # echo "VITE_OTHER_SECRET=${{ secrets.VITE_OTHER_SECRET }}" >> .env
+
       - name: Install dependencies
         run: npm install
 
