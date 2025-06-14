@@ -75,14 +75,14 @@ function Groups() {
         studentsResponse,
         paymentsResponse,
       ] = await Promise.all([
-        fetch("http://localhost:3000/get_groups").catch(() => ({ ok: false })),
-        fetch("http://localhost:3000/get_teachers").catch(() => ({
+        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({
           ok: false,
         })),
-        fetch("http://localhost:3000/get_students").catch(() => ({
+        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({
           ok: false,
         })),
-        fetch("http://localhost:3000/get_payments").catch(() => ({
+        fetch(`${import.meta.env.VITE_API_URL}/get_payments`).catch(() => ({
           ok: false,
         })),
       ]);
@@ -162,7 +162,7 @@ function Groups() {
       .toUpperCase();
 
     try {
-      const response = await fetch("http://localhost:3000/create_group", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_group`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -208,7 +208,7 @@ function Groups() {
   
     try {
       const response = await fetch(
-        `http://localhost:3000/update_group/${editingGroup.id}`,
+        `${import.meta.env.VITE_API_URL}/update_group/${editingGroup.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -256,7 +256,7 @@ function Groups() {
   
   const deleteGroup = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3000/delete_group/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_group/${id}`, {
         method: "DELETE",
       });
 

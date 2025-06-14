@@ -43,7 +43,7 @@ function Attendance() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:3000/get_groups");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_groups`);
       if (!res.ok) {
         throw new Error("Guruhlar olinmadi");
       }
@@ -69,7 +69,7 @@ function Attendance() {
       setLoading(true);
       console.log("Fetching students for groupId:", groupId); // Debug uchun
       const res = await fetch(
-        `http://localhost:3000/get_students?group_id=${groupId}`
+        `${import.meta.env.VITE_API_URL}/get_students?group_id=${groupId}`
       );
       if (!res.ok) {
         toast.error(`O'quvchilarni yuklashda xatolik!`, {
@@ -120,7 +120,7 @@ function Attendance() {
       );
 
       const res = await fetch(
-        `http://localhost:3000/make_attendance/${selectedGroup.id}`,
+        `${import.meta.env.VITE_API_URL}/make_attendance/${selectedGroup.id}`,
         {
           method: "POST",
           headers: {

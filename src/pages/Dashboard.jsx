@@ -44,7 +44,7 @@ function Dashboard() {
     const fetchStats = async () => {
       try {
         setLoading(true)
-        const response = await fetch("http://localhost:3000/get_stats")
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/get_stats`)
 
         if (response.ok) {
           const data = await response.json()

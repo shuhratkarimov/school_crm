@@ -69,10 +69,6 @@ function Login({ setIsAuthenticated }) {
             {loading ? "Kirish..." : "Kirish"}
           </button>
         </form>
-
-        <div style={{ marginTop: "16px", textAlign: "center", fontSize: "14px", color: "#6b7280" }}>
-          Demo: admin / 123456
-        </div>
       </div>
     </div>
   )

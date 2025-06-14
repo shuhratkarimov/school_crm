@@ -84,9 +84,9 @@ function Payments() {
       setPaymentsError("");
 
       const [groupsResponse, studentsResponse, paymentsResponse] = await Promise.all([
-        fetch("http://localhost:3000/get_groups").catch(() => ({ ok: false })),
-        fetch("http://localhost:3000/get_students").catch(() => ({ ok: false })),
-        fetch("http://localhost:3000/get_payments").catch(() => ({ ok: false })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({ ok: false })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_payments`).catch(() => ({ ok: false })),
       ]);
 
       if (groupsResponse.ok) {
@@ -142,7 +142,7 @@ function Payments() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/create_payment", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -190,7 +190,7 @@ function Payments() {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/update_payment/${editFormData.id}`,
+        `${import.meta.env.VITE_API_URL}/update_payment/${editFormData.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -230,7 +230,7 @@ function Payments() {
   const deletePayment = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/delete_payment/${id}`,
+        `${import.meta.env.VITE_API_URL}/delete_payment/${id}`,
         {
           method: "DELETE",
         }
@@ -294,7 +294,7 @@ function Payments() {
   const sendNotification = async (studentId) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/payment_alert/${studentId}`,
+        `${import.meta.env.VITE_API_URL}/payment_alert/${studentId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" }

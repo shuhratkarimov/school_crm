@@ -58,8 +58,8 @@ function Teachers() {
       setTeachersError("");
 
       const [groupsResponse, teachersResponse] = await Promise.all([
-        fetch("http://localhost:3000/get_groups").catch(() => ({ ok: false })),
-        fetch("http://localhost:3000/get_teachers").catch(() => ({ ok: false })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({ ok: false })),
       ]);
 
       if (groupsResponse.ok) {
@@ -90,7 +90,7 @@ function Teachers() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/create_teacher", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_teacher`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -132,7 +132,7 @@ function Teachers() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://localhost:3000/update_teacher/${editFormData.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/update_teacher/${editFormData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -164,7 +164,7 @@ function Teachers() {
   const deleteTeacher = async (id) => {
 
     try {
-      const response = await fetch(`http://localhost:3000/delete_teacher/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_teacher/${id}`, {
         method: "DELETE",
       });
 

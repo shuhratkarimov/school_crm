@@ -92,7 +92,7 @@ function Students() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch("http://localhost:3000/get_students");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_students`);
       if (!response.ok)
         throw new Error(
           "O'quvchilar ma'lumotlarini olishda muammo yuzaga keldi!"
@@ -113,7 +113,7 @@ function Students() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch("http://localhost:3000/get_groups");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_groups`);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Guruhlar ma'lumotlarini olishda muammo yuzaga keldi! ${errorText}`);
@@ -129,7 +129,7 @@ function Students() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch("http://localhost:3000/get_teachers");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_teachers`);
       if (!response.ok)
         throw new Error("Ustozlar ma'lumotlarini olishda muammo yuzaga keldi!");
       const data = await response.json();
@@ -175,7 +175,7 @@ function Students() {
     };
 
     try {
-      const response = await fetch("http://localhost:3000/create_student", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_student`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -218,7 +218,7 @@ function Students() {
   const deleteStudent = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/delete_student/${id}`,
+        `${import.meta.env.VITE_API_URL}/delete_student/${id}`,
         {
           method: "DELETE",
         }
@@ -346,7 +346,7 @@ function Students() {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/update_student/${editingStudent.id}`,
+        `${import.meta.env.VITE_API_URL}/update_student/${editingStudent.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
