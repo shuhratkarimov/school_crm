@@ -1,11 +1,14 @@
 name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
+
 jobs:
   build-and-deploy:
     runs-on: self-hosted
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -127,8 +130,37 @@ jobs:
           script: |
             cd /home/shuhrat/app
             df -h
+
+            echo "📦 Loading Docker image..."
+            if [ -f "my-express-app.tar.gz" ]; then
+              gunzip -c my-express-app.tar.gz | docker load
+            else
+              echo "Error: my-express-app.tar.gz not found"
+              exit 1
+            fi
+
+            echo "🧹 Cleaning old containers..."
+            docker-compose down --remove-orphans
+
+            echo "🐘 Starting PostgreSQL for schema.sql import..."
+            if [ -f "docker-compose.yml" ]; then
+              docker-compose up -d db
+              sleep 10
+            else
+              echo "Error: docker-compose.yml not found"
+              exit 1
+            fi
+
+            echo "📥 Importing schema.sql into database..."
+            if [ -f "schema.sql" ]; then
+              cat schema.sql | docker exec -i app_db_1 psql -U postgres -d crm
+            else
+              echo "Error: schema.sql not found"
+              exit 1
+            fi
+
+            echo "🚀 Launching full application stack..."
+            docker-compose up -d --force-recreate
+
+            echo "🧼 Final cleanup..."
             docker system prune -f || true
-            if [ -f "my-express-app.tar.gz" ]; then gunzip -c my-express-app.tar.gz | docker load; else echo "Error: my-express-app.tar.gz not found"; exit 1; fi
-            if [ -f "docker-compose.yml" ]; then docker-compose down || true; docker-compose up -d db; sleep 10; else echo "Error: docker-compose.yml not found"; exit 1; fi
-            if [ -f "schema.sql" ]; then cat schema.sql | docker exec -i app_db_1 psql -U postgres -d crm; else echo "Error: schema.sql not found"; exit 1; fi
-            docker-compose up -d
