@@ -1,0 +1,9 @@
+services:
+  frontend:
+    container_name: vite_frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    restart: always

@@ -1,0 +1,41 @@
+{
+    "header": {
+      "title": "Intellectual Progress Star o'quv markazi CRM tizimi",
+      "admin": "Admin",
+      "logout": "Chiqish",
+      "lightMode": "Kun rejimi",
+      "darkMode": "Tungi rejim"
+    },
+    "form": {
+      "name": "Ism",
+      "family": "Familiya",
+      "phone": "Telefon raqami",
+      "group": "Guruh",
+      "teacher": "Ustoz",
+      "parentName": "Ota/onasining ismi",
+      "parentPhone": "Ota/onasining telefon raqami",
+      "birthDate": "Tug'ilgan sana",
+      "startDate": "O'qishga kelgan vaqt",
+      "payment": "Ushbu oy uchun to'lov qildimi?",
+      "yes": "Ha",
+      "no": "Yo'q",
+      "addStudent": "O'quvchini qo'shish",
+      "success": "Muvaffaqiyatli qo'shildi!",
+      "error": "Xatolik yuzaga keldi!"
+    },
+    "table": {
+      "id": "#",
+      "fullName": "F.I.Sh.",
+      "phoneNumber": "Telefon raqami",
+      "subject": "Fan",
+      "parentName": "Ota/onasining F.I.Sh.",
+      "parentPhone": "Ota/onasining telefon raqami",
+      "paymentStatus": "To'lov holati",
+      "actions": "Amallar"
+    },
+    "modal": {
+      "editTitle": "O'quvchi ma'lumotlarini yangilash",
+      "cancel": "Bekor qilish",
+      "save": "Saqlash"
+    }
+  }

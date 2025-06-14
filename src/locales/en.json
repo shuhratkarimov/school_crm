@@ -1,0 +1,41 @@
+{
+    "header": {
+      "title": "Intellectual Progress Star Education Center CRM System",
+      "admin": "Admin",
+      "logout": "Logout",
+      "lightMode": "Light Mode",
+      "darkMode": "Dark Mode"
+    },
+    "form": {
+      "name": "Name",
+      "family": "Family",
+      "phone": "Phone Number",
+      "group": "Group",
+      "teacher": "Teacher",
+      "parentName": "Parent's Name",
+      "parentPhone": "Parent's Phone",
+      "birthDate": "Birth Date",
+      "startDate": "Start Date",
+      "payment": "Paid for this month?",
+      "yes": "Yes",
+      "no": "No",
+      "addStudent": "Add Student",
+      "success": "Successfully added!",
+      "error": "An error occurred!"
+    },
+    "table": {
+      "id": "#",
+      "fullName": "Full Name",
+      "phoneNumber": "Phone Number",
+      "subject": "Subject",
+      "parentName": "Parent's Name",
+      "parentPhone": "Parent's Phone",
+      "paymentStatus": "Payment Status",
+      "actions": "Actions"
+    },
+    "modal": {
+      "editTitle": "Update Student Details",
+      "cancel": "Cancel",
+      "save": "Save"
+    }
+  }

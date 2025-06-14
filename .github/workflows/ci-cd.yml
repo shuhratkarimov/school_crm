@@ -1,0 +1,64 @@
+name: Frontend CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy-frontend:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./frontend
+
+      - name: Build frontend Docker image
+        run: docker build -t my-vite-frontend:latest ./frontend
+
+      - name: Save frontend Docker image
+        run: docker save my-vite-frontend:latest | gzip > my-vite-frontend.tar.gz
+
+      - name: Copy frontend Docker image to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: shuhrat
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: my-vite-frontend.tar.gz
+          target: /home/shuhrat/app
+          overwrite: true
+
+      - name: Deploy frontend to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: shuhrat
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/shuhrat/app
+            echo "📦 Loading frontend Docker image..."
+            gunzip -c my-vite-frontend.tar.gz | docker load
+
+            echo "🧹 Removing old frontend container..."
+            docker-compose stop frontend
+            docker-compose rm -f frontend
+
+            echo "🚀 Recreating frontend container..."
+            docker-compose up -d --force-recreate frontend
+
+            echo "🧼 Cleaning up..."
+            docker system prune -f || true
