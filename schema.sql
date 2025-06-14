@@ -45,6 +45,7 @@ CREATE TABLE students (
     parents_phone_number VARCHAR(20),
     telegram_user_id BIGINT UNIQUE,
     came_in_school DATE NOT NULL,
+    studental_id VARCHAR (50) NOT NULL,
     img_url VARCHAR(255),
     left_school DATE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),

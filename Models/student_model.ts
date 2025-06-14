@@ -91,6 +91,10 @@ Student.init(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    studental_id: {
+      type: DataTypes.STRING,
+      allowNull: false
+    }
   },
   {
     sequelize,
