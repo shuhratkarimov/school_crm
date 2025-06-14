@@ -10,6 +10,10 @@ Group.init(
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
+    first_name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     group_subject: {
       type: DataTypes.STRING,
       allowNull: false,

@@ -59,6 +59,8 @@ CREATE TABLE payments (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     pupil_id UUID NOT NULL,
     payment_amount BIGINT NOT NULL CHECK (payment_amount >= 0),
+    payment_type VARCHAR,
+    received VARCHAR,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE
@@ -72,6 +74,7 @@ CREATE TABLE appeals (
     telegram_user_id BIGINT NOT NULL,
     is_seen BOOLEAN NOT NULL DEFAULT FALSE,
     is_answered BOOLEAN NOT NULL DEFAULT FALSE,
+    answer TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE
