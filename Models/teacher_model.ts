@@ -1,8 +1,9 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.config';
 
-class Group extends Model {}
-Group.init(
+class Teacher extends Model {}
+
+Teacher.init(
   {
     id: {
       type: DataTypes.UUID,
@@ -12,60 +13,46 @@ Group.init(
     },
     first_name: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
     },
-    group_subject: {
+    last_name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    days: {
+    father_name: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
-    start_time: {
-      type: DataTypes.TIME,
+    birth_date: {
+      type: DataTypes.DATEONLY,
       allowNull: false,
-    },
-    end_time: {
-      type: DataTypes.TIME,
-      allowNull: false,
-    },
-    teacher_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'teachers',
-        key: 'id',
-      },
-      onDelete: 'SET NULL',
-      onUpdate: 'CASCADE',
     },
     phone_number: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
+      unique: true,
     },
-    monthly_fee: {
+    subject: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    students_amount: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
-    paid_students_amount: {
-      type: DataTypes.INTEGER,
+    img_url: {
+      type: DataTypes.STRING,
       allowNull: true,
-      defaultValue: 0,
+    },
+    got_salary_for_this_month: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   },
   {
     sequelize,
-    tableName: 'groups',
+    tableName: 'teachers',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
 );
 
-export default Group;
+export default Teacher;
