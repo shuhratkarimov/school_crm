@@ -16,15 +16,19 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'  # Node 20 - npm 11 versiyalar bilan mos
+
+      - name: Clean up disk space before build
+        run: |
+          echo "🧹 Cleaning up disk to prevent ENOSPC error..."
+          docker system prune -af || true
+          sudo rm -rf ~/.npm/_cacache || true
 
       - name: Install dependencies
         run: npm install
-        working-directory: .  # yoki bu qatorni butunlay olib tashlang
 
       - name: Build frontend
         run: npm run build
-        working-directory: .  # yoki bu qatorni ham olib tashlang
 
       - name: Build frontend Docker image
         run: docker build -t my-vite-frontend:latest .
@@ -60,5 +64,5 @@ jobs:
             echo "🚀 Recreating frontend container..."
             docker-compose up -d --force-recreate frontend
 
-            echo "🧼 Cleaning up..."
-            docker system prune -f || true
+            echo "🧼 Final cleanup..."
+            docker image prune -f || true
