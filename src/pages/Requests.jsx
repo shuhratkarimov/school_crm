@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../styles/styles.css";
-import { ToastContainer, toast } from "react-toastify";
 import LottieLoading from "../components/Loading";
 
 function Requests() {
@@ -52,7 +52,8 @@ function Requests() {
       if (todayResponse.ok) {
         todayData = await todayResponse.json();
       } else if (todayResponse.status === 404) {
-        console.log("Bugungi murojaatlar topilmadi");
+        toast.warn("Bugun hech qanday murojaat kelib tushmagan", { position: "top-right", autoClose: 3000 } )
+
       } else {
         throw new Error("Bugungi murojaatlarni olishda xatolik");
       }
@@ -62,7 +63,7 @@ function Requests() {
       if (allResponse.ok) {
         allData = await allResponse.json();
       } else if (allResponse.status === 404) {
-        console.log("Oxirgi 10 kunlik murojaatlar topilmadi");
+        toast.warn("Oxirgi 10 kunda murojaat qilinmagan...", { position: "top-right", autoClose: 3000 } )
       } else {
         throw new Error("Oxirgi 10 kunlik murojaatlarni olishda xatolik");
       }
@@ -222,20 +223,20 @@ function Requests() {
 
   return (
     <div>
+      <h1>Murojaatlar</h1>
       <ToastContainer/>
-      <h1 style={{ marginBottom: "24px" }}>Murojaatlar</h1>
       {/* Filtrlash paneli */}
-      <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
+      <div style={{ marginBottom: "20px", display: "flex", gap: "20px" }}>
         <input
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          style={{ padding: "8px", borderRadius: "4px" }}
+          style={{ padding: "8px", borderRadius: "4px", marginLeft: "20px", marginTop: "20px" }}
         />
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{ padding: "8px", borderRadius: "4px" }}
+          style={{ padding: "8px", borderRadius: "4px", cursor: "pointer", marginTop: "20px" }}
         >
           <option value="all">Barcha murojaatlar</option>
           <option value="answered">Javob berilganlar</option>

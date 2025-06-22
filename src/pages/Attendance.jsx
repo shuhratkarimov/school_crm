@@ -48,7 +48,6 @@ function Attendance() {
         throw new Error("Guruhlar olinmadi");
       }
       const data = await res.json();
-      console.log("Fetched groups:", data); // Debug uchun
       setGroups(data);
       if (data.length > 0) {
         setSelectedGroup(data[0]); // Birinchi guruhni default sifatida tanlaymiz
@@ -67,33 +66,27 @@ function Attendance() {
   const fetchStudents = async (groupId) => {
     try {
       setLoading(true);
-      console.log("Fetching students for groupId:", groupId); // Debug uchun
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_students?group_id=${groupId}`
+        `${import.meta.env.VITE_API_URL}/get_one_group_students?group_id=${groupId}`
       );
       if (!res.ok) {
-        toast.error(`O'quvchilarni yuklashda xatolik!`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        if (res.status === 404) {
+          toast.error(`O'quvchilar hali mavjud emas!`, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        }
         throw new Error(`O'quvchilar olinmadi. Status: ${res.status}`);
       }
       const data = await res.json();
-      const filteredStudents = data.filter(
-        (student) => student.group_id == groupId
-      );
-      setStudents(filteredStudents);
+      setStudents(data);
 
       const initialAttendance = {};
-      filteredStudents.forEach((student) => {
+      data.forEach((student) => {
         initialAttendance[student.id] = true;
       });
       setAttendance(initialAttendance);
     } catch (err) {
-      toast.error(`O'quvchilarni yuklashda xatolik: ${err.message}`, {
-        position: "top-right",
-        autoClose: 3000,
-      });
       console.error("Fetch students error:", err);
     } finally {
       setLoading(false);
@@ -113,7 +106,7 @@ function Attendance() {
 
       const attendanceData = Object.entries(attendance).map(
         ([studentId, present]) => ({
-          studentId: studentId,
+          studentId,
           present,
           date: today,
         })
@@ -126,7 +119,7 @@ function Attendance() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(attendanceData),
+          body: JSON.stringify({ attendanceBody: attendanceData }),
         }
       );
 
@@ -174,12 +167,13 @@ function Attendance() {
   }, [success, error]);
 
   if (loading) {
-    return <LottieLoading />
+    return <LottieLoading />;
   }
+
   return (
     <div>
+      <h1>Davomat</h1>
       <ToastContainer />
-      <h1 style={{ marginBottom: "24px" }}>Davomat</h1>
 
       {success && <div className="success">{success}</div>}
       {error && <div className="error">{error}</div>}
@@ -259,43 +253,51 @@ function Attendance() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>№</th>
+                    <th>#</th>
                     <th>O'quvchi ismi</th>
                     <th style={{ textAlign: "left" }}>Davomat</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {students.map((student, index) => (
-                    <tr key={student.id}>
-                      <td>{index + 1}</td>
-                      <td>{`${student.first_name} ${student.last_name}`}</td>
-                      <td style={{ textAlign: "right" }}>
-                        <button
-                          onClick={() => toggleAttendance(student.id)}
-                          style={{
-                            background: attendance[student.id]
-                              ? "#16a34a"
-                              : "#ef4444",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "50%",
-                            width: "32px",
-                            height: "32px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {attendance[student.id] ? (
-                            <Check size={16} />
-                          ) : (
-                            <X size={16} />
-                          )}
-                        </button>
+                  {students.length > 0 ? (
+                    students.map((student, index) => (
+                      <tr key={student.id}>
+                        <td>{index + 1}</td>
+                        <td>{`${student.first_name} ${student.last_name}`}</td>
+                        <td style={{ textAlign: "right" }}>
+                          <button
+                            onClick={() => toggleAttendance(student.id)}
+                            style={{
+                              background: attendance[student.id]
+                                ? "#16a34a"
+                                : "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "50%",
+                              width: "32px",
+                              height: "32px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {attendance[student.id] ? (
+                              <Check size={16} />
+                            ) : (
+                              <X size={16} />
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" style={{ textAlign: "center", padding: "20px" }}>
+                        Hali o'quvchilar yo'q...
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
 

@@ -29,9 +29,7 @@ function Students() {
     mother_name: "",
     birth_date: "",
     phone_number: "",
-    group_id: "", // Boshlang'ichda bo'sh
-    teacher_id: "", // Boshlang'ichda bo'sh
-    paid_for_this_month: false,
+    group_ids: [], // Ko'p guruhlar uchun massiv
     parents_phone_number: "",
     came_in_school: "",
   });
@@ -46,32 +44,30 @@ function Students() {
     mother_name: "",
     birth_date: "",
     phone_number: "",
-    group_id: "",
-    teacher_id: "",
-    paid_for_this_month: false,
+    group_ids: [], // Ko'p guruhlar uchun massiv
     parents_phone_number: "",
     came_in_school: "",
-    group: { group_subject: "" },
+    groups: [], // Guruhlar ro'yxati ko'rsatish uchun
   });
 
   function getMonthsInWord(thisMonth) {
     let months = {
-      1: "yanvar",
-      2: "fevral",
-      3: "mart",
-      4: "aprel",
-      5: "may",
-      6: "iyun",
-      7: "iyul",
-      8: "avgust",
-      9: "sentabr",
-      10: "oktabr",
-      11: "noyabr",
-      12: "dekabr",
+      1: "Yanvar",
+      2: "Fevral",
+      3: "Mart",
+      4: "Aprel",
+      5: "May",
+      6: "Iyun",
+      7: "Iyul",
+      8: "Avgust",
+      9: "Sentabr",
+      10: "Oktabr",
+      11: "Noyabr",
+      12: "Dekabr",
     };
     for (const key in months) {
       if (key == thisMonth) {
-        thisMonth = months[key].toUpperCase();
+        thisMonth = months[key];
         return thisMonth;
       }
     }
@@ -82,9 +78,7 @@ function Students() {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-
     const formatted = `${day}.${month}.${year}`;
-
     return formatted;
   };
 
@@ -92,7 +86,9 @@ function Students() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_students`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/get_students`
+      );
       if (!response.ok)
         throw new Error(
           "O'quvchilar ma'lumotlarini olishda muammo yuzaga keldi!"
@@ -105,7 +101,6 @@ function Students() {
         "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi: hali mavjud emas",
         { position: "top-right", autoClose: 3000 }
       );
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -113,23 +108,31 @@ function Students() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_groups`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/get_groups`
+      );
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Guruhlar ma'lumotlarini olishda muammo yuzaga keldi! ${errorText}`);
+        throw new Error(
+          `Guruhlar ma'lumotlarini olishda muammo yuzaga keldi! ${errorText}`
+        );
       }
       const data = await response.json();
       setGroups(data);
     } catch (err) {
       setError("Guruhlar ma'lumotlarini olishda muammo yuzaga keldi!");
-      toast.error(`Guruhlar ma'lumotlarini olishda xatolik yuz berdi: ${err.message}`, { position: "top-right", autoClose: 3000 });
-      console.error(err);
+      toast.error(
+        `Guruhlar ma'lumotlarini olishda xatolik yuz berdi: ${err.message}`,
+        { position: "top-right", autoClose: 3000 }
+      );
     }
   };
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_teachers`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/get_teachers`
+      );
       if (!response.ok)
         throw new Error("Ustozlar ma'lumotlarini olishda muammo yuzaga keldi!");
       const data = await response.json();
@@ -140,7 +143,6 @@ function Students() {
         { position: "top-right", autoClose: 3000 }
       );
       setError("Ustozlar ma'lumotlarini olishda muammo yuzaga keldi!");
-      console.error(err);
     }
   };
 
@@ -156,9 +158,9 @@ function Students() {
     setError("");
     setSuccess("");
 
-    if (!formData.group_id) {
-      setError("Iltimos, guruhni tanlang!");
-      toast.error("Iltimos, guruhni tanlang!", {
+    if (formData.group_ids.length === 0) {
+      setError("Iltimos, kamida bitta guruhni tanlang!");
+      toast.error("Iltimos, kamida bitta guruhni tanlang!", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -169,17 +171,18 @@ function Students() {
       ...formData,
       birth_date: formatDate(formData.birth_date),
       came_in_school: formatDate(formData.came_in_school),
-      group_id: formData.group_id || null,
-      teacher_id: formData.teacher_id || null, // Agar avtomatik to'ldirilgan bo'lsa, null bo'lmasligi kerak
-      paid_for_this_month: formData.paid_for_this_month,
+      group_ids: formData.group_ids, // Ko'p guruhlar uchun massiv
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_student`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/create_student`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok)
         throw new Error("O'quvchini qo'shishda muammo yuzaga keldi!");
@@ -198,9 +201,7 @@ function Students() {
         mother_name: "",
         birth_date: "",
         phone_number: "",
-        group_id: "",
-        teacher_id: "",
-        paid_for_this_month: false,
+        group_ids: [],
         parents_phone_number: "",
         came_in_school: "",
       });
@@ -215,6 +216,7 @@ function Students() {
       console.error(err);
     }
   };
+
   const deleteStudent = async (id) => {
     try {
       const response = await fetch(
@@ -244,33 +246,6 @@ function Students() {
       console.error(err);
     }
   };
-
-  useEffect(() => {
-    if (groups.length > 0 && formData.group_id) {
-      const selectedGroup = groups.find(
-        (group) => group.id === formData.group_id
-      );
-      if (selectedGroup && selectedGroup.teacher_id) {
-        setFormData((prev) => ({
-          ...prev,
-          teacher_id: selectedGroup.teacher_id.toString(),
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          teacher_id: "",
-        }));
-      }
-    } else if (!formData.group_id) {
-      setFormData((prev) => ({
-        ...prev,
-        teacher_id: "",
-      }));
-    }
-  }, [formData.group_id, groups]);
-
-  useEffect(() => {
-  }, [formData]);
 
   const showDeleteToast = (id) => {
     toast(
@@ -326,9 +301,9 @@ function Students() {
     setError("");
     setSuccess("");
 
-    if (!editFormData.teacher_id) {
-      setError("Iltimos, ustozni tanlang");
-      toast.error("Iltimos, ustozni tanlang", {
+    if (editFormData.group_ids.length === 0) {
+      setError("Iltimos, kamida bitta guruhni tanlang!");
+      toast.error("Iltimos, kamida bitta guruhni tanlang!", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -339,9 +314,7 @@ function Students() {
       ...editFormData,
       birth_date: formatDate(editFormData.birth_date),
       came_in_school: formatDate(editFormData.came_in_school),
-      group_id: editFormData.group_id || null,
-      teacher_id: editFormData.teacher_id,
-      paid_for_this_month: editFormData.paid_for_this_month,
+      group_ids: editFormData.group_ids, // Ko'p guruhlar uchun massiv
     };
 
     try {
@@ -355,9 +328,9 @@ function Students() {
       );
 
       if (!response.ok) throw new Error("Failed to update student");
-      await fetchStudents(); // Barcha ma'lumotlarni qayta yuklash
-      await fetchGroups(); // Guruhlarni yangilash
-      await fetchTeachers(); // Ustozlarni yangilash
+      await fetchStudents();
+      await fetchGroups();
+      await fetchTeachers();
       setSuccess("Student successfully updated");
       toast.success("O'quvchi ma'lumotlari muvaffaqiyatli yangilandi!", {
         position: "top-right",
@@ -376,21 +349,18 @@ function Students() {
   };
 
   const openEditModal = (student) => {
-    const selectedGroup = groups.find((group) => group.id === student.group_id);
+    const studentGroups = student.groups || [];
     setEditingStudent(student);
     setEditFormData({
       ...student,
-      group: student.group || { group_subject: "" },
+      groups: studentGroups,
+      group_ids: studentGroups.map((group) => group.id), // Guruhlar ID lari
       birth_date: student.birth_date
         ? new Date(student.birth_date).toISOString().split("T")[0]
         : "",
       came_in_school: student.came_in_school
         ? new Date(student.came_in_school).toISOString().split("T")[0]
         : "",
-      paid_for_this_month: student.paid_for_this_month || false,
-      teacher_id: selectedGroup
-        ? selectedGroup.teacher_id
-        : student.teacher_id || "",
     });
     setEditModal(true);
   };
@@ -399,15 +369,33 @@ function Students() {
     setSelectedStudent(student);
   };
 
-  // Real-time search and payment filter
+  // Calculate payment ratio for a student
+  const getPaymentRatio = (student) => {
+    const totalGroups = student.total_groups;
+    if (totalGroups === 0) return "0/0";
+    const paidGroups = student?.paid_groups;
+    return `${paidGroups}/${totalGroups} (${Math.round(
+      (paidGroups / totalGroups) * 100
+    )}%)`;
+  };
+
+  // Filter students based on payment status
   const filteredStudents = students.filter((student) => {
     const matchesName = `${student.first_name} ${student.last_name}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
+    const totalGroups = student.groups ? student.groups.length : 0;
+    const paidGroups = student?.paid_groups;
+    const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
+    const isPartiallyPaid =
+      totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
+    const isUnpaid = totalGroups > 0 && paidGroups === 0;
+
     const matchesPayment =
       paymentFilter === "all" ||
-      (paymentFilter === "paid" && student.paid_for_this_month) ||
-      (paymentFilter === "unpaid" && !student.paid_for_this_month);
+      (paymentFilter === "fullyPaid" && isFullyPaid) ||
+      (paymentFilter === "partiallyPaid" && isPartiallyPaid) ||
+      (paymentFilter === "unpaid" && isUnpaid);
     return matchesName && matchesPayment;
   });
 
@@ -427,28 +415,6 @@ function Students() {
     fetchGroups();
     fetchTeachers();
   }, []);
-
-  useEffect(() => {
-    if (groups.length > 0 && formData.group_id) {
-      const selectedGroup = groups.find((group) => group.id === formData.group_id);
-      if (selectedGroup && selectedGroup.teacher_id) {
-        setFormData((prev) => ({
-          ...prev,
-          teacher_id: selectedGroup.teacher_id.toString(),
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          teacher_id: "",
-        }));
-      }
-    } else if (!formData.group_id) {
-      setFormData((prev) => ({
-        ...prev,
-        teacher_id: "",
-      }));
-    }
-  }, [formData.group_id, groups]);
 
   useEffect(() => {
     if (success) {
@@ -475,10 +441,7 @@ function Students() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: "24px" }}>O'quvchilar</h1>
-
-      {/* {error && <div className="error">{error}</div>}
-        {success && <div className="success">{success}</div>} */}
+      <h1>O'quvchilar</h1>
 
       {/* Toast Container */}
       <ToastContainer />
@@ -535,54 +498,72 @@ function Students() {
               </InputMask>
             </div>
             <div className="form-group">
-              <label>Guruh</label>
+              <label>Guruhlar</label>
               <select
                 className="select"
-                value={formData.group_id || ""} // Bo'sh bo'lsa default qiymat
+                value=""
                 onChange={(e) => {
                   const selectedGroupId = e.target.value;
-                  const selectedGroup = groups.find(
-                    (group) => group.id === selectedGroupId
-                  );
-                  const newTeacherId = selectedGroup
-                    ? selectedGroup.teacher_id.toString()
-                    : "";
-                  setFormData({
-                    ...formData,
-                    group_id: selectedGroupId,
-                    teacher_id: newTeacherId,
-                  });
+                  if (
+                    selectedGroupId &&
+                    !formData.group_ids.includes(selectedGroupId)
+                  ) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      group_ids: [...prev.group_ids, selectedGroupId],
+                    }));
+                  }
                 }}
+                style={{ marginBottom: "10px" }}
               >
                 <option value="">Guruhni tanlang</option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.group_subject}
-                  </option>
-                ))}
+                {groups
+                  .filter((group) => !formData.group_ids.includes(group.id))
+                  .map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.group_subject}
+                    </option>
+                  ))}
               </select>
-            </div>
-            <div className="form-group">
-              <label>Ustoz</label>
-              <select
-                className="select"
-                value={formData.teacher_id || ""} // Bo'sh bo'lsa default qiymat
-                onChange={(e) => {}} // O'zgartirishni taqiqlash
-                disabled
-                required
-              >
-                <option value="">Ustoz</option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {teacher.first_name} {teacher.last_name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="hidden"
-                name="teacher_id"
-                value={formData.teacher_id}
-              />
+              <div>
+                {formData.group_ids.map((groupId) => {
+                  const group = groups.find((g) => g.id === groupId);
+                  return group ? (
+                    <div
+                      key={groupId}
+                      style={{
+                        display: "inline-block",
+                        background: "#e9ecef",
+                        padding: "5px 10px",
+                        margin: "5px",
+                        borderRadius: "5px",
+                      }}
+                    >
+                      {group.group_subject}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            group_ids: prev.group_ids.filter(
+                              (id) => id !== groupId
+                            ),
+                          }))
+                        }
+                        style={{
+                          marginLeft: "10px",
+                          background: "none",
+                          border: "none",
+                          color: "#dc3545",
+                          cursor: "pointer",
+                        }}
+                      >
+                        x
+                      </button>
+                    </div>
+                  ) : null;
+                })}
+              </div>
             </div>
             <div className="form-group">
               <label>Ota/onasining ismi va familiyasi</label>
@@ -643,61 +624,6 @@ function Students() {
                 placeholder="YYYY-MM-DD"
               />
             </div>
-            <div
-              className="form-group"
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: "10px",
-              }}
-            >
-              <label style={{ margin: "0" }}>
-                Ushbu oy uchun to'lov qildimi?
-              </label>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "5px" }}
-              >
-                <button
-                  type="button"
-                  className={`btn ${
-                    formData.paid_for_this_month
-                      ? "btn-primary"
-                      : "btn-secondary"
-                  }`}
-                  onClick={() =>
-                    setFormData({ ...formData, paid_for_this_month: true })
-                  }
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "5px",
-                    minWidth: "60px",
-                    fontSize: "14px",
-                  }}
-                >
-                  ✓ Ha
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${
-                    !formData.paid_for_this_month
-                      ? "btn-primary"
-                      : "btn-secondary"
-                  }`}
-                  onClick={() =>
-                    setFormData({ ...formData, paid_for_this_month: false })
-                  }
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "5px",
-                    minWidth: "60px",
-                    fontSize: "14px",
-                  }}
-                >
-                  X Yo'q
-                </button>
-              </div>
-            </div>
           </div>
           <button type="submit" className="btn btn-primary">
             O'quvchini qo'shish
@@ -733,8 +659,9 @@ function Students() {
               style={{ minWidth: "150px" }}
             >
               <option value="all">Barcha o'quvchilar</option>
-              <option value="paid">To'lov qilgan</option>
-              <option value="unpaid">To'lov qilmagan</option>
+              <option value="fullyPaid">To'liq to'langan</option>
+              <option value="partiallyPaid">Qisman to'langan</option>
+              <option value="unpaid">Umuman to'lanmagan</option>
             </select>
           </div>
         </div>
@@ -745,10 +672,9 @@ function Students() {
               <th>#</th>
               <th>F.I.Sh.</th>
               <th>Telefon raqami</th>
-              <th>Fan</th>
+              <th>Guruhlar</th>
               <th>Ota/onasining F.I.Sh.</th>
-              <th>Ota/onasining telefon raqami</th>
-              <th>To'lov ({getMonthsInWord()})</th>
+              <th>To'lov ({getMonthsInWord(new Date().getMonth() + 1)})</th>
               <th>Amallar</th>
             </tr>
           </thead>
@@ -756,7 +682,7 @@ function Students() {
             {filteredStudents.length === 0 ? (
               <tr>
                 <td
-                  colSpan="8"
+                  colSpan="7"
                   style={{ textAlign: "center", padding: "40px" }}
                 >
                   {searchTerm || paymentFilter !== "all"
@@ -774,12 +700,13 @@ function Students() {
                   <td>{indexOfFirstStudent + index + 1}</td>
                   <td>{`${student.first_name} ${student.last_name}`}</td>
                   <td>{student.phone_number}</td>
-                  <td>{student.group?.group_subject || "N/A"}</td>
-                  <td>{student.father_name || "N/A"}</td>
-                  <td>{student.parents_phone_number}</td>
                   <td>
-                    {student.paid_for_this_month ? "To'langan" : "To'lanmagan"}
+                    {student.groups
+                      ?.map((group) => group.group_subject)
+                      .join(", ") || "N/A"}
                   </td>
+                  <td>{student.father_name || "N/A"}</td>
+                  <td>{getPaymentRatio(student)}</td>
                   <td>
                     <div style={{ display: "flex", gap: "8px" }}>
                       <button
@@ -880,7 +807,7 @@ function Students() {
                 />
               </div>
               <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Familiyasi</label>
+                <label>Familiya</label>
                 <input
                   type="text"
                   className="input"
@@ -918,45 +845,74 @@ function Students() {
                 </InputMask>
               </div>
               <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Fan</label>
+                <label>Guruhlar</label>
                 <select
                   className="select"
-                  value={editFormData.group_id}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      group_id: e.target.value,
-                    })
-                  }
+                  value=""
+                  onChange={(e) => {
+                    const selectedGroupId = e.target.value;
+                    if (
+                      selectedGroupId &&
+                      !editFormData.group_ids.includes(selectedGroupId)
+                    ) {
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        group_ids: [...prev.group_ids, selectedGroupId],
+                      }));
+                    }
+                  }}
+                  style={{ marginBottom: "10px" }}
                 >
                   <option value="">Guruhni tanlang</option>
-                  {groups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.group_subject}
-                    </option>
-                  ))}
+                  {groups
+                    .filter(
+                      (group) => !editFormData.group_ids.includes(group.id)
+                    )
+                    .map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.group_subject}
+                      </option>
+                    ))}
                 </select>
-              </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Ustoz</label>
-                <select
-                  className="select"
-                  value={editFormData.teacher_id}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      teacher_id: e.target.value,
-                    })
-                  }
-                  required
-                >
-                  <option value="">Ustozni tanlang</option>
-                  {teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id}>
-                      {teacher.first_name} {teacher.last_name}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  {editFormData.group_ids.map((groupId) => {
+                    const group = groups.find((g) => g.id === groupId);
+                    return group ? (
+                      <div
+                        key={groupId}
+                        style={{
+                          display: "inline-block",
+                          background: "#e9ecef",
+                          padding: "5px 10px",
+                          margin: "5px",
+                          borderRadius: "5px",
+                        }}
+                      >
+                        {group.group_subject}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditFormData((prev) => ({
+                              ...prev,
+                              group_ids: prev.group_ids.filter(
+                                (id) => id !== groupId
+                              ),
+                            }))
+                          }
+                          style={{
+                            marginLeft: "10px",
+                            background: "none",
+                            border: "none",
+                            color: "#dc3545",
+                            cursor: "pointer",
+                          }}
+                        >
+                          x
+                        </button>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               </div>
               <div className="form-group" style={{ marginBottom: "16px" }}>
                 <label>Ota/onasining F.I.Sh.</label>
@@ -1082,33 +1038,64 @@ function Students() {
                 {FormattedDate(selectedStudent.came_in_school) || "N/A"}
               </p>
               <p>
-                <strong>Guruh:</strong>{" "}
-                {selectedStudent.group?.group_subject || "N/A"}
+                <strong>Guruhlar:</strong>{" "}
+                {selectedStudent.groups
+                  ?.map((group) => group.group_subject)
+                  .join(", ") || "N/A"}
               </p>
               <p>
                 <strong>O'quvchining unikal ID raqami:</strong>{" "}
                 {`ID${selectedStudent.studental_id}` || "N/A"}
               </p>
               <p>
-                <strong>Ustoz:</strong>{" "}
-                {
-                  teachers.find((t) => t.id === selectedStudent.teacher_id)
-                    ?.first_name
-                }{" "}
-                {teachers.find((t) => t.id === selectedStudent.teacher_id)
-                  ?.last_name || "N/A"}
+                <strong>
+                  {getMonthsInWord(new Date().getMonth() + 1)} oyi uchun to'lov
+                  holati:
+                </strong>{" "}
+                {getPaymentRatio(selectedStudent)}
               </p>
-              <p>
-                <strong>Ustozning telefon raqami:</strong>{" "}
-                {teachers.find((t) => t.id === selectedStudent.teacher_id)
-                  ?.phone_number || "N/A"}
+              <p style={{ marginTop: "10px" }}>
+                <hr />
               </p>
-              <p>
-                <strong>{getMonthsInWord()} oyi uchun to'lov holati:</strong>{" "}
-                {selectedStudent.paid_for_this_month
-                  ? "To'langan"
-                  : "To'lanmagan"}
+              <p style={{ marginTop: "10px" }}>
+                <strong>Guruhlar to‘lov holati:</strong>
               </p>
+              {selectedStudent.groups &&
+                selectedStudent.groups.map((group, index) => {
+                  // studentGroups'dan mos group_id uchun paid qiymatini topamiz
+                  const groupPaymentStatus = selectedStudent.studentGroups.find(
+                    (sg) => sg.group_id === group.id
+                  )?.paid;
+                  return (
+                    <div key={index} style={{ marginBottom: "10px" }}>
+                      <p>
+                        <strong>Guruh:</strong> {group.group_subject}
+                      </p>
+                      <p>
+                        <strong>To‘lov holati:</strong>{" "}
+                        <span
+                          style={{
+                            color: groupPaymentStatus ? "green" : "red",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {groupPaymentStatus ? "To'langan" : "To'lanmagan"}
+                        </span>
+                      </p>
+                      <p>
+                        <strong>Ustoz:</strong>{" "}
+                        {group.teacher
+                          ? `${group.teacher.first_name} ${group.teacher.last_name}`
+                          : "N/A"}
+                      </p>
+                      <p>
+                        <strong>Telefon raqami:</strong>{" "}
+                        {group.teacher ? group.teacher.phone_number : "N/A"}
+                      </p>
+                      {index < selectedStudent.groups.length - 1 && <hr />}
+                    </div>
+                  );
+                })}
             </div>
           </div>
         </div>

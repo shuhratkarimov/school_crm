@@ -31,7 +31,7 @@ function Payments() {
   });
 
   const [formData, setFormData] = useState({
-    group_id: "",
+    for_which_group: "", // "group_id" o'rniga "for_which_group"
     pupil_id: "",
     payment_amount: "",
     payment_type: "",
@@ -59,7 +59,9 @@ function Payments() {
   const currentMonth = allMonths[currentMonthIndex];
   const nextMonth = allMonths[(currentMonthIndex + 1) % 12];
   const radioMonths = [currentMonth, nextMonth];
-  const selectMonths = allMonths.filter((month) => !radioMonths.includes(month));
+  const selectMonths = allMonths.filter(
+    (month) => !radioMonths.includes(month)
+  );
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -83,11 +85,18 @@ function Payments() {
       setStudentsError("");
       setPaymentsError("");
 
-      const [groupsResponse, studentsResponse, paymentsResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_payments`).catch(() => ({ ok: false })),
-      ]);
+      const [groupsResponse, studentsResponse, paymentsResponse] =
+        await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({
+            ok: false,
+          })),
+          fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({
+            ok: false,
+          })),
+          fetch(`${import.meta.env.VITE_API_URL}/get_payments`).catch(() => ({
+            ok: false,
+          })),
+        ]);
 
       if (groupsResponse.ok) {
         const groupsData = await groupsResponse.json();
@@ -142,29 +151,37 @@ function Payments() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pupil_id: formData.pupil_id,
-          payment_amount: Number(formData.payment_amount),
-          payment_type: formData.payment_type,
-          received: formData.received,
-          for_which_month: formData.for_which_month,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/create_payment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pupil_id: formData.pupil_id,
+            for_which_group: formData.for_which_group, // "group_id" o'rniga "for_which_group"
+            payment_amount: Number(formData.payment_amount),
+            payment_type: formData.payment_type,
+            received: formData.received,
+            for_which_month: formData.for_which_month,
+          }),
+        }
+      );
 
       if (response.ok) {
         const newPayment = await response.json();
         const student = students.find((s) => s.id === formData.pupil_id);
         const paymentWithStudent = {
           ...newPayment,
-          student: student || { first_name: "N/A", last_name: "N/A", phone_number: "N/A" },
+          student: student || {
+            first_name: "N/A",
+            last_name: "N/A",
+            phone_number: "N/A",
+          },
         };
         setPayments([...payments, paymentWithStudent]);
         setSuccess("To'lov muvaffaqiyatli amalga oshirildi");
         setFormData({
-          group_id: "",
+          for_which_group: "", // "group_id" o'rniga "for_which_group"
           pupil_id: "",
           payment_amount: "",
           payment_type: "",
@@ -209,10 +226,16 @@ function Payments() {
         const student = students.find((s) => s.id === editFormData.pupil_id);
         const paymentWithStudent = {
           ...updatedPayment,
-          student: student || { first_name: "N/A", last_name: "N/A", phone_number: "N/A" },
+          student: student || {
+            first_name: "N/A",
+            last_name: "N/A",
+            phone_number: "N/A",
+          },
         };
         setPayments(
-          payments.map((p) => (p.id === editFormData.id ? paymentWithStudent : p))
+          payments.map((p) =>
+            p.id === editFormData.id ? paymentWithStudent : p
+          )
         );
         setSuccess("To'lov muvaffaqiyatli yangilandi");
         setIsEditModalOpen(false);
@@ -262,31 +285,30 @@ function Payments() {
     setIsEditModalOpen(true);
   };
 
-  const filteredStudents = formData.group_id
-    ? students
-        .filter((student) => student.group_id === formData.group_id)
-        .filter((student) =>
-          `${student.first_name} ${student.last_name}`
-            .toLowerCase()
-            .includes(studentSearch.toLowerCase())
-        )
-    : [];
+  const filteredStudents = students.filter((student) =>
+    `${student.first_name} ${student.last_name}`
+      .toLowerCase()
+      .includes(studentSearch.toLowerCase())
+  );
 
   const handleStudentSelect = (student) => {
-    setFormData({ ...formData, pupil_id: student.id });
+    setFormData({ ...formData, pupil_id: student.id, group_id: "" });
     setStudentSearch(`${student.first_name} ${student.last_name}`);
     setShowDropdown(false);
   };
 
-  // Check for overdue payments
+  const getStudentGroups = (studentId) => {
+    const student = students.find((s) => s.id === studentId);
+    return student?.groups.map((group) => group.id) || []; // `groups` dan `id` larni olish
+  };
+
   const isOverdue = (studentId) => {
-    const studentPayments = payments.filter(
-      (p) => p.pupil_id === studentId
-    );
+    const studentPayments = payments.filter((p) => p.pupil_id === studentId);
     const currentOrNextMonthPaid = studentPayments.some(
       (p) =>
         [currentMonth, nextMonth].includes(p.for_which_month) &&
-        new Date(p.created_at) >= new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        new Date(p.created_at) >=
+          new Date(now.getFullYear(), now.getMonth() - 1, 1)
     );
     return !currentOrNextMonthPaid && students.find((s) => s.id === studentId);
   };
@@ -297,7 +319,7 @@ function Payments() {
         `${import.meta.env.VITE_API_URL}/payment_alert/${studentId}`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         }
       );
 
@@ -317,40 +339,48 @@ function Payments() {
     }
   };
 
-  const filteredPayments = payments.filter((payment) =>
-    `${payment.student?.first_name} ${payment.student?.last_name}`
-      ?.toLowerCase()
-      ?.includes(searchTerm.toLowerCase()) &&
-    (monthFilter === "all" || payment.for_which_month === monthFilter)
+  const filteredPayments = payments.filter(
+    (payment) =>
+      `${payment.student?.first_name} ${payment.student?.last_name}`
+        ?.toLowerCase()
+        ?.includes(searchTerm.toLowerCase()) &&
+      (monthFilter === "all" || payment.for_which_month === monthFilter)
   );
 
   useEffect(() => {
-    if (formData.group_id && groups.length > 0) {
-      const selectedGroup = groups.find((group) => group.id === formData.group_id);
-      if (selectedGroup && selectedGroup.payment_amount) {
+    if (formData.pupil_id && groups.length > 0) {
+      const studentGroups = getStudentGroups(formData.pupil_id);
+      const selectedGroup = groups.find(
+        (group) => group.id === formData.for_which_group
+      ); // "group_id" o'rniga "for_which_group"
+      if (selectedGroup && studentGroups.includes(selectedGroup.id)) {
         setFormData((prev) => ({
           ...prev,
           payment_amount: selectedGroup.payment_amount.toString(),
         }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          payment_amount: "",
+          for_which_group: "",
+        })); // "group_id" o'rniga "for_which_group"
       }
-    } else {
-      setFormData((prev) => ({ ...prev, payment_amount: "" }));
     }
-  }, [formData.group_id, groups]);
+  }, [formData.pupil_id, formData.for_which_group, groups]); // "group_id" o'rniga "for_which_group"
 
   useEffect(() => {
     fetchData();
   }, []);
 
   useEffect(() => {
-    if (formData.group_id && studentSearch) {
+    if (studentSearch) {
       setShowDropdown(true);
     } else {
       setShowDropdown(false);
     }
-  }, [formData.group_id, studentSearch]);
+  }, [studentSearch]);
 
-  useEffect(() => {}, [formData.group_id, studentSearch, filteredStudents]);
+  useEffect(() => {}, [formData.pupil_id, studentSearch, filteredStudents]);
 
   useEffect(() => {}, [payments]);
 
@@ -370,15 +400,15 @@ function Payments() {
   }, [success, groupsError, studentsError, paymentsError]);
 
   if (loading) {
-    return <LottieLoading />
+    return <LottieLoading />;
   }
 
   const showDeleteToast = (id) => {
     toast(
       <div>
         <p>
-          Diqqat! Ushbu to'lovga tegishli barcha ma'lumotlar o'chiriladi! O'chirishga
-          ishonchingiz komilmi?
+          Diqqat! Ushbu to'lovga tegishli barcha ma'lumotlar o'chiriladi!
+          O'chirishga ishonchingiz komilmi?
         </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
@@ -423,64 +453,88 @@ function Payments() {
   };
 
   return (
-    <div className="container">
-      <h1 style={{ marginBottom: "24px" }}>To'lovlar</h1>
-
-      {success && <div className="success">{success}</div>}
-      {groupsError && <div className="error">{groupsError}</div>}
-      {studentsError && <div className="error">{studentsError}</div>}
-      {paymentsError && <div className="error">{paymentsError}</div>}
+    <div>
+      <h1>To'lovlar</h1>
 
       <ToastContainer />
 
-      {/* To'lov qo'shish formasi */}
-      <div className="card">
-        <h3 style={{ marginBottom: "20px" }}>To'lov qilish</h3>
-        <form onSubmit={addPayment} className="payment-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Guruh</label>
-              <select
-                className="select"
-                value={formData.group_id}
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    group_id: e.target.value,
-                    pupil_id: "",
-                  });
-                  setStudentSearch("");
-                  setShowDropdown(false);
+      <div className="card" style={{ padding: "20px" }}>
+        <h3 style={{ marginBottom: "20px", fontSize: "1.5rem" }}>
+          To'lov qilish
+        </h3>
+        <form
+          onSubmit={addPayment}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "15px",
+            alignItems: "flex-start",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              gap: "15px",
+              flex: "1 1 100%",
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                flex: "1 1 45%",
+                minWidth: "250px",
+                position: "relative",
+              }}
+            >
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
                 }}
-                required
-                disabled={groups.length === 0}
               >
-                <option value="">{groupsError ? "Guruhlar yo'q" : "Tanlang"}</option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.group_subject}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>O'quvchi</label>
+                O'quvchi
+              </label>
               <input
                 type="text"
-                className="input"
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  fontSize: "1rem",
+                }}
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
                 onFocus={() => setShowDropdown(true)}
                 onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
                 placeholder="O'quvchi ismini kiriting..."
-                disabled={!formData.group_id || students.length === 0}
+                disabled={students.length === 0}
               />
               {showDropdown && filteredStudents.length > 0 && (
-                <div className="dropdown">
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    background: "#fff",
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    maxHeight: "150px",
+                    overflowY: "auto",
+                    zIndex: 10,
+                  }}
+                >
                   {filteredStudents.map((student) => (
                     <div
                       key={student.id}
-                      className="dropdown-item"
+                      style={{
+                        padding: "8px",
+                        cursor: "pointer",
+                        background: "#f9f9f9",
+                        borderBottom: "1px solid #eee",
+                      }}
                       onClick={() => handleStudentSelect(student)}
                     >
                       {`${student.first_name} ${student.last_name}`}
@@ -489,16 +543,111 @@ function Payments() {
                 </div>
               )}
               {showDropdown && filteredStudents.length === 0 && (
-                <div className="dropdown">O'quvchi topilmadi</div>
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    background: "#fff",
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    padding: "8px",
+                    color: "#666",
+                  }}
+                >
+                  O'quvchi topilmadi
+                </div>
               )}
             </div>
+            <div style={{ flex: "1 1 45%", minWidth: "250px" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
+                }}
+              >
+                Guruh
+              </label>
+              <select
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  fontSize: "1rem",
+                }}
+                value={formData.for_which_group} // "group_id" o'rniga "for_which_group"
+                onChange={
+                  (e) =>
+                    setFormData({
+                      ...formData,
+                      for_which_group: e.target.value,
+                    }) // "group_id" o'rniga "for_which_group"
+                }
+                required
+                disabled={
+                  !formData.pupil_id ||
+                  getStudentGroups(formData.pupil_id).length === 0
+                }
+              >
+                <option value="">Tanlang</option>
+                {formData.pupil_id &&
+                  getStudentGroups(formData.pupil_id).map((groupId) => {
+                    const group = groups.find((g) => g.id === groupId);
+                    return (
+                      group && (
+                        <option key={group.id} value={group.id}>
+                          {group.group_subject}
+                        </option>
+                      )
+                    );
+                  })}
+              </select>
+              {formData.pupil_id &&
+                getStudentGroups(formData.pupil_id).length === 0 && (
+                  <p
+                    style={{
+                      color: "red",
+                      fontSize: "0.9rem",
+                      marginTop: "5px",
+                    }}
+                  >
+                    Ushbu o‘quvchiga hech qanday guruh bog‘lanmagan!
+                  </p>
+                )}
+            </div>
           </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>To'lov miqdori</label>
+
+          {/* To'lov miqdori va turi bir qatorda */}
+          <div
+            style={{
+              display: "flex",
+              gap: "15px",
+              flex: "1 1 100%",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ flex: "1 1 45%", minWidth: "250px" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
+                }}
+              >
+                To'lov miqdori
+              </label>
               <input
                 type="number"
-                className="input"
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  fontSize: "1rem",
+                }}
                 value={formData.payment_amount}
                 onChange={(e) =>
                   setFormData({ ...formData, payment_amount: e.target.value })
@@ -506,8 +655,9 @@ function Payments() {
                 onFocus={(e) => {
                   if (
                     e.target.value ===
-                    groups.find((g) => g.id === formData.group_id)?.payment_amount
-                      .toString()
+                    groups
+                      .find((g) => g.id === formData.group_id)
+                      ?.payment_amount.toString()
                   ) {
                     e.target.value = ""; // Avtomatik kiritilgan summani o'chirish
                   }
@@ -517,10 +667,24 @@ function Payments() {
                 required
               />
             </div>
-            <div className="form-group">
-              <label>To'lov turi</label>
+            <div style={{ flex: "1 1 45%", minWidth: "250px" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
+                }}
+              >
+                To'lov turi
+              </label>
               <select
-                className="select"
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  fontSize: "1rem",
+                }}
                 value={formData.payment_type}
                 onChange={(e) =>
                   setFormData({ ...formData, payment_type: e.target.value })
@@ -534,15 +698,53 @@ function Payments() {
               </select>
             </div>
           </div>
-          <div className="form-row">
-            <div className="form-group full-width">
-              <label>Qaysi oy uchun to'lov qilinyapti</label>
-              <div className="month-options">
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "20px",
+              marginTop: "10px",
+              width: "100%",
+            }}
+          >
+            {/* Oy uchun to'lov */}
+            <div style={{ width: "48%" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
+                }}
+              >
+                Qaysi oy uchun to'lov qilinyapti
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "15px",
+                  alignItems: "center",
+                }}
+              >
                 {radioMonths.map((month) => (
-                  <label key={month} className="radio-label">
+                  <label
+                    key={month}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginRight: "15px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     <input
-                      className="radio"
                       type="radio"
+                      style={{
+                        scale: "1.4",
+                        marginRight: "5px",
+                        cursor: "pointer",
+                      }}
                       name="month"
                       value={month}
                       checked={formData.for_which_month === month}
@@ -552,7 +754,12 @@ function Payments() {
                   </label>
                 ))}
                 <select
-                  className="select"
+                  style={{
+                    padding: "8px",
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    fontSize: "1rem",
+                  }}
                   value={
                     radioMonths.includes(formData.for_which_month)
                       ? ""
@@ -569,12 +776,26 @@ function Payments() {
                 </select>
               </div>
             </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group full-width">
-              <label>Qabul qilgan mas'ul F.I.Sh.</label>
+
+            {/* Mas'ul qismi */}
+            <div style={{ minWidth: "49.5%" }}>
+              <label
+                style={{
+                  display: "inline-block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
+                }}
+              >
+                Qabul qilgan mas'ul F.I.Sh.
+              </label>
               <input
-                className="input"
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  fontSize: "1rem",
+                }}
                 value={formData.received}
                 placeholder="Kim to'lovni qabul qilganligini kiriting..."
                 onChange={(e) =>
@@ -584,15 +805,61 @@ function Payments() {
               />
             </div>
           </div>
-          <button type="submit" className="btn btn-primary">
-            To'lov qilish
-          </button>
+
+          {/* Tugma */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+              marginTop: "15px",
+            }}
+          >
+            <button
+              className="btn btn-primary"
+              type="submit"
+              style={{
+                padding: "10px 20px",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "1rem",
+              }}
+            >
+              To'lov qilish
+            </button>
+          </div>
         </form>
       </div>
 
       {isEditModalOpen && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
+        <div
+          className="modal-backdrop"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            style={{
+              backgroundColor: "white",
+              padding: "20px",
+              borderRadius: "8px",
+              width: "90%",
+              maxWidth: "500px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            }}
+          >
             <h3 style={{ marginBottom: "16px" }}>To'lovni yangilash</h3>
             <form onSubmit={updatePayment}>
               <div className="form-grid">
@@ -641,6 +908,11 @@ function Payments() {
                           type="radio"
                           name="edit_month"
                           value={month}
+                          style={{
+                            scale: "1.5",
+                            marginRight: "5px",
+                            cursor: "pointer",
+                          }}
                           checked={editFormData.for_which_month === month}
                           onChange={() => handleEditChange(month)}
                         />{" "}
@@ -716,7 +988,10 @@ function Payments() {
             flexWrap: "wrap",
           }}
         >
-          <h3>To'lov qilganlar ({filteredPayments.length})</h3>
+          <h3>
+            To'lov qilganlar (va qilmaganlar "Xabar jo'natish" tugmasi bilan) (
+            {filteredPayments.length})
+          </h3>
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
             <input
               type="text"
@@ -745,13 +1020,13 @@ function Payments() {
         <table className="table">
           <thead>
             <tr>
-              <th>№</th>
+              <th>#</th>
               <th>Ism</th>
-              <th>Telefon</th>
               <th>Summa</th>
               <th>To'lov turi</th>
               <th>Qabul qilgan mas'ul</th>
               <th>Qaysi oy uchun</th>
+              <th>Qaysi guruh uchun</th>
               <th>Sana</th>
               <th>Amallar</th>
             </tr>
@@ -759,54 +1034,66 @@ function Payments() {
           <tbody>
             {filteredPayments.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: "center", padding: "10px" }}>
+                <td
+                  colSpan="9"
+                  style={{ textAlign: "center", padding: "10px" }}
+                >
                   {searchTerm || monthFilter !== "all"
                     ? "Qidiruv bo'yicha natija topilmadi"
                     : paymentsError || "Hozircha to'lovlar yo'q"}
                 </td>
               </tr>
             ) : (
-              filteredPayments.map((payment, index) => (
-                <tr key={payment.id}>
-                  <td>{index + 1}</td>
-                  <td>
-                    {`${payment.student?.first_name || ""} ${
-                      payment.student?.last_name || ""
-                    }`.trim() || "N/A"}
-                  </td>
-                  <td>{payment.student?.phone_number || "N/A"}</td>
-                  <td>
-                    {payment.payment_amount
-                      ? Number(payment.payment_amount).toLocaleString("uz-UZ") +
-                        " so'm"
-                      : "N/A"}
-                  </td>
-                  <td>{payment.payment_type || "N/A"}</td>
-                  <td>{payment.received || "N/A"}</td>
-                  <td>{payment.for_which_month || "N/A"}</td>
-                  <td>
-                    {payment.created_at
-                      ? new Date(payment.created_at).toLocaleDateString("uz-UZ")
-                      : "N/A"}
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => openEditModal(payment)}
-                      style={{ marginRight: "4px", padding: "4px 8px" }}
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => showDeleteToast(payment.id)}
-                      style={{ padding: "4px 8px" }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))
+              filteredPayments.map((payment, index) => {
+                const group = groups.find(
+                  (g) => g.id === payment.for_which_group
+                );
+                const groupName = group ? group.group_subject : "N/A";
+                return (
+                  <tr key={payment.id}>
+                    <td>{index + 1}</td>
+                    <td>
+                      {`${payment.student?.first_name || ""} ${
+                        payment.student?.last_name || ""
+                      }`.trim() || "N/A"}
+                    </td>
+                    <td>
+                      {payment.payment_amount
+                        ? Number(payment.payment_amount).toLocaleString(
+                            "uz-UZ"
+                          ) + " so'm"
+                        : "N/A"}
+                    </td>
+                    <td>{payment.payment_type || "N/A"}</td>
+                    <td>{payment.received || "N/A"}</td>
+                    <td>{payment.for_which_month || "N/A"}</td>
+                    <td>{groupName}</td> {/* Yangi qo'shilgan qism */}
+                    <td>
+                      {payment.created_at
+                        ? new Date(payment.created_at).toLocaleDateString(
+                            "uz-UZ"
+                          )
+                        : "N/A"}
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => openEditModal(payment)}
+                        style={{ marginRight: "4px", padding: "4px 8px" }}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => showDeleteToast(payment.id)}
+                        style={{ padding: "4px 8px" }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
             {/* Display overdue students without payments */}
             {students
@@ -819,7 +1106,7 @@ function Payments() {
                   <td>-</td>
                   <td>-</td>
                   <td>-</td>
-                  <td>{currentMonth}</td>
+                  <td>-</td>
                   <td>-</td>
                   <td>
                     <button

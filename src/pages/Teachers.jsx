@@ -5,10 +5,12 @@ import { Check, Trash2, Edit2, X } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
+import InputMask from "react-input-mask";
 
 function Teachers() {
   const [teachers, setTeachers] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState("");
   const [groupsError, setGroupsError] = useState("");
@@ -23,7 +25,14 @@ function Teachers() {
 
   const openDetailModal = (teacher) => {
     setSelectedTeacher(teacher);
-    const filteredGroups = groups.filter(group => group.teacher_id === teacher.id);
+    const filteredGroups = groups
+      .filter((group) => group.teacher_id === teacher.id)
+      .map((group) => ({
+        ...group,
+        students_amount: students.filter((student) =>
+          student.groups.some((g) => g.id === group.id)
+        ).length,
+      }));
     setTeacherGroups(filteredGroups);
     setIsDetailModalOpen(true);
   };
@@ -57,9 +66,10 @@ function Teachers() {
       setGroupsError("");
       setTeachersError("");
 
-      const [groupsResponse, teachersResponse] = await Promise.all([
+      const [groupsResponse, teachersResponse, studentsResponse] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
         fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({ ok: false })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({ ok: false })),
       ]);
 
       if (groupsResponse.ok) {
@@ -67,7 +77,11 @@ function Teachers() {
         setGroups(groupsData);
       } else {
         setGroups([]);
-        toast.error("Guruhlar yuklanmadi: Hali mavjud emas", { position: "top-right", autoClose: 3000 });
+        setGroupsError("Guruhlar hali mavjud emas");
+        toast.error("Guruhlar yuklanmadi: Hali mavjud emas", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
 
       if (teachersResponse.ok) {
@@ -75,12 +89,33 @@ function Teachers() {
         setTeachers(teachersData);
       } else {
         setTeachers([]);
-        toast.error("Ustozlar yuklanmadi: Hali mavjud emas", { position: "top-right", autoClose: 3000 });
+        setTeachersError("Ustozlar hali mavjud emas");
+        toast.error("Ustozlar yuklanmadi: Hali mavjud emas", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+
+      if (studentsResponse.ok) {
+        const studentsData = await studentsResponse.json();
+        setStudents(studentsData);
+      } else {
+        setStudents([]);
+        toast.error("O'quvchilar yuklanmadi: Hali mavjud emas", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     } catch (err) {
       setGroups([]);
       setTeachers([]);
-      toast.error("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi", { position: "top-right", autoClose: 3000 });
+      setStudents([]);
+      setGroupsError("Guruhlar hali mavjud emas");
+      setTeachersError("Ustozlar hali mavjud emas");
+      toast.error("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -108,7 +143,10 @@ function Teachers() {
       if (response.ok) {
         const newTeacher = await response.json();
         setTeachers([...teachers, newTeacher]);
-        toast.success("Yangi ustoz muvaffaqiyatli qo'shildi!", { position: "top-right", autoClose: 3000 });
+        toast.success("Yangi ustoz muvaffaqiyatli qo'shildi!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
         setFormData({
           first_name: "",
           last_name: "",
@@ -124,7 +162,10 @@ function Teachers() {
         throw new Error("Ustoz qo'shishda xatolik");
       }
     } catch (err) {
-      toast.error("Ustoz qo'shishda xatolik: API mavjud emas", { position: "top-right", autoClose: 3000 });
+      toast.error("Ustoz qo'shishda xatolik: API mavjud emas", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -132,51 +173,66 @@ function Teachers() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/update_teacher/${editFormData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: editFormData.first_name,
-          last_name: editFormData.last_name,
-          father_name: editFormData.father_name,
-          birth_date: editFormData.birth_date,
-          phone_number: editFormData.phone_number,
-          subject: editFormData.subject,
-          salary_amount: Number(editFormData.salary_amount),
-          got_salary_for_this_month: editFormData.got_salary_for_this_month,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/update_teacher/${editFormData.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            first_name: editFormData.first_name,
+            last_name: editFormData.last_name,
+            father_name: editFormData.father_name,
+            birth_date: editFormData.birth_date,
+            phone_number: editFormData.phone_number,
+            subject: editFormData.subject,
+            salary_amount: Number(editFormData.salary_amount),
+            got_salary_for_this_month: editFormData.got_salary_for_this_month,
+          }),
+        }
+      );
 
       if (response.ok) {
         const updatedTeacher = await response.json();
         setTeachers(teachers.map((t) => (t.id === editFormData.id ? updatedTeacher : t)));
-        toast.success("Ustoz ma'lumotlari muvaffaqiyatli yangilandi", { position: "top-right", autoClose: 3000 });
-
+        toast.success("Ustoz ma'lumotlari muvaffaqiyatli yangilandi.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
         setIsEditModalOpen(false);
       } else {
         throw new Error("Ustoz yangilashda xatolik");
       }
     } catch (err) {
-      toast.error("Ustoz yangilashda xatolik: API mavjud emas", { position: "top-right", autoClose: 3000 });
+      toast.error("Ustoz yangilashda xatolik: API mavjud emas", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
   const deleteTeacher = async (id) => {
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_teacher/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/delete_teacher/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (response.ok) {
         setTeachers(teachers.filter((t) => t.id !== id));
-        toast.success("Ustoz muvaffaqiyatli o'chirildi! (", { position: "top-right", autoClose: 3000 });
-
+        toast.success("Ustoz muvaffaqiyatli o'chirildi!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       } else {
         throw new Error("Ustoz o'chirishda xatolik");
       }
     } catch (err) {
-      toast.error("Ustoz o'chirishda xatolik: API mavjud emas", { position: "top-right", autoClose: 3000 });
+      toast.error("Ustoz o'chirishda xatolik: API mavjud emas", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -245,15 +301,16 @@ function Teachers() {
   const uniqueSubjects = [...new Set(teachers.map((teacher) => teacher.subject))];
 
   const filteredTeachers = teachers.filter((teacher) => {
-    const nameMatch = `${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ''}`
+    const nameMatch = `${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    
+
     const subjectMatch = subjectFilter === "all" || teacher.subject === subjectFilter;
-    const salaryMatch = salaryFilter === "all" || 
-      (salaryFilter === "paid" && teacher.got_salary_for_this_month) || 
+    const salaryMatch =
+      salaryFilter === "all" ||
+      (salaryFilter === "paid" && teacher.got_salary_for_this_month) ||
       (salaryFilter === "unpaid" && !teacher.got_salary_for_this_month);
-    
+
     return nameMatch && subjectMatch && salaryMatch;
   });
 
@@ -276,16 +333,16 @@ function Teachers() {
   }, [success, groupsError, teachersError]);
 
   if (loading) {
-    return <LottieLoading />
+    return <LottieLoading />;
   }
 
   return (
     <div>
-      <h1 style={{ marginBottom: "24px" }}>Ustozlar</h1>
-
+      <h1>Ustozlar</h1>
+{/* 
       {success && <div className="success">{success}</div>}
       {groupsError && <div className="error">{groupsError}</div>}
-      {teachersError && <div className="error">{teachersError}</div>}
+      {teachersError && <div className="error">{teachersError}</div>} */}
 
       <ToastContainer />
 
@@ -346,14 +403,21 @@ function Teachers() {
             </div>
             <div className="form-group">
               <label>Telefon raqami</label>
-              <input
-                type="tel"
-                className="input"
+              <InputMask
+                mask="+998 (99) 999-99-99"
                 value={formData.phone_number}
                 onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                placeholder="+998901234567"
-                required
-              />
+              >
+                {(inputProps) => (
+                  <input
+                    {...inputProps}
+                    type="tel"
+                    className="input"
+                    placeholder="+998 (99) 999-99-99"
+                    required
+                  />
+                )}
+              </InputMask>
             </div>
             <div className="form-group">
               <label>Fan</label>
@@ -380,14 +444,16 @@ function Teachers() {
             </div>
             <div className="form-group">
               <label>Ushbu oy uchun maosh olganmi?</label>
-              <div style={{ marginTop: "8px"}}>
+              <div style={{ marginTop: "8px" }}>
                 <label style={{ marginRight: "16px" }}>
                   <input
                     type="radio"
                     name="salary"
-                    style={{scale: "1.5", marginLeft: "5px", cursor: "pointer"}}
+                    style={{ scale: "1.5", marginLeft: "5px", cursor: "pointer" }}
                     checked={formData.got_salary_for_this_month === true}
-                    onChange={() => setFormData({ ...formData, got_salary_for_this_month: true })}
+                    onChange={() =>
+                      setFormData({ ...formData, got_salary_for_this_month: true })
+                    }
                   />{" "}
                   Ha
                 </label>
@@ -395,9 +461,11 @@ function Teachers() {
                   <input
                     type="radio"
                     name="salary"
-                    style={{scale: "1.5", marginLeft: "5px", cursor: "pointer"}}
+                    style={{ scale: "1.5", marginLeft: "5px", cursor: "pointer" }}
                     checked={formData.got_salary_for_this_month === false}
-                    onChange={() => setFormData({ ...formData, got_salary_for_this_month: false })}
+                    onChange={() =>
+                      setFormData({ ...formData, got_salary_for_this_month: false })
+                    }
                   />{" "}
                   Yo'q
                 </label>
@@ -547,7 +615,10 @@ function Teachers() {
                         name="edit_salary"
                         checked={editFormData.got_salary_for_this_month === true}
                         onChange={() =>
-                          setEditFormData({ ...editFormData, got_salary_for_this_month: true })
+                          setEditFormData({
+                            ...editFormData,
+                            got_salary_for_this_month: true,
+                          })
                         }
                       />{" "}
                       Ha
@@ -558,7 +629,10 @@ function Teachers() {
                         name="edit_salary"
                         checked={editFormData.got_salary_for_this_month === false}
                         onChange={() =>
-                          setEditFormData({ ...editFormData, got_salary_for_this_month: false })
+                          setEditFormData({
+                            ...editFormData,
+                            got_salary_for_this_month: false,
+                          })
                         }
                       />{" "}
                       Yo'q
@@ -566,7 +640,14 @@ function Teachers() {
                   </div>
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                  marginTop: "16px",
+                }}
+              >
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -582,6 +663,8 @@ function Teachers() {
           </div>
         </div>
       )}
+
+      {/* Ustoz ma'lumotlari modali */}
       {isDetailModalOpen && selectedTeacher && (
         <div
           className="modal-backdrop"
@@ -610,9 +693,16 @@ function Teachers() {
               overflowY: "auto",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }}
+            >
               <h2>Ustoz ma'lumotlari</h2>
-              <button 
+              <button
                 onClick={() => setIsDetailModalOpen(false)}
                 style={{ background: "none", border: "none", cursor: "pointer" }}
               >
@@ -621,34 +711,67 @@ function Teachers() {
             </div>
 
             <div style={{ marginBottom: "24px" }}>
-              <h3 style={{ marginBottom: "16px", borderBottom: "1px solid #eee", paddingBottom: "8px" }}>Asosiy ma'lumotlar</h3>
+              <h3
+                style={{
+                  marginBottom: "16px",
+                  borderBottom: "1px solid #eee",
+                  paddingBottom: "8px",
+                }}
+              >
+                Asosiy ma'lumotlar
+              </h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
-                  <p><strong>Ism:</strong> {selectedTeacher.first_name}</p>
-                  <p><strong>Familiya:</strong> {selectedTeacher.last_name}</p>
-                  <p><strong>Otasining ismi:</strong> {selectedTeacher.father_name || "Mavjud emas"}</p>
+                  <p>
+                    <strong>Ism:</strong> {selectedTeacher.first_name}
+                  </p>
+                  <p>
+                    <strong>Familiya:</strong> {selectedTeacher.last_name}
+                  </p>
+                  <p>
+                    <strong>Otasining ismi:</strong>{" "}
+                    {selectedTeacher.father_name || "Mavjud emas"}
+                  </p>
                 </div>
                 <div>
-                  <p><strong>Tug'ilgan sana:</strong> {new Date(selectedTeacher.birth_date).toLocaleDateString("uz-UZ")}</p>
-                  <p><strong>Telefon:</strong> {selectedTeacher.phone_number}</p>
-                  <p><strong>Fan:</strong> {selectedTeacher.subject}</p>
+                  <p>
+                    <strong>Tug'ilgan sana:</strong>{" "}
+                    {new Date(selectedTeacher.birth_date).toLocaleDateString("uz-UZ")}
+                  </p>
+                  <p>
+                    <strong>Telefon:</strong> {selectedTeacher.phone_number}
+                  </p>
+                  <p>
+                    <strong>Fan:</strong> {selectedTeacher.subject}
+                  </p>
                 </div>
               </div>
               <div style={{ marginTop: "16px" }}>
-                <p><strong>Oylik maosh:</strong> {Number(selectedTeacher.salary_amount).toLocaleString("uz-UZ")} so'm</p>
+                <p>
+                  <strong>Oylik maosh:</strong>{" "}
+                  {Number(selectedTeacher.salary_amount).toLocaleString("uz-UZ")} so'm
+                </p>
                 <p>
                   <strong>Maosh holati:</strong>{" "}
                   {selectedTeacher.got_salary_for_this_month ? (
-                    <span style={{ color: "#388e3c" }}>Olingan</span>
+                    <span style={{ color: "#388e3c" }}>Berildi</span>
                   ) : (
-                    <span style={{ color: "#d32f2f" }}>Olinmagan</span>
+                    <span style={{ color: "#d32f2f" }}>Berilmagan</span>
                   )}
                 </p>
               </div>
             </div>
 
             <div>
-              <h3 style={{ marginBottom: "16px", borderBottom: "1px solid #eee", paddingBottom: "8px" }}>Guruhlar ({teacherGroups.length} ta)</h3>
+              <h3
+                style={{
+                  marginBottom: "16px",
+                  borderBottom: "1px solid #eee",
+                  paddingBottom: "8px",
+                }}
+              >
+                Guruhlar ({teacherGroups.length} ta)
+              </h3>
               {teacherGroups.length > 0 ? (
                 <table className="table" style={{ width: "100%" }}>
                   <thead>
@@ -659,9 +782,7 @@ function Teachers() {
                       <th>Kunlari</th>
                     </tr>
                   </thead>
-                  <tbody>{
-                    console.log(teacherGroups)
-                    }
+                  <tbody>
                     {teacherGroups.map((group, index) => (
                       <tr key={group.id}>
                         <td>{index + 1}</td>
@@ -708,7 +829,6 @@ function Teachers() {
               <th>№</th>
               <th>F.I.Sh.</th>
               <th>Tug'ilgan sana</th>
-              <th>Telefon</th>
               <th>Fan</th>
               <th>Oylik maosh</th>
               <th>Maosh holati</th>
@@ -720,33 +840,39 @@ function Teachers() {
             {filteredTeachers.length === 0 ? (
               <tr>
                 <td colSpan="9" style={{ textAlign: "center", padding: "40px" }}>
+                  {searchTerm || subjectFilter !== "all" || salaryFilter !== "all"
+                    ? "Qidiruv bo'yicha natija topilmadi"
+                    : teachersError || "Hali ustozlar qo'shilmagan"}
                 </td>
               </tr>
             ) : (
               filteredTeachers.map((teacher, index) => {
-                const groupsCount = groups.filter(g => g.teacher_id === teacher.id).length;
+                const groupsCount = groups.filter((g) => g.teacher_id === teacher.id).length;
                 return (
                   <tr key={teacher.id}>
                     <td>{index + 1}</td>
-                    <td 
-                      style={{ cursor: "pointer", color: "#1976d2" }}
+                    <td
+                      style={{ cursor: "pointer", color: "#104292" }}
                       onClick={() => openDetailModal(teacher)}
                     >
-                      {`${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ''}`}
+                      {`${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""}`}
                     </td>
-                    <td>{teacher.birth_date ? new Date(teacher.birth_date).toLocaleDateString("uz-UZ") : "N/A"}</td>
-                    <td>{teacher.phone_number || "N/A"}</td>
+                    <td>
+                      {teacher.birth_date
+                        ? new Date(teacher.birth_date).toLocaleDateString("uz-UZ")
+                        : "N/A"}
+                    </td>
                     <td>{teacher.subject || "N/A"}</td>
                     <td>
-                      {teacher.salary_amount 
-                        ? Number(teacher.salary_amount).toLocaleString("uz-UZ") + " so'm" 
+                      {teacher.salary_amount
+                        ? Number(teacher.salary_amount).toLocaleString("uz-UZ") + " so'm"
                         : "N/A"}
                     </td>
                     <td>
                       {teacher.got_salary_for_this_month ? (
-                        <span style={{ color: "#388e3c" }}>Olingan</span>
+                        <span style={{ color: "#388e3c" }}>Berildi</span>
                       ) : (
-                        <span style={{ color: "#d32f2f" }}>Olinmagan</span>
+                        <span style={{ color: "#d32f2f" }}>Berilmagan</span>
                       )}
                     </td>
                     <td>{groupsCount} ta</td>
