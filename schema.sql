@@ -1,158 +1,158 @@
--- 1. Teachers jadvali
-CREATE TABLE teachers (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255) NOT NULL,
-    father_name VARCHAR(255),
-    birth_date DATE NOT NULL,
-    phone_number VARCHAR(20) UNIQUE NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    img_url VARCHAR(255),
-    got_salary_for_this_month BOOLEAN NOT NULL DEFAULT FALSE,
-    salary_amount INTEGER NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- 2. Groups jadvali
-CREATE TABLE groups (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    group_subject VARCHAR(255) NOT NULL,
-    days TEXT NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    teacher_id UUID NOT NULL,
-    monthly_fee DECIMAL(10,2) NOT NULL,
-    img_url VARCHAR(255),
-    students_amount INTEGER NOT NULL DEFAULT 0,
-    paid_students_amount INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE
-);
-
--- 3. Students jadvali (group_id olib tashlandi)
-CREATE TABLE students (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255) NOT NULL,
-    father_name VARCHAR(255),
-    mother_name VARCHAR(255),
-    birth_date DATE NOT NULL,
-    phone_number VARCHAR(20),
-    teacher_id UUID NOT NULL,
-    paid_for_this_month BOOLEAN NOT NULL DEFAULT FALSE,
-    parents_phone_number VARCHAR(20),
-    telegram_user_id BIGINT UNIQUE,
-    came_in_school DATE NOT NULL,
-    studental_id VARCHAR(50) NOT NULL,
-    img_url VARCHAR(255),
-    left_school DATE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE
-);
-
--- 4. Student_Groups jadvali (yangi bog'lovchi jadval)
-CREATE TABLE student_groups (
-    student_id UUID NOT NULL,
-    group_id UUID NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (student_id, group_id),
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- 5. Payments jadvali
-CREATE TABLE payments (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    pupil_id UUID NOT NULL,
-    payment_amount BIGINT NOT NULL CHECK (payment_amount >= 0),
-    payment_type VARCHAR,
-    for_which_month VARCHAR,
-    for_which_group VARCHAR,    
-    received VARCHAR,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE
-);
-
--- 6. Appeals jadvali
-CREATE TABLE appeals (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    pupil_id UUID NOT NULL,
-    message TEXT NOT NULL,
-    telegram_user_id BIGINT NOT NULL,
-    is_seen BOOLEAN NOT NULL DEFAULT FALSE,
-    is_answered BOOLEAN NOT NULL DEFAULT FALSE,
-    answer TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE
-);
-
--- 7. Attendances jadvali
-CREATE TABLE attendances (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    group_id UUID NOT NULL,
-    date TIMESTAMP NOT NULL DEFAULT NOW(),
-    came_students JSONB NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- 8. Users jadvali
-CREATE TABLE users (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(255) NOT NULL DEFAULT 'user',
     verification_code BIGINT,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    timestamp TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    timestamp TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. Centers jadvali
-CREATE TABLE centers (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+CREATE TABLE IF NOT EXISTS centers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     address VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    owner VARCHAR(255) NOT NULL,
+    phone VARCHAR(255) NOT NULL,
+    login VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    paymentDate DATE NOT NULL DEFAULT '1990-01-01',
+    status VARCHAR(255) NOT NULL DEFAULT 'blocked' CHECK (status IN ('active', 'blocked')),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 10. Notifications jadvali
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    pupil_id UUID NOT NULL,
-    message TEXT NOT NULL,
-    is_seen BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE
+CREATE TABLE IF NOT EXISTS teachers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    father_name VARCHAR(255),
+    birth_date DATE NOT NULL,
+    phone_number VARCHAR(255) NOT NULL UNIQUE,
+    subject VARCHAR(255) NOT NULL,
+    img_url VARCHAR(255),
+    got_salary_for_this_month BOOLEAN NOT NULL DEFAULT FALSE,
+    salary_amount INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 11. NotificationToCenter jadvali
-CREATE TABLE notification_to_center (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    center_id UUID NOT NULL,
-    message TEXT NOT NULL,
-    is_seen BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (center_id) REFERENCES centers(id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- 12. Rooms jadvali (oldindan taqdim etilmagan, lekin modelda bor)
-CREATE TABLE rooms (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+CREATE TABLE IF NOT EXISTS rooms (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
-    capacity INTEGER NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    capacity INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS students (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    father_name VARCHAR(255),
+    mother_name VARCHAR(255),
+    birth_date DATE NOT NULL,
+    phone_number VARCHAR(20),
+    paid_groups INTEGER,
+    total_groups INTEGER,
+    parents_phone_number VARCHAR(20),
+    telegram_user_id BIGINT UNIQUE,
+    came_in_school DATE NOT NULL,
+    img_url VARCHAR(255),
+    left_school DATE,
+    studental_id VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    teacher_id UUID REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_subject VARCHAR(255) NOT NULL,
+    days VARCHAR(255) NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    teacher_id UUID REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    monthly_fee DECIMAL(10,2) NOT NULL,
+    students_amount INTEGER NOT NULL DEFAULT 0,
+    paid_students_amount INTEGER DEFAULT 0,
+    room_id UUID REFERENCES rooms(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS student_groups (
+    student_id UUID NOT NULL REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    paid BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (student_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS appeals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pupil_id UUID NOT NULL REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    message TEXT NOT NULL,
+    telegram_user_id BIGINT NOT NULL,
+    is_seen BOOLEAN NOT NULL DEFAULT FALSE,
+    is_answered BOOLEAN NOT NULL DEFAULT FALSE,
+    answer TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pupil_id UUID REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    group_id UUID REFERENCES groups(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    payment_amount BIGINT NOT NULL CHECK (payment_amount >= 0),
+    payment_type VARCHAR(255) NOT NULL,
+    received VARCHAR(255) NOT NULL,
+    for_which_month VARCHAR(255) NOT NULL,
+    for_which_group VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pupil_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    message VARCHAR(255) NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notificationsToCenter (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    center_id UUID NOT NULL REFERENCES centers(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    message VARCHAR(255) NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS attendances (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    came_students JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS schedules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    teacher_id UUID NOT NULL REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    day VARCHAR(255) NOT NULL CHECK (day IN ('DUSHANBA', 'SESHANBA', 'CHORSHANBA', 'PAYSHANBA', 'JUMA', 'SHANBA', 'YAKSHANBA')),
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
