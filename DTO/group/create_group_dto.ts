@@ -1,12 +1,9 @@
 export interface ICreateGroupDto {
   group_subject: string;
-  days: string;
-  start_time: string;
-  end_time: string;
+  days: string; // "DU-CHOR-PAY"
+  start_time: string; // "09:00:00"
+  end_time: string; // "11:00:00"
   teacher_id: string;
-  teacher_phone?: string;
-  img_url?: string;
-  students_amount: number;
-  paid_students_amount: number;
-  monthly_fee: string
+  monthly_fee: number;
+  room_id: string;
 }

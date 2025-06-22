@@ -1,8 +1,9 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.config';
 
-class Payment extends Model {}
-Payment.init(
+class Schedule extends Model {}
+
+Schedule.init(
   {
     id: {
       type: DataTypes.UUID,
@@ -10,59 +11,58 @@ Payment.init(
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
-    pupil_id: {
+    room_id: {
       type: DataTypes.UUID,
-      allowNull: true,
+      allowNull: false,
       references: {
-        model: 'students',
+        model: 'rooms',
         key: 'id',
       },
-      onDelete: 'SET NULL',
+      onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
     },
     group_id: {
       type: DataTypes.UUID,
-      allowNull: true,
+      allowNull: false,
       references: {
         model: 'groups',
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+    },
+    teacher_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'teachers',
         key: 'id',
       },
       onDelete: 'SET NULL',
       onUpdate: 'CASCADE',
     },
-    payment_amount: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
-      validate: {
-        min: 0,
-      },
-    },
-    payment_type: {
-      type: DataTypes.STRING,
+    day: {
+      type: DataTypes.ENUM('DUSHANBA', 'SESHANBA', 'CHORSHANBA', 'PAYSHANBA', 'JUMA', 'SHANBA', 'YAKSHANBA'),
       allowNull: false,
     },
-    received: {
-      type: DataTypes.STRING,
+    start_time: {
+      type: DataTypes.TIME,
       allowNull: false,
     },
-    for_which_month: {
-      type: DataTypes.STRING,
+    end_time: {
+      type: DataTypes.TIME,
       allowNull: false,
     },
-    for_which_group: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    }
   },
   {
     sequelize,
-    tableName: 'payments',
+    tableName: 'schedules',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
 );
 
-Payment.sync({force: false})
+Schedule.sync({force: false})
 
-export default Payment;
+export default Schedule;

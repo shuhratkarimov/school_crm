@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import User from "../Models/user_model";
 import { BaseError } from "../Utils/base_error";
 import bcryptjs from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import sendVerificationEmail from "../Utils/email_verifier";
 import i18next from "../Utils/lang";
@@ -13,6 +13,20 @@ import { ILoginDto } from "../DTO/user/login_user_dto";
 dotenv.config();
 
 User.sync({ force: false });
+
+async function checkAuth(req: Request, res: Response, next: NextFunction) {
+  const token = req.cookies.accesstoken;
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    jwt.verify(token, process.env.ACCESS_SECRET_KEY as string);
+    res.status(200).json({ message: "Authenticated" });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token" });
+  }
+}
 
 async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -226,4 +240,4 @@ function logout(req: Request, res: Response, next: NextFunction) {
     });
 }
 
-export { register, login, verify, logout, resendVerificationCode };
+export { register, login, verify, logout, resendVerificationCode, checkAuth };

@@ -53,29 +53,7 @@ async function createPayment(req, res, next) {
             month: "2-digit",
             year: "numeric",
         });
-        function getMonthsInWord() {
-            let thisMonth = new Date().getMonth() + 1;
-            let months = {
-                1: "yanvar",
-                2: "fevral",
-                3: "mart",
-                4: "aprel",
-                5: "may",
-                6: "iyun",
-                7: "iyul",
-                8: "avgust",
-                9: "sentabr",
-                10: "oktabr",
-                11: "noyabr",
-                12: "dekabr",
-            };
-            for (const key in months) {
-                if (key == thisMonth) {
-                    thisMonth = months[key].toUpperCase();
-                    return thisMonth;
-                }
-            }
-        }
+
         const student = await index_2.Student.findByPk(payment.dataValues.pupil_id);
         if (student) {
             if (getMonthsInWord().toLowerCase() === for_which_month.toLowerCase()) {

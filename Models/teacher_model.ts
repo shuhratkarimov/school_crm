@@ -45,6 +45,10 @@ Teacher.init(
       allowNull: false,
       defaultValue: false,
     },
+    salary_amount: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
   },
   {
     sequelize,

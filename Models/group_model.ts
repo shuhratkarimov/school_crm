@@ -50,6 +50,16 @@ Group.init(
       allowNull: true,
       defaultValue: 0,
     },
+    room_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'rooms',
+        key: 'id',
+      },
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
+    },
   },
   {
     sequelize,
@@ -59,5 +69,7 @@ Group.init(
     updatedAt: 'updated_at',
   }
 );
+
+Group.sync({force: false})
 
 export default Group;

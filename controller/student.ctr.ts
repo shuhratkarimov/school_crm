@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Sequelize, col, fn, Op, where } from "sequelize";
 import i18next from "../Utils/lang";
-import { Student } from "../Models/index";
+import { Notification, Student } from "../Models/index";
 import { ICreateStudentDto } from "../DTO/student/create_student_dto";
 import { BaseError } from "../Utils/base_error";
 import { IUpdateStudentDto } from "../DTO/student/update_student_dto";
@@ -12,6 +12,8 @@ import { createNotification } from "../Utils/notification.srv";
 import { getThisMonthTotalPayments, latestPayments } from "./payments.ctr";
 import sequelize from "../config/database.config";
 import { sendSMS } from "../Utils/sms-service";
+import StudentGroup from "../Models/student_groups_model";
+import { getRoomsBusinessPercent } from "./room.ctr";
 
 async function generateStudentId(transaction?: any): Promise<string> {
   try {
@@ -58,11 +60,31 @@ async function getStudents(
       include: [
         {
           model: Group,
-          as: "group",
+          as: "groups",
           attributes: ["id", "group_subject"],
+          through: { attributes: [] }, // StudentGroup orqali bog'langan guruhlarni olish
+          include: [
+            {
+              model: Teacher,
+              as: "teacher",
+              attributes: ["id", "first_name", "last_name", "phone_number"],
+            },
+          ],
+        },
+        {
+          model: StudentGroup, // StudentGroup modelini qo'shamiz
+          as: "studentGroups", // Agar alias berilgan bo'lsa, moslashtiring
+          attributes: ["group_id", "paid"], // Faqat paid ustunini olamiz
+          include: [
+            {
+              model: Group,
+              as: "group", // StudentGroup'dagi Group bog'lanishi
+              attributes: [], // Agar Group ma'lumotlari kerak bo'lmasa
+            },
+          ],
         },
       ],
-    });
+    });    
     if (students.length === 0) {
       return next(
         BaseError.BadRequest(
@@ -84,7 +106,16 @@ async function getOneStudent(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-    const student = await Student.findByPk(req.params.id as string);
+    const student = await Student.findByPk(req.params.id as string, {
+      include: [
+        {
+          model: Group,
+          as: "groups",
+          attributes: ["id", "group_subject"],
+          through: { attributes: [] },
+        },
+      ],
+    });
     if (!student) {
       return next(
         BaseError.BadRequest(404, i18next.t("student_not_found", { lng: lang }))
@@ -103,9 +134,20 @@ async function getOneGroupStudents(
 ): Promise<Response | void> {
   try {
     const lang = "uz";
-    const groupId = req.query.group_id;
+    const groupId = req.query.group_id as string;
     if (!groupId) return res.status(400).json({ error: "group_id required" });
-    const students = await Student.findAll({ where: { group_id: groupId } });
+
+    const students = await Student.findAll({
+      include: [
+        {
+          model: StudentGroup,
+          as: "studentGroups",
+          where: { group_id: groupId },
+          attributes: [],
+        },
+      ],
+    });
+    
     if (students.length === 0) {
       return next(
         BaseError.BadRequest(404, i18next.t("student_not_found", { lng: lang }))
@@ -131,9 +173,7 @@ async function createStudent(
       mother_name,
       birth_date,
       phone_number,
-      group_id,
-      teacher_id,
-      paid_for_this_month,
+      group_ids,
       parents_phone_number,
       telegram_user_id,
       came_in_school,
@@ -141,9 +181,9 @@ async function createStudent(
       left_school,
     } = req.body as ICreateStudentDto;
 
-    if (!group_id) {
+    if (!group_ids || !Array.isArray(group_ids) || group_ids.length === 0) {
       return next(
-        BaseError.BadRequest(400, i18next.t("group_id_required", { lng: lang }))
+        BaseError.BadRequest(400, i18next.t("group_ids_required", { lng: lang }))
       );
     }
 
@@ -160,47 +200,59 @@ async function createStudent(
           mother_name,
           birth_date,
           phone_number,
-          group_id,
-          teacher_id,
-          paid_for_this_month,
           parents_phone_number,
           telegram_user_id,
           came_in_school,
           img_url,
           left_school,
           studental_id: ReturnedId,
+          total_groups: group_ids.length,
+          paid_groups: 0
         },
         { transaction: t }
       );
-
-      const group_name = await Group.findByPk(student.dataValues.group_id, {
-        transaction: t,
-      });
-      if (!group_name) {
-        throw BaseError.BadRequest(
-          404,
-          i18next.t("group_not_found", { lng: lang })
+      console.log(group_ids);
+      
+      // Ko'p guruhlar uchun StudentGroup yozuvlarini yaratish
+      for (const group_id of group_ids) {
+        const studentGroup = await StudentGroup.create(
+          {
+            student_id: student.dataValues.id,
+            group_id,
+          },
+          { transaction: t }
         );
+
+        const group_name = await Group.findByPk(group_id, {
+          transaction: t,
+        });
+        if (!group_name) {
+          throw BaseError.BadRequest(
+            404,
+            i18next.t("group_not_found", { lng: lang })
+          );
+        }
+        await group_name.increment("students_amount", { by: 1, transaction: t });
+
+        // await createNotification(
+        //   student.dataValues.id,
+        //   i18next.t("added_to_group", {
+        //     group_subject: group_name.dataValues.group_subject,
+        //     lng: lang,
+        //   }),
+        //   { transaction: t }
+        // );
       }
 
-      await group_name.increment("students_amount", { by: 1, transaction: t });
-
-      await createNotification(
-        student.dataValues.id,
-        i18next.t("added_to_group", {
-          group_subject: group_name.dataValues.group_subject,
-          lng: lang,
-        }),
-        { transaction: t }
-      );
       await t.commit();
+
       const welcomeMessage = `Assalomu alaykum hurmatli ${student.dataValues.first_name} ${student.dataValues.last_name}!\nSizni o'quvchilarimiz orasida ko'rib turganimizdan juda xursandmiz!\nSizning shaxsiy ID raqamingiz: ID${student.dataValues.studental_id}\nSiz shaxsiy ID raqamingizdan foydalangan holda markazimizning @murojaat_crm_bot telegram boti orqali bizga istalgan vaqtda murojaat qilishingiz mumkin.\nO'qishlaringizda muvaffaqiyatlar tilaymiz!\n\nHurmat bilan,\n"Intellectual Progress Star" jamoasi! `;
 
-      await sendSMS(
-        student.dataValues.id,
-        student.dataValues.phone_number,
-        welcomeMessage
-      );
+      // await sendSMS(
+      //   student.dataValues.id,
+      //   student.dataValues.phone_number,
+      //   welcomeMessage
+      // );
       res.status(200).json(student);
     } catch (error) {
       await t.rollback();
@@ -226,9 +278,7 @@ async function updateStudent(
       mother_name,
       birth_date,
       phone_number,
-      group_id,
-      teacher_id,
-      paid_for_this_month,
+      group_ids,
       parents_phone_number,
       telegram_user_id,
       came_in_school,
@@ -241,23 +291,77 @@ async function updateStudent(
         BaseError.BadRequest(404, i18next.t("student_not_found", { lng: lang }))
       );
     }
-    await student.update({
-      first_name,
-      last_name,
-      father_name,
-      mother_name,
-      birth_date,
-      phone_number,
-      group_id,
-      teacher_id,
-      paid_for_this_month,
-      parents_phone_number,
-      telegram_user_id,
-      came_in_school,
-      img_url,
-      left_school,
-    });
-    res.status(200).json(student);
+
+    const t = await sequelize.transaction();
+    try {
+      await student.update(
+        {
+          first_name,
+          last_name,
+          father_name,
+          mother_name,
+          birth_date,
+          group_ids,
+          phone_number,
+          parents_phone_number,
+          telegram_user_id,
+          came_in_school,
+          img_url,
+          left_school,
+        },
+        { transaction: t }
+      );
+
+      if (group_ids && Array.isArray(group_ids)) {
+        const existingStudentGroups = await StudentGroup.findAll({
+          where: { student_id: student.dataValues.id },
+          transaction: t,
+        });
+
+        // Eski guruhlar ro‘yxatini ID lari orqali solishtirish
+        const existingGroupIds = existingStudentGroups.map((sg) => sg.dataValues.group_id);
+        const newGroupIds = group_ids.filter((id) => !existingGroupIds.includes(id));
+        const removedGroupIds = existingGroupIds.filter((id) => !group_ids.includes(id));
+
+        // O‘chirilishi kerak bo‘lgan guruhlarni yangilash
+        for (const groupId of removedGroupIds) {
+          const group = await Group.findByPk(groupId, { transaction: t });
+          if (group) {
+            await group.increment("students_amount", { by: -1, transaction: t });
+          }
+          await StudentGroup.destroy({
+            where: { student_id: student.dataValues.id, group_id: groupId },
+            transaction: t,
+          });
+        }
+
+        // Yangi guruhlarni qo‘shish
+        for (const group_id of newGroupIds) {
+          await StudentGroup.upsert(
+            { student_id: student.dataValues.id, group_id },
+            { transaction: t }
+          );
+
+          const newGroup = await Group.findByPk(group_id, { transaction: t });
+          if (newGroup) {
+            await newGroup.increment("students_amount", { by: 1, transaction: t });
+          }
+        }
+
+        await student.update(
+          {
+            total_groups: group_ids.length,
+          },
+          { transaction: t }
+        );
+      }
+
+      await t.commit();
+      res.status(200).json(student);
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
   } catch (error: any) {
     next(error);
   }
@@ -282,26 +386,23 @@ async function deleteStudent(
         );
       }
 
-      const group_name = await Group.findByPk(student.dataValues.group_id, {
+      const studentGroups = await StudentGroup.findAll({
+        where: { student_id: student.dataValues.id },
         transaction: t,
       });
-      if (!group_name) {
-        throw BaseError.BadRequest(
-          404,
-          i18next.t("group_not_found", { lng: lang })
-        );
+
+      for (const sg of studentGroups) {
+        const group = await Group.findByPk(sg.dataValues.group_id, { transaction: t });
+        if (group) {
+          await group.update(
+            { students_amount: group.dataValues.students_amount - 1 },
+            { transaction: t }
+          );
+        }
+        await sg.destroy({ transaction: t });
       }
 
-      await group_name.increment("students_amount", { by: -1, transaction: t });
-
-      await createNotification(
-        student.dataValues.id,
-        i18next.t("removed_from_group", {
-          first_name: student.dataValues.first_name,
-          lng: lang,
-        }),
-        { transaction: t }
-      );
+      await Notification.destroy({where: {pupil_id: student.dataValues.id}})
 
       await student.destroy({ transaction: t });
       await t.commit();
@@ -381,8 +482,9 @@ const getMonthlyStudentStats = async (
       include: [
         {
           model: Group,
-          as: "group",
+          as: "groups",
           attributes: ["id", "group_subject"],
+          through: { attributes: [] }, // StudentGroup orqali bog'langan guruhlarni olish
         },
         {
           model: Teacher,
@@ -394,6 +496,7 @@ const getMonthlyStudentStats = async (
     const totalStudents = await Student.findAndCountAll();
     const totalPaymentThisMonth = await getThisMonthTotalPayments();
     const latestPaymentsForThisMonth = await latestPayments();
+    const roomsBusinessPercentAll = await getRoomsBusinessPercent()
 
     return res.status(200).json({
       totalTeachers,
@@ -405,6 +508,7 @@ const getMonthlyStudentStats = async (
       latestStudents,
       latestPaymentsForThisMonth,
       totalStudents,
+      roomsBusinessPercentAll: roomsBusinessPercentAll
     });
   } catch (error) {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
@@ -421,7 +525,7 @@ async function makeAttendance(
     const lang = "uz";
     let group_subject_id = req.params.id as string;
     let { attendanceBody } = req.body;
-    const date = new Date(2025, 2, 1);
+    const date = new Date();
     const formattedDate = date.toLocaleDateString(`uz-UZ`, {
       day: "2-digit",
       month: "2-digit",
@@ -433,12 +537,8 @@ async function makeAttendance(
         BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang }))
       );
     }
-    interface student_id {
-      student_id: string;
-      attendance: string;
-    }
 
-    const attendance_res: student_id[] = [];
+    const attendance_res: { student_id: string; attendance: string }[] = [];
 
     let startTime = foundGroup.dataValues.start_time;
     let endTime = foundGroup.dataValues.end_time;
@@ -458,7 +558,7 @@ async function makeAttendance(
         return next(
           BaseError.BadRequest(
             400,
-            req.t("student_id_not_found", { studentId: item.studentId })
+            i18next.t("student_id_not_found", { studentId: item.studentId, lng: lang })
           )
         );
       }
@@ -469,7 +569,7 @@ async function makeAttendance(
         attendance_res.push({ student_id: item.studentId, attendance: "not" });
         // await createNotification(
         //   item.studentId,
-        //   req.t("absent_notification", {
+        //   i18next.t("absent_notification", {
         //     date: formattedDate,
         //     startTime: startTime.slice(0, 5),
         //     endTime: endTime.slice(0, 5),

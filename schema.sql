@@ -9,6 +9,7 @@ CREATE TABLE teachers (
     subject VARCHAR(255) NOT NULL,
     img_url VARCHAR(255),
     got_salary_for_this_month BOOLEAN NOT NULL DEFAULT FALSE,
+    salary_amount INTEGER NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -30,7 +31,7 @@ CREATE TABLE groups (
     FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- 3. Students jadvali
+-- 3. Students jadvali (group_id olib tashlandi)
 CREATE TABLE students (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     first_name VARCHAR(255) NOT NULL,
@@ -39,34 +40,44 @@ CREATE TABLE students (
     mother_name VARCHAR(255),
     birth_date DATE NOT NULL,
     phone_number VARCHAR(20),
-    group_id UUID NOT NULL,
     teacher_id UUID NOT NULL,
     paid_for_this_month BOOLEAN NOT NULL DEFAULT FALSE,
     parents_phone_number VARCHAR(20),
     telegram_user_id BIGINT UNIQUE,
     came_in_school DATE NOT NULL,
-    studental_id VARCHAR (50) NOT NULL,
+    studental_id VARCHAR(50) NOT NULL,
     img_url VARCHAR(255),
     left_school DATE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- 4. Payments jadvali
+-- 4. Student_Groups jadvali (yangi bog'lovchi jadval)
+CREATE TABLE student_groups (
+    student_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (student_id, group_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- 5. Payments jadvali
 CREATE TABLE payments (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     pupil_id UUID NOT NULL,
     payment_amount BIGINT NOT NULL CHECK (payment_amount >= 0),
     payment_type VARCHAR,
+    for_which_month VARCHAR,
+    for_which_group VARCHAR,    
     received VARCHAR,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- 5. Appeals jadvali
+-- 6. Appeals jadvali
 CREATE TABLE appeals (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     pupil_id UUID NOT NULL,
@@ -80,7 +91,7 @@ CREATE TABLE appeals (
     FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- 6. Attendances jadvali
+-- 7. Attendances jadvali
 CREATE TABLE attendances (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     group_id UUID NOT NULL,
@@ -91,7 +102,7 @@ CREATE TABLE attendances (
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- 7. Users jadvali
+-- 8. Users jadvali
 CREATE TABLE users (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     username VARCHAR(255) NOT NULL,
@@ -105,7 +116,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- 8. Centers jadvali
+-- 9. Centers jadvali
 CREATE TABLE centers (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
@@ -115,7 +126,7 @@ CREATE TABLE centers (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- 9. Notifications jadvali
+-- 10. Notifications jadvali
 CREATE TABLE notifications (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     pupil_id UUID NOT NULL,
@@ -126,7 +137,7 @@ CREATE TABLE notifications (
     FOREIGN KEY (pupil_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- 10. NotificationToCenter jadvali
+-- 11. NotificationToCenter jadvali
 CREATE TABLE notification_to_center (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     center_id UUID NOT NULL,
@@ -135,4 +146,13 @@ CREATE TABLE notification_to_center (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (center_id) REFERENCES centers(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- 12. Rooms jadvali (oldindan taqdim etilmagan, lekin modelda bor)
+CREATE TABLE rooms (
+    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    capacity INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

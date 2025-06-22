@@ -8,6 +8,9 @@ import User from './user_model';
 import Center from './center_model';
 import Notification from './notification_model';
 import NotificationToCenter from './notification_center.model';
+import Schedule from './schedule_model';
+import Room from './room_model';
+import StudentGroup from './student_groups_model';
 
 // Bog‘lanishlar
 // 1. Teacher ↔ Group
@@ -24,17 +27,34 @@ Group.belongsTo(Teacher, {
   onUpdate: 'CASCADE',
 });
 
-// 2. Group ↔ Student
-Group.hasMany(Student, {
-  foreignKey: 'group_id',
-  as: 'students',
+Room.hasMany(Group, {
+  foreignKey: 'room_id',
+  as: 'groups',
   onDelete: 'SET NULL',
   onUpdate: 'CASCADE',
 });
-Student.belongsTo(Group, {
-  foreignKey: 'group_id',
-  as: 'group',
+Group.belongsTo(Room, {
+  foreignKey: 'room_id',
+  as: 'room',
   onDelete: 'SET NULL',
+  onUpdate: 'CASCADE',
+});
+
+// 2. Group ↔ Student (Many-to-Many)
+Group.belongsToMany(Student, {
+  through: 'student_groups',
+  foreignKey: 'group_id',
+  otherKey: 'student_id',
+  as: 'students',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+Student.belongsToMany(Group, {
+  through: 'student_groups',
+  foreignKey: 'student_id',
+  otherKey: 'group_id',
+  as: 'groups',
+  onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
 });
 
@@ -122,4 +142,89 @@ NotificationToCenter.belongsTo(Center, {
   onUpdate: 'CASCADE',
 });
 
-export { Teacher, Group, Student, Payment, Appeal, Attendance, User, Center, Notification, NotificationToCenter };
+// Aloqalar
+Room.hasMany(Schedule, {
+  foreignKey: 'room_id',
+  as: 'roomSchedules',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+Schedule.belongsTo(Room, {
+  foreignKey: 'room_id',
+  as: 'room',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+Group.hasMany(Schedule, {
+  foreignKey: 'group_id',
+  as: 'groupSchedules',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+Schedule.belongsTo(Group, {
+  foreignKey: 'group_id',
+  as: 'group',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+Teacher.hasMany(Schedule, {
+  foreignKey: 'teacher_id',
+  as: 'teacherSchedules',
+  onDelete: 'SET NULL',
+  onUpdate: 'CASCADE',
+});
+Schedule.belongsTo(Teacher, {
+  foreignKey: 'teacher_id',
+  as: 'teacher',
+  onDelete: 'SET NULL',
+  onUpdate: 'CASCADE',
+});
+
+// Student modeli bilan StudentGroup o'rtasidagi bog'lanish
+Student.hasMany(StudentGroup, {
+  foreignKey: 'student_id', // StudentGroup jadvalidagi student_id maydoni
+  as: 'studentGroups',     // Alias nomi
+  onDelete: 'SET NULL',    // O'quvchi o'chirilsa, bog'lanish NULL bo'ladi
+  onUpdate: 'CASCADE',     // O'quvchi ID o'zgartirilsa, yangilanadi
+});
+
+// StudentGroup modeli bilan Student o'rtasidagi bog'lanish
+StudentGroup.belongsTo(Student, {
+  foreignKey: 'student_id', // StudentGroup jadvalidagi student_id maydoni
+  as: 'student',           // Alias nomi (Student uchun)
+  onDelete: 'SET NULL',
+  onUpdate: 'CASCADE',
+});
+
+// Group modeli bilan StudentGroup o'rtasidagi bog'lanish
+Group.hasMany(StudentGroup, {
+  foreignKey: 'group_id',  // StudentGroup jadvalidagi group_id maydoni
+  as: 'studentGroups',     // Alias nomi
+  onDelete: 'SET NULL',   // Guruh o'chirilsa, bog'lanish NULL bo'ladi
+  onUpdate: 'CASCADE',    // Guruh ID o'zgartirilsa, yangilanadi
+});
+
+// StudentGroup modeli bilan Group o'rtasidagi bog'lanish
+StudentGroup.belongsTo(Group, {
+  foreignKey: 'group_id',  // StudentGroup jadvalidagi group_id maydoni
+  as: 'group',            // Alias nomi (Group uchun)
+  onDelete: 'SET NULL',
+  onUpdate: 'CASCADE',
+});
+
+export {
+  Teacher,
+  Group,
+  Student,
+  Payment,
+  Appeal,
+  Attendance,
+  User,
+  Center,
+  Notification,
+  NotificationToCenter,
+  Room,
+  Schedule,
+};

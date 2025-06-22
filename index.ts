@@ -17,6 +17,8 @@ import { UserRouter } from './router/user.router';
 import { SearchRouter } from './router/search.router';
 import { CenterRouter } from './router/centers.router';
 import { NotificationsRouter } from './router/notifications_router';
+import { RoomRouter } from './router/room.router';
+import ScheduleRouter from './router/schedules.router';
 
 dotenv.config();
 
@@ -40,23 +42,25 @@ app.use(UserRouter);
 app.use(SearchRouter);
 app.use(NotificationsRouter);
 app.use(CenterRouter);
+app.use(RoomRouter);
+app.use(ScheduleRouter)
 
 // Error handling
 app.use(errorMiddleware as any);
+sequelize.sync({force: false})
 
 
 // Server start
 const start = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ Database connected successfully!');
+    console.log('Database connected successfully!');
 
     app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-      console.log("Test CI CD");
+      console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('❌ Unable to start the server:', error);
+    console.error('Unable to start the server:', error);
     process.exit(1);
   }
 };

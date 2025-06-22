@@ -2,7 +2,7 @@ import TelegramBot from "node-telegram-bot-api";
 import Appeal from "../Models/appeal_model";
 import { Request, Response } from "express";
 import { Op } from "sequelize";
-import {Student} from "../Models/index";
+import {Group, Student} from "../Models/index";
 import { validate as isUUID } from "uuid";
 import fs from "fs";
 
@@ -16,13 +16,13 @@ if (!botToken) {
 
 let regex: RegExp = /^[a-zA-Z0-9!@#$%^&*()_+-{}~`, ."':;?//\|]*$/;
 let bot = new TelegramBot(botToken as string, {
-  polling: {
-    autoStart: true,
-    interval: 300,
-    params: {
-      timeout: 10,
-    },
-  },
+  // polling: {
+  //   autoStart: true,
+  //   interval: 300,
+  //   params: {
+  //     timeout: 10,
+  //   },
+  // },
 });
 
 export const sendTelegramMessage = async (req: Request, res: Response) => {
@@ -165,12 +165,22 @@ export const getAppeals = async (
           [Op.gte]: today,
         },
       },
-      include: [{
-        model: Student,
-        as: "student",
-        attributes: ["first_name", "last_name", "group_id", "phone_number"]
-      }]
+      include: [
+        {
+          model: Student,
+          as: "student",
+          attributes: ["first_name", "last_name", "phone_number"],
+          include: [
+            {
+              model: Group,
+              as: "groups",
+              attributes: ["group_subject"]
+            }
+          ]
+        }
+      ]
     });
+    
 
     if (appeals.length === 0) {
       return res.status(404).json({
@@ -208,7 +218,12 @@ export const getLastTenDayAppeals = async (
       include: [{
         model: Student,
         as: "student",
-        attributes: ["first_name", "last_name", "group_id", "phone_number"]
+        attributes: ["first_name", "last_name", "phone_number"],
+        include: [{
+          model: Group,
+          as: "groups",
+          attributes: ["group_subject"]
+        }]
       }]
     });
 

@@ -3,7 +3,7 @@ import { getStudents, getOneStudent, createStudent, updateStudent, deleteStudent
 const StudentsRouter:Router = Router()
 
 StudentsRouter.get("/get_students", getStudents as RequestHandler)
-StudentsRouter.get("/get_studentsByQuery", getOneGroupStudents as RequestHandler)
+StudentsRouter.get("/get_one_group_students", getOneGroupStudents as RequestHandler)
 StudentsRouter.post("/make_attendance/:id", makeAttendance as RequestHandler)
 StudentsRouter.get("/get_one_student/:id", getOneStudent as RequestHandler)
 StudentsRouter.get("/get_stats", getMonthlyStudentStats as RequestHandler)

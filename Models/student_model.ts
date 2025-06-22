@@ -35,30 +35,11 @@ Student.init(
       type: DataTypes.STRING(20),
       allowNull: true,
     },
-    group_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'groups',
-        key: 'id',
-      },
-      onDelete: 'SET NULL',
-      onUpdate: 'CASCADE',
+    paid_groups: {
+      type: DataTypes.INTEGER
     },
-    teacher_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'teachers',
-        key: 'id',
-      },
-      onDelete: 'SET NULL',
-      onUpdate: 'CASCADE',
-    },
-    paid_for_this_month: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
+    total_groups: {
+      type: DataTypes.INTEGER
     },
     parents_phone_number: {
       type: DataTypes.STRING(20),
@@ -104,5 +85,7 @@ Student.init(
     updatedAt: 'updated_at',
   }
 );
+
+Student.sync({force: false})
 
 export default Student;
