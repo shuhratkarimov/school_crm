@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Sequelize, col, fn, Op, where } from "sequelize";
 import i18next from "../Utils/lang";
-import { Notification, Student } from "../Models/index";
+import { Appeal, Notification, Payment, Student } from "../Models/index";
 import { ICreateStudentDto } from "../DTO/student/create_student_dto";
 import { BaseError } from "../Utils/base_error";
 import { IUpdateStudentDto } from "../DTO/student/update_student_dto";
@@ -403,6 +403,8 @@ async function deleteStudent(
       }
 
       await Notification.destroy({where: {pupil_id: student.dataValues.id}})
+      await Appeal.destroy({where: {pupil_id: student.dataValues.id}})
+      await Payment.destroy({where: {pupil_id: student.dataValues.id}})
 
       await student.destroy({ transaction: t });
       await t.commit();
