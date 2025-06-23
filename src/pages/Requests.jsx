@@ -270,26 +270,26 @@ function Requests() {
             <tbody>
               {filterRequests(todayRequests).map((request, index) => (
                 <tr
-                  key={request.id}
-                  className={request.answer ? "answered-row" : "unanswered-row"}
+                  key={request?.id}
+                  className={request?.answer ? "answered-row" : "unanswered-row"}
                 >
                   <td>{index + 1}</td>
-                  <td>{`${request.student?.first_name} ${request.student?.last_name}`}</td>
-                  <td>{request.student?.phone_number}</td>
-                  <td style={{ maxWidth: "300px" }}>{request.message}</td>
-                  <td style={{ maxWidth: "300px" }}>{request.created_at ? `${formatTime(request.created_at)} da` : "-"}</td>
-                  <td style={{ maxWidth: "300px" }}>{request.answer ? request.answer : "-"}</td>
+                  <td>{`${request?.student?.first_name} ${request?.student?.last_name}`}</td>
+                  <td>{request?.student?.phone_number}</td>
+                  <td style={{ maxWidth: "300px" }}>{request?.message}</td>
+                  <td style={{ maxWidth: "300px" }}>{request?.created_at ? `${formatTime(request?.created_at)} da` : "-"}</td>
+                  <td style={{ maxWidth: "300px" }}>{request?.answer ? request.answer : "-"}</td>
                   <td>
                     <button
                       className="btn btn-primary"
-                      onClick={() => openReplyModal(request.telegram_user_id, request.id)}
+                      onClick={() => openReplyModal(request?.telegram_user_id, request?.id)}
                       style={{ marginRight: "6px", padding: "4px 8px" }}
                     >
                       {!request.answer ? "Javob yozish" : "Qayta yozish"}
                     </button>
                     <button
                       className="btn btn-danger"
-                      onClick={() => deleteRequest(request.id, true)}
+                      onClick={() => deleteRequest(request?.id, true)}
                       style={{ padding: "4px 8px" }}
                     >
                       <Trash2 size={16} />
@@ -328,26 +328,26 @@ function Requests() {
             <tbody>
               {filterRequests(pastRequests).map((request, index) => (
                 <tr
-                  key={request.id}
-                  className={request.answer ? "answered-row" : "unanswered-row"}
+                  key={request?.id}
+                  className={request?.answer ? "answered-row" : "unanswered-row"}
                 >
                   <td>{index + 1}</td>
-                  <td>{`${request.student.first_name} ${request.student.last_name}`}</td>
-                  <td>{request.student.phone_number}</td>
-                  <td style={{ maxWidth: "300px" }}>{request.message}</td>
-                  <td style={{ maxWidth: "300px" }}>{request.created_at ? `${formatDateTime(request.created_at)}` : "-"}</td>
-                  <td style={{ maxWidth: "300px" }}>{request.answer ? request.answer : "-"}</td>
+                  <td>{`${request?.student?.first_name} ${request?.student?.last_name}`}</td>
+                  <td>{request?.student?.phone_number}</td>
+                  <td style={{ maxWidth: "300px" }}>{request?.message}</td>
+                  <td style={{ maxWidth: "300px" }}>{request?.created_at ? `${formatDateTime(request?.created_at)}` : "-"}</td>
+                  <td style={{ maxWidth: "300px" }}>{request?.answer ? request?.answer : "-"}</td>
                   <td>
                     <button
                       className="btn btn-primary"
-                      onClick={() => openReplyModal(request.telegram_user_id, request.id)}
+                      onClick={() => openReplyModal(request?.telegram_user_id, request?.id)}
                       style={{ marginRight: "6px", padding: "4px 8px" }}
                     >
                       {!request.answer ? "Javob yozish" : "Qayta yozish"}
                     </button>
                     <button
                       className="btn btn-danger"
-                      onClick={() => showDeleteToast(request.id)}
+                      onClick={() => showDeleteToast(request?.id)}
                       style={{ padding: "4px 8px" }}
                     >
                       <Trash2 size={16} />
