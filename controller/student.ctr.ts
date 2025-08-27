@@ -557,14 +557,17 @@ const getMonthlyStudentStats = async (
           as: "groups",
           attributes: ["id", "group_subject"],
           through: { attributes: [] }, // StudentGroup orqali bog'langan guruhlarni olish
-        },
-        {
-          model: Teacher,
-          as: "teacher",
-          attributes: ["id", "first_name", "last_name"],
+          include: [
+            {
+              model: Teacher,
+              as: "teacher",
+              attributes: ["id", "first_name", "last_name"],
+            },
+          ],
         },
       ],
     });
+
     const totalStudents = await Student.findAndCountAll();
     const totalPaymentThisMonth = await getThisMonthTotalPayments();
     const latestPaymentsForThisMonth = await latestPayments();
@@ -575,14 +578,14 @@ const getMonthlyStudentStats = async (
           Sequelize.literal(`
             COUNT(CASE WHEN "last_name" ILIKE '%va' THEN 1 END)
           `),
-          "female"
+          "female",
         ],
         [
           Sequelize.literal(`
             COUNT(CASE WHEN "last_name" ILIKE '%v' AND "last_name" NOT ILIKE '%va' THEN 1 END)
           `),
-          "male"
-        ]
+          "male",
+        ],
       ],
       raw: true,
     });

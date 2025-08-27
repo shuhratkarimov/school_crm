@@ -16,7 +16,7 @@ if (!botToken) {
 let regex: RegExp = /^[a-zA-Z0-9!@#$%^&*()_+-{}~`, ."':;?//\|]*$/;
 let bot = new TelegramBot(botToken as string, {
   polling: {
-    autoStart: false,
+    autoStart: true,
     interval: 300,
     params: {
       timeout: 10,

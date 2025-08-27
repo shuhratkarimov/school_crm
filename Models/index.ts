@@ -58,20 +58,6 @@ Student.belongsToMany(Group, {
   onUpdate: "CASCADE",
 });
 
-// 3. Teacher ↔ Student
-Teacher.hasMany(Student, {
-  foreignKey: "teacher_id",
-  as: "students",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
-});
-Student.belongsTo(Teacher, {
-  foreignKey: "teacher_id",
-  as: "teacher",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
-});
-
 // 4. Student ↔ Payment
 Student.hasMany(Payment, {
   foreignKey: "pupil_id",

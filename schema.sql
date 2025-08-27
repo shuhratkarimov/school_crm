@@ -1,51 +1,29 @@
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(255) NOT NULL DEFAULT 'user',
+    username VARCHAR NOT NULL,
+    email VARCHAR NOT NULL,
+    password VARCHAR NOT NULL,
+    role VARCHAR NOT NULL DEFAULT 'user',
     verification_code BIGINT,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    timestamp TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS centers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    address VARCHAR(255) NOT NULL,
-    owner VARCHAR(255) NOT NULL,
-    phone VARCHAR(255) NOT NULL,
-    login VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    paymentDate DATE NOT NULL DEFAULT '1990-01-01',
-    status VARCHAR(255) NOT NULL DEFAULT 'blocked' CHECK (status IN ('active', 'blocked')),
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS teachers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255) NOT NULL,
-    father_name VARCHAR(255),
+    first_name VARCHAR NOT NULL,
+    last_name VARCHAR NOT NULL,
+    father_name VARCHAR,
     birth_date DATE NOT NULL,
-    phone_number VARCHAR(255) NOT NULL UNIQUE,
-    subject VARCHAR(255) NOT NULL,
-    img_url VARCHAR(255),
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    username VARCHAR(255),
-    password VARCHAR(255)
-);
-
-CREATE TABLE IF NOT EXISTS rooms (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    capacity INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    phone_number VARCHAR NOT NULL,
+    subject VARCHAR NOT NULL,
+    img_url VARCHAR,
+    username VARCHAR DEFAULT NULL,
+    password VARCHAR DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS students (
@@ -56,122 +34,139 @@ CREATE TABLE IF NOT EXISTS students (
     mother_name VARCHAR(255),
     birth_date DATE NOT NULL,
     phone_number VARCHAR(20),
-    paid_groups INTEGER,
-    total_groups INTEGER,
+    paid_groups INT,
+    total_groups INT,
     parents_phone_number VARCHAR(20),
-    telegram_user_id BIGINT UNIQUE,
+    telegram_user_id BIGINT,
     came_in_school DATE NOT NULL,
     img_url VARCHAR(255),
     left_school DATE,
-    studental_id VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    teacher_id UUID REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    studental_id VARCHAR NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS rooms (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR NOT NULL,
+    capacity INT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    group_subject VARCHAR(255) NOT NULL,
-    days VARCHAR(255) NOT NULL,
+    group_subject VARCHAR NOT NULL,
+    days VARCHAR NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    teacher_id UUID REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    monthly_fee DECIMAL(10,2) NOT NULL,
-    students_amount INTEGER NOT NULL DEFAULT 0,
-    paid_students_amount INTEGER DEFAULT 0,
-    room_id UUID REFERENCES rooms(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    teacher_id UUID REFERENCES teachers(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    monthly_fee INT NOT NULL,
+    students_amount INT NOT NULL DEFAULT 0,
+    paid_students_amount INT DEFAULT 0,
+    room_id UUID REFERENCES rooms(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS student_groups (
-    student_id UUID NOT NULL REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+    group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
     paid BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (student_id, group_id)
+    month VARCHAR,
+    year INT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pupil_id UUID REFERENCES students(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    group_id UUID REFERENCES groups(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    payment_amount INT NOT NULL CHECK (payment_amount >= 0),
+    payment_type VARCHAR NOT NULL,
+    received VARCHAR NOT NULL,
+    for_which_month VARCHAR NOT NULL,
+    for_which_group VARCHAR NOT NULL,
+    comment VARCHAR DEFAULT '',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS appeals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    pupil_id UUID NOT NULL REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    pupil_id UUID REFERENCES students(id) ON UPDATE CASCADE ON DELETE SET NULL,
     message TEXT NOT NULL,
     telegram_user_id BIGINT NOT NULL,
     is_seen BOOLEAN NOT NULL DEFAULT FALSE,
     is_answered BOOLEAN NOT NULL DEFAULT FALSE,
     answer TEXT,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS payments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    pupil_id UUID REFERENCES students(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    group_id UUID REFERENCES groups(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    payment_amount BIGINT NOT NULL CHECK (payment_amount >= 0),
-    payment_type VARCHAR(255) NOT NULL,
-    received VARCHAR(255) NOT NULL,
-    for_which_month VARCHAR(255) NOT NULL,
-    for_which_group VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    pupil_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    message VARCHAR(255) NOT NULL,
-    is_read BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS notificationsToCenter (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    center_id UUID NOT NULL REFERENCES centers(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    message VARCHAR(255) NOT NULL,
-    is_read BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS attendances (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    date DATE NOT NULL DEFAULT CURRENT_DATE,
-    came_students JSONB NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    group_id UUID REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS attendance_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    attendance_id UUID REFERENCES attendances(id) ON DELETE CASCADE,
+    student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+    status VARCHAR CHECK (status IN ('present', 'absent')) NOT NULL,
+    reason VARCHAR CHECK (reason IN ('excused','unexcused')),
+    note TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS expenses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR NOT NULL,
+    amount INT NOT NULL,
+    date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR NOT NULL,
+    description TEXT NOT NULL,
+    date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS schedules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    teacher_id UUID NOT NULL REFERENCES teachers(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    day VARCHAR(255) NOT NULL CHECK (day IN ('DUSHANBA', 'SESHANBA', 'CHORSHANBA', 'PAYSHANBA', 'JUMA', 'SHANBA', 'YAKSHANBA')),
+    room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
+    group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
+    teacher_id UUID REFERENCES teachers(id) ON DELETE SET NULL,
+    day VARCHAR CHECK (day IN ('DUSHANBA','SESHANBA','CHORSHANBA','PAYSHANBA','JUMA','SHANBA','YAKSHANBA')) NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
-
-CREATE TABLE teacher_balances (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id UUID NOT NULL REFERENCES teachers(id),
-  balance INTEGER NOT NULL DEFAULT 0
+CREATE TABLE IF NOT EXISTS teacher_balances (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    teacher_id UUID REFERENCES teachers(id),
+    balance INT NOT NULL DEFAULT 0
 );
 
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
-CREATE TABLE teacher_payments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
-  teacher_id UUID NOT NULL,
-  payment_type VARCHAR(10) NOT NULL CHECK (payment_type IN ('avans', 'hisob')),
-  given_by VARCHAR(255) NOT NULL,
-  payment_amount INTEGER NOT NULL,
-  given_date TIMESTAMP NOT NULL DEFAULT NOW(),
-  CONSTRAINT fk_teacher FOREIGN KEY (teacher_id) REFERENCES teachers(id)
+CREATE TABLE IF NOT EXISTS teacher_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    teacher_id UUID REFERENCES teachers(id),
+    payment_type VARCHAR CHECK (payment_type IN ('avans','hisob')) NOT NULL,
+    given_by VARCHAR NOT NULL,
+    payment_amount INT NOT NULL,
+    given_date TIMESTAMP DEFAULT NOW()
 );
+
