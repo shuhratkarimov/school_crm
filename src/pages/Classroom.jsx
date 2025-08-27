@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, School } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
@@ -394,13 +394,15 @@ const getContrastColor = (hexColor) => {
 
   return (
     <div>
-      <h1>Xonalar va darslar jadvali</h1>
-
+      <div className="flex items-center gap-2">
+        <School size={24} color="#104292"/>
+        <h1 className="text-2xl font-bold">Xonalar va darslar jadvali</h1>
+      </div>
       <ToastContainer />
 
       {/* Xona qo‘shish formasi */}
       <div className="card">
-        <h3 style={{ marginBottom: "20px" }}>Yangi xona qo'shish</h3>
+        <h3 style={{ marginBottom: "20px", fontWeight: "bold" }}>Yangi xona qo'shish</h3>
         <form onSubmit={addRoom}>
           <div className="form-grid">
             <div className="form-group">
@@ -437,7 +439,7 @@ const getContrastColor = (hexColor) => {
       </div>
 
       <div className="card" style={{ marginTop: "20px" }}>
-        <h3 style={{ marginBottom: "20px" }}>Xonalar ({rooms.length} ta)</h3>
+        <h3 style={{ marginBottom: "20px", fontWeight: "bold" }}>Xonalar ({rooms.length} ta)</h3>
         {rooms.length === 0 ? (
           <p style={{ textAlign: "center", padding: "20px" }}>
             {error || "Xonalar hali mavjud emas"}

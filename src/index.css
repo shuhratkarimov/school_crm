@@ -1,3 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 /* Global reset */
 * {
   margin: 0;
@@ -221,7 +226,7 @@ body.dark .form-group label {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #c1fac5 0%, #8f9cff 100%);
+  background: linear-gradient(135deg, #cbd1cc 0%, #f4f7d7 100%);
   overflow: hidden;
   position: relative;
 }
@@ -644,7 +649,6 @@ body.dark .modal-content {
 
 .stat-card {
   background: white;
-  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
   margin-top: 10px;
@@ -673,5 +677,28 @@ body.dark .stat-number {
 
 body.dark .stat-label {
   color: #9ca3af;
+}
+
+.highlight-class-day {
+  background-color: #7ff04b; /* Qizg'ish fon rangi */
+  color: #333; /* Matn rangi o'qilishi uchun moslashtirilgan */
+  border-radius: 50%; /* Yumaloq shakl */
+}
+
+/* Agar faqat tanlangan kunni boshqacha ko'rsatmoqchi bo'lsangiz */
+.react-datepicker__day--selected {
+  background-color: #ff4d4d !important; /* Tanlangan kun uchun quyuqroq qizil */
+  color: white !important;
+}
+
+/* Kalendardagi kunlarning umumiy uslubi */
+.react-datepicker__day {
+  padding: 4px;
+  margin: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
 }
 

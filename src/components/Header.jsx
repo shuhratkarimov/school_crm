@@ -53,8 +53,8 @@ function Header({ setIsAuthenticated }) {
   return (
     <div className="header">
       <div>
-        <h1>{t("header.title")}</h1>
-        <p style={{ fontStyle: "italic" }}>Passion, purpose, progress</p>
+        <h1 style={{ fontWeight: "bold", fontSize: "1.5rem" }}>"Intellectual Progress Star" o'quv markazi CRM tizimi</h1>
+        <p style={{ fontStyle: "italic", fontSize: "1rem" }}>Passion, purpose, progress</p>
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">

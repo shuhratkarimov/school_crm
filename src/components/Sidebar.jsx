@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, BookOpen, CreditCard, ClipboardCheck, MessageSquare, GraduationCap, School } from "lucide-react";
+import { Home, Users, BookOpen, CreditCard, ClipboardCheck, MessageSquare, GraduationCap, School, DollarSign, NotebookPen, Calculator } from "lucide-react";
 
 function Sidebar() {
   const location = useLocation();
@@ -30,6 +30,9 @@ function Sidebar() {
     { path: "/requests", label: "Murojaatlar", icon: MessageSquare },
     { path: "/teachers", label: "Ustozlar", icon: GraduationCap },
     { path: "/rooms", label: "Sinfxonalar", icon: School },
+    { path: "/expenses", label: "Xarajatlar", icon: DollarSign },
+    { path: "/notes", label: "Qaydlar", icon: NotebookPen },
+    { path: "/calculator", label: "Kalkulyator", icon: Calculator },
   ];
 
   return (

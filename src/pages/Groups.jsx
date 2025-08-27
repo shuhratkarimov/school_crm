@@ -1,30 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Pen, BookOpen, Plus, X, Search } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
 import "../index.css";
-
-const daysInEn = {
-  monday: "DUSHANBA",
-  tuesday: "SESHANBA",
-  wednesday: "CHORSHANBA",
-  thursday: "PAYSHANBA",
-  friday: "JUMA",
-  saturday: "SHANBA",
-  sunday: "YAKSHANBA",
-};
-
-function dayParser(day) {
-  for (const d in daysInEn) {
-    if (day === d) {
-      return daysInEn[d];
-    }
-  }
-  return day;
-}
 
 function Groups() {
   const [groups, setGroups] = useState([]);
@@ -63,6 +44,7 @@ function Groups() {
     end_time: "",
     monthly_fee: "",
   });
+  const [addModal, setAddModal] = useState(false);
 
   const daysOfWeek = [
     "DUSHANBA",
@@ -73,15 +55,6 @@ function Groups() {
     "SHANBA",
     "YAKSHANBA",
   ];
-
-  function daysInTextParser(text) {
-    let str = "";
-    const days = text.split("-");
-    for (const day of days) {
-      str += `${dayParser(day)}-`;
-    }
-    return str;
-  }
 
   // Checkbox’lar uchun handler
   const handleDaysChange = (day, isEdit = false) => {
@@ -138,11 +111,18 @@ function Groups() {
       ]);
 
       if (groupsResponse.ok) {
-        setGroups(await groupsResponse.json());
+        const groupsData = await groupsResponse.json();
+        console.log("Backenddan kelgan days:", groupsData.map(g => g.days));
+        setGroups(
+          groupsData.map((group) => ({
+            ...group,
+            days: group.days ? group.days.toUpperCase() : "",
+          }))
+        );
       } else {
         setGroups([]);
-        setErrors((prev) => ({ ...prev, groups: "Guruhlar hali mavjud emas" }));
-        toast.error("Guruhlar yuklanmadi: Hali mavjud emas", {
+        setErrors((prev) => ({ ...prev, groups: "Guruhlar mavjud emas" }));
+        toast.info("Guruhlar mavjud emas", {
           position: "top-right",
           autoClose: 3000,
         });
@@ -152,8 +132,8 @@ function Groups() {
         setTeachers(await teachersResponse.json());
       } else {
         setTeachers([]);
-        setErrors((prev) => ({ ...prev, teachers: "O'qituvchilar hali mavjud emas" }));
-        toast.error("O'qituvchilar yuklanmadi: Hali mavjud emas", {
+        setErrors((prev) => ({ ...prev, teachers: "O'qituvchilar mavjud emas" }));
+        toast.info("O'qituvchilar mavjud emas", {
           position: "top-right",
           autoClose: 3000,
         });
@@ -163,8 +143,8 @@ function Groups() {
         setStudents(await studentsResponse.json());
       } else {
         setStudents([]);
-        setErrors((prev) => ({ ...prev, students: "O'quvchilar hali mavjud emas" }));
-        toast.error("O'quvchilar yuklanmadi: Hali mavjud emas", {
+        setErrors((prev) => ({ ...prev, students: "O'quvchilar mavjud emas" }));
+        toast.info("O'quvchilar mavjud emas", {
           position: "top-right",
           autoClose: 3000,
         });
@@ -174,8 +154,8 @@ function Groups() {
         setPayments(await paymentsResponse.json());
       } else {
         setPayments([]);
-        setErrors((prev) => ({ ...prev, payments: "To'lovlar hali mavjud emas" }));
-        toast.error("To'lovlar yuklanmadi: Hali mavjud emas", {
+        setErrors((prev) => ({ ...prev, payments: "To'lovlar mavjud emas" }));
+        toast.info("To'lovlar mavjud emas", {
           position: "top-right",
           autoClose: 3000,
         });
@@ -185,8 +165,8 @@ function Groups() {
         setRooms(await roomsResponse.json());
       } else {
         setRooms([]);
-        setErrors((prev) => ({ ...prev, rooms: "Xonalar hali mavjud emas" }));
-        toast.error("Xonalar yuklanmadi: Hali mavjud emas", {
+        setErrors((prev) => ({ ...prev, rooms: "Xonalar mavjud emas" }));
+        toast.info("Xonalar mavjud emas", {
           position: "top-right",
           autoClose: 3000,
         });
@@ -198,13 +178,13 @@ function Groups() {
       setPayments([]);
       setRooms([]);
       setErrors({
-        groups: "Guruhlar hali mavjud emas",
-        teachers: "O'qituvchilar hali mavjud emas",
-        students: "O'quvchilar hali mavjud emas",
-        payments: "To'lovlar hali mavjud emas",
-        rooms: "Xonalar hali mavjud emas",
+        groups: "Guruhlar mavjud emas",
+        teachers: "O'qituvchilar mavjud emas",
+        students: "O'quvchilar mavjud emas",
+        payments: "To'lovlar mavjud emas",
+        rooms: "Xonalar mavjud emas",
       });
-      toast.error("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi", {
+      toast.warning("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -245,7 +225,7 @@ function Groups() {
     e.preventDefault();
 
     if (formData.days.length === 0) {
-      toast.error("Kamida bitta dars kuni tanlanishi kerak", {
+      toast.warning("Kamida bitta dars kuni tanlanishi kerak", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -253,7 +233,7 @@ function Groups() {
     }
 
     if (formData.start_time >= formData.end_time) {
-      toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak", {
+      toast.warning("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -261,7 +241,7 @@ function Groups() {
     }
 
     if (!formData.teacher_id || !formData.room_id) {
-      toast.error("O‘qituvchi va xona tanlanishi kerak", {
+      toast.warning("O‘qituvchi va xona tanlanishi kerak", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -277,7 +257,7 @@ function Groups() {
     );
 
     if (hasConflict) {
-      toast.error(
+      toast.warning(
         "Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.",
         {
           position: "top-right",
@@ -321,9 +301,10 @@ function Groups() {
           end_time: "",
           monthly_fee: "",
         });
+        setAddModal(false);
       } else {
         if (response.status === 400) {
-          toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.", {
+          toast.warning("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.", {
             position: "top-right",
             autoClose: 5000,
           });
@@ -370,7 +351,7 @@ function Groups() {
     );
 
     if (hasConflict) {
-      toast.error(
+      toast.warning(
         "Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.",
         {
           position: "top-right",
@@ -416,7 +397,7 @@ function Groups() {
         setEditModal(false);
       } else {
         if (response.status === 400) {
-          toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.", {
+          toast.warning("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.", {
             position: "top-right",
             autoClose: 5000,
           });
@@ -425,7 +406,7 @@ function Groups() {
         throw new Error("Guruhni yangilashda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.error("Guruhni yangilashda xatolik: API mavjud emas", {
+      toast.warning("Guruhni yangilashda xatolik: API mavjud emas", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -453,7 +434,7 @@ function Groups() {
         throw new Error("Guruhni o'chirishda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.error("Guruhni o'chirishda xatolik: API mavjud emas", {
+      toast.warning("Guruhni o'chirishda xatolik: API mavjud emas", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -506,21 +487,23 @@ function Groups() {
       }
     );
   };
-
   // Tahrirlash modalini ochish
   const openEditModal = (group) => {
     setEditingGroup(group);
+
+    const parsedDays = group.days ? group.days.split("-").map((d) => d.trim().toUpperCase()) : [];
     setEditFormData({
       group_subject: group.group_subject,
       teacher_id: group.teacher_id,
       room_id: group.room_id || "",
-      days: group.days ? group.days.split("-") : [],
+      days: parsedDays,
       start_time: group.start_time.slice(0, 5),
       end_time: group.end_time.slice(0, 5),
       monthly_fee: group.monthly_fee || "",
     });
     setEditModal(true);
   };
+
 
   // Guruh statistikasini hisoblash
   const calculateGroupStats = (groupId) => {
@@ -588,263 +571,261 @@ function Groups() {
 
   return (
     <div>
-      <h1>Guruhlar</h1>
-
       <ToastContainer />
-
-      {/* Yangi guruh qo‘shish formasi */}
-      <div className="card">
-        <h3 style={{ marginBottom: "20px" }}>Yangi guruh qo'shish</h3>
-        <form onSubmit={addGroup}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Guruh nomi</label>
-              <input
-                type="text"
-                className="input"
-                value={formData.group_subject}
-                onChange={(e) =>
-                  setFormData({ ...formData, group_subject: e.target.value })
-                }
-                placeholder="Guruh nomini kiriting"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>O'qituvchi</label>
-              <select
-                className="select"
-                value={formData.teacher_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, teacher_id: e.target.value })
-                }
-                required
-                disabled={teachers.length === 0}
-              >
-                <option value="">
-                  {errors.teachers ? "O'qituvchilar yo'q" : "Tanlang"}
-                </option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {`${teacher.first_name} ${teacher.last_name} (${teacher.subject})`}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Xona</label>
-              <select
-                className="select"
-                value={formData.room_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, room_id: e.target.value })
-                }
-                required
-                disabled={rooms.length === 0}
-              >
-                <option value="">
-                  {errors.rooms ? "Xonalar yo'q" : "Tanlang"}
-                </option>
-                {rooms.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {`${room.name} (${room.capacity || "Belgilanmagan"})`}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Dars kunlari</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                {daysOfWeek.map((day) => (
-                  <label key={day} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.days.includes(day)}
-                      onChange={() => handleDaysChange(day)}
-                      style={{ scale: "1.5", cursor: "pointer" }}
-                    />
-                    {day}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Boshlanish vaqti</label>
-              <input
-                type="time"
-                className="input"
-                value={formData.start_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, start_time: e.target.value })
-                }
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Tugash vaqti</label>
-              <input
-                type="time"
-                className="input"
-                value={formData.end_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, end_time: e.target.value })
-                }
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Oylik to'lov summasi (so'm)</label>
-              <input
-                type="number"
-                className="input"
-                value={formData.monthly_fee}
-                onChange={(e) =>
-                  setFormData({ ...formData, monthly_fee: e.target.value })
-                }
-                placeholder="Masalan: 225000"
-                min="0"
-                required
-              />
-            </div>
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Qo'shish
+      <div className="flex justify-between gap-2 pl-6 pr-6">
+        <div className="flex items-center gap-2">
+          <BookOpen size={24} color="#104292" />
+          <span className="text-2xl font-bold">Guruhlar</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => setAddModal(true)}
+            style={{ display: "flex", alignItems: "center", gap: "8px" }}
+          >
+            <Plus size={20} />
+            Yangi guruh qo'shish
           </button>
-        </form>
+        </div>
       </div>
 
       {/* Mavjud guruhlar ro‘yxati */}
-      <div className="card">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px",
-          }}
-        >
-          <h3>Mavjud guruhlar ({filteredGroups.length} ta)</h3>
-          <input
-            type="text"
-            className="input"
-            style={{ width: "300px" }}
-            placeholder="Guruh nomini kiriting..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="p-6 grid">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <h3 className="text-xl font-bold">
+            Mavjud guruhlar ({filteredGroups.length} ta)
+          </h3>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", border: "1px solid #ccc", borderRadius: "5px", padding: "5px" }}>
+              <Search size={22} color="#104292" style={{ marginLeft: "12px" }} />
+              <input
+                type="text"
+                className="input"
+                style={{ width: "170px", border: "none", outline: "none" }}
+                placeholder="Guruhni qidirish..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {filteredGroups.length === 0 ? (
-            <div
-              style={{
-                gridColumn: "1 / -1",
-                textAlign: "center",
-                padding: "40px",
-              }}
-            >
-              {searchTerm
-                ? "Qidiruv bo'yicha natija topilmadi"
-                : errors.groups || "Hali mavjud emas"}
-            </div>
-          ) : (
-            filteredGroups.map((group) => {
+        {filteredGroups.length === 0 ? (
+          <div className="text-center py-16 text-gray-500">
+            {searchTerm ? "Bunday guruh topilmadi" : errors.groups || "Hali mavjud emas"}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredGroups.map((group) => {
               const teacher = teachers?.find((t) => t.id === group?.teacher_id);
               const room = rooms.find((r) => r.id == group?.room_id);
+
               return (
                 <div
                   key={group.id}
-                  className="card"
-                  style={{ margin: 0, cursor: "pointer" }}
+                  className="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer flex flex-col"
                   onClick={() => setSelectedGroup(group)}
                 >
-                  <div
-                    style={{
-                      background: "#104292",
-                      color: "white",
-                      padding: "16px",
-                      margin: "-24px -24px 16px -24px",
-                      borderRadius: "8px 8px 0 0",
-                    }}
-                  >
-                    <h4 style={{ margin: 0 }}>{group.group_subject}</h4>
+                  {/* Header */}
+                  <div className="bg-blue-800 text-white px-4 py-3 rounded-t-lg">
+                    <h4 className="font-semibold text-center text-xl ">{group.group_subject}</h4>
                   </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>O'qituvchi:</strong>{" "}
-                    {teacher
-                      ? `${teacher.first_name} ${teacher.last_name}`
-                      : errors.teachers || "N/A"}
+
+                  {/* Body: 2 ustunli jadval ko'rinishida */}
+                  <div className="p-4 flex-1">
+                    <div className="grid grid-cols-[35%_65%] gap-x-4 gap-y-2">
+                      <span className="font-semibold text-black">O'qituvchi:</span>
+                      <span className="text-black font-semibold">
+                        {teacher ? `${teacher.first_name} ${teacher.last_name}` : errors.teachers || "N/A"}
+                      </span>
+
+                      <span className="font-semibold text-black">Xona:</span>
+                      <span className="text-black font-semibold">{room ? room.name : errors.rooms || "Belgilanmagan"}</span>
+
+                      <span className="font-semibold text-black">Dars kunlari:</span>
+                      <span className="text-black break-all font-semibold">{group.days || "Belgilanmagan"}</span>
+                      <span className="font-semibold text-black">Dars vaqti:</span>
+                      <span className="text-black font-semibold">
+                        {group.start_time?.slice(0, 5)} - {group.end_time?.slice(0, 5)}
+                      </span>
+
+                      <span className="font-semibold text-black">O'quvchilar soni:</span>
+                      <span className="text-black font-semibold">{group.studentsAmount || 0}</span>
+
+                      <span className="font-semibold text-black">To'lov qilganlar:</span>
+                      <span className="text-black font-semibold">{group.paidStudentsAmount || 0}</span>
+
+                      <span className="font-semibold text-black">To'lov qilmaganlar:</span>
+                      <span className="text-black font-semibold">{group.unpaidStudentsAmount || 0}</span>
+
+                      <span className="font-semibold text-black">Oylik to'lov:</span>
+                      <span className="text-black font-semibold">
+                        {group.monthly_fee ? `${Number(group.monthly_fee).toLocaleString("uz-UZ")} so'm` : "N/A"}
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>Xona:</strong>{" "}
-                    {room ? room?.name : errors.rooms || "Belgilanmagan"}
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>Dars kunlari:</strong>{" "}
-                    {daysInTextParser(group.days).slice(0, daysInTextParser(group.days).length - 1)}
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>Dars vaqti:</strong>{" "}
-                    {`${group.start_time.slice(0, 5)} - ${group.end_time.slice(0, 5)}`}
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>O'quvchilar soni:</strong>{" "}
-                    {group.studentsAmount ? `${group.studentsAmount} nafar` : 0}
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>Ushbu oy uchun to'lov qilgan o'quvchilar:</strong>{" "}
-                    {group.paidStudentsAmount ? `${group.paidStudentsAmount} nafar` : 0}
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>To'lov qilmagan o'quvchilar:</strong>{" "}
-                    {group.unpaidStudentsAmount ? `${group.unpaidStudentsAmount} nafar` : 0}
-                  </div>
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>Oylik to'lov summasi:</strong>{" "}
-                    {group.monthly_fee
-                      ? `${Number(group.monthly_fee).toLocaleString("uz-UZ")} so'm`
-                      : "N/A"}
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      justifyContent: "flex-end",
-                    }}
-                  >
+
+                  {/* Tugmalar pastda */}
+                  <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
                     <button
-                      className="btn btn-secondary"
+                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(group);
                       }}
-                      style={{ padding: "4px 8px" }}
+                      title="Tahrirlash"
                     >
-                      <Edit size={16} />
+                      <Pen size={16} />
                     </button>
                     <button
-                      className="btn btn-danger"
+                      className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition"
                       onClick={(e) => {
                         e.stopPropagation();
                         showDeleteToast(group.id);
                       }}
-                      style={{ padding: "4px 8px" }}
+                      title="O'chirish"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
+      {addModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <div className="modal-header bg-[#104292] p-2 text-white rounded-[10px]">
+              <h3 className="text-center text-lg font-bold">Yangi guruh qo'shish</h3>
+            </div>
+            <form onSubmit={addGroup}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Guruh nomi</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.group_subject}
+                    onChange={(e) =>
+                      setFormData({ ...formData, group_subject: e.target.value })
+                    }
+                    placeholder="Guruh nomini kiriting"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>O'qituvchi</label>
+                  <select
+                    className="select"
+                    value={formData.teacher_id}
+                    onChange={(e) =>
+                      setFormData({ ...formData, teacher_id: e.target.value })
+                    }
+                    required
+                    disabled={teachers.length === 0}
+                  >
+                    <option value="">
+                      {errors.teachers ? "O'qituvchilar yo'q" : "Tanlang"}
+                    </option>
+                    {teachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {`${teacher.first_name} ${teacher.last_name} (${teacher.subject})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Xona</label>
+                  <select
+                    className="select"
+                    value={formData.room_id}
+                    onChange={(e) =>
+                      setFormData({ ...formData, room_id: e.target.value })
+                    }
+                    required
+                    disabled={rooms.length === 0}
+                  >
+                    <option value="">
+                      {errors.rooms ? "Xonalar yo'q" : "Tanlang"}
+                    </option>
+                    {rooms.map((room) => (
+                      <option key={room.id} value={room.id}>
+                        {`${room.name} (${room.capacity || "Belgilanmagan"})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Dars kunlari</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    {daysOfWeek.map((day) => (
+                      <label key={day} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.days.includes(day)}
+                          onChange={() => handleDaysChange(day)}
+                          style={{ scale: "1.5", cursor: "pointer" }}
+                        />
+                        {day}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Boshlanish vaqti</label>
+                  <input
+                    type="time"
+                    className="input"
+                    value={formData.start_time}
+                    onChange={(e) =>
+                      setFormData({ ...formData, start_time: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tugash vaqti</label>
+                  <input
+                    type="time"
+                    className="input"
+                    value={formData.end_time}
+                    onChange={(e) =>
+                      setFormData({ ...formData, end_time: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Oylik to'lov summasi (so'm)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={formData.monthly_fee}
+                    onChange={(e) =>
+                      setFormData({ ...formData, monthly_fee: e.target.value })
+                    }
+                    placeholder="Masalan: 225000"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setAddModal(false)}
+                >
+                  Bekor qilish
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Tahrirlash modal oynasi */}
       {editModal && (
@@ -1007,74 +988,81 @@ function Groups() {
 
       {/* Guruh haqida ma'lumot modal oynasi */}
       {selectedGroup && (
-        <div className="modal" onClick={() => setSelectedGroup(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Guruh haqida ma'lumot</h3>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setSelectedGroup(null)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex justify-between items-center mb-4 border-b pb-2">
+              <h3 className="text-xl font-bold">Guruh haqida ma'lumot</h3>
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-danger"
                 onClick={() => setSelectedGroup(null)}
-                style={{ float: "right", padding: "4px 8px" }}
+                style={{ float: "right", padding: "8px", borderRadius: "50%" }}
               >
-                Yopish
+                <X />
               </button>
             </div>
-            <div className="modal-body">
-              <p>
-                <strong>Guruh nomi:</strong> {selectedGroup.group_subject}
-              </p>
-              <p>
-                <strong>Xona:</strong>{" "}
-                {rooms.find((r) => r.id === selectedGroup.room_id)?.name || "Belgilanmagan"}
-              </p>
-              <p>
-                <strong>Dars kunlari:</strong>{" "}
-                {daysInTextParser(selectedGroup.days).slice(0, daysInTextParser(selectedGroup.days).length - 1)}
-              </p>
-              <p>
-                <strong>Dars vaqti:</strong>{" "}
-                {`${selectedGroup.start_time.slice(0, 5)} - ${selectedGroup.end_time.slice(0, 5)}`}
-              </p>
-              <p>
-                <strong>O'quvchilar soni:</strong>{" "}
-                {selectedGroup.studentsAmount
-                  ? `${selectedGroup.studentsAmount} nafar`
-                  : errors.students || "0"}
-              </p>
-              <p>
-                <strong>To'lov qilganlar soni ({getMonthsInWord(new Date().getMonth() + 1)}):</strong>{" "}
-                {selectedGroup.paidStudentsAmount
-                  ? `${selectedGroup.paidStudentsAmount} nafar`
-                  : errors.payments || "0"}
-              </p>
-              <p>
-                <strong>To'lov qilmaganlar soni:</strong>{" "}
-                {selectedGroup.unpaidStudentsAmount
-                  ? `${selectedGroup.unpaidStudentsAmount} nafar`
-                  : errors.students || "0"}
-              </p>
-              <p>
-                <strong>Oylik to'lov summasi:</strong>{" "}
-                {selectedGroup.monthly_fee
-                  ? `${Number(selectedGroup.monthly_fee).toLocaleString("uz-UZ")} so'm`
-                  : "N/A"}
-              </p>
-              <h4 style={{ marginTop: "15px" }}>O'qituvchi ma'lumotlari</h4>
+
+            {/* Modal body */}
+            <div className="space-y-4">
+              {/* Guruh haqida ma'lumotlar */}
+              <div className="grid grid-cols-2 gap-4">
+                <span className="font-semibold text-gray-700">Guruh nomi:</span>
+                <span className="text-gray-900">{selectedGroup.group_subject}</span>
+
+                <span className="font-semibold text-gray-700">Xona:</span>
+                <span className="text-gray-900">
+                  {rooms.find((r) => r.id === selectedGroup.room_id)?.name || "Belgilanmagan"}
+                </span>
+
+                <span className="font-semibold text-gray-700">Dars kunlari:</span>
+                <span className="text-gray-900 break-words">{selectedGroup.days || "Belgilanmagan"}</span>
+                <span className="font-semibold text-gray-700">Dars vaqti:</span>
+                <span className="text-gray-900">
+                  {`${selectedGroup.start_time.slice(0, 5)} - ${selectedGroup.end_time.slice(0, 5)}`}
+                </span>
+
+                <span className="font-semibold text-gray-700">O'quvchilar soni:</span>
+                <span className="text-gray-900">
+                  {selectedGroup.studentsAmount ? `${selectedGroup.studentsAmount} nafar` : errors.students || "0"}
+                </span>
+
+                <span className="font-semibold text-gray-700">To'lov qilganlar soni ({getMonthsInWord(new Date().getMonth() + 1)}):</span>
+                <span className="text-gray-900">
+                  {selectedGroup.paidStudentsAmount ? `${selectedGroup.paidStudentsAmount} nafar` : errors.payments || "0"}
+                </span>
+
+                <span className="font-semibold text-gray-700">To'lov qilmaganlar soni:</span>
+                <span className="text-gray-900">
+                  {selectedGroup.unpaidStudentsAmount ? `${selectedGroup.unpaidStudentsAmount} nafar` : errors.students || "0"}
+                </span>
+
+                <span className="font-semibold text-gray-700">Oylik to'lov summasi:</span>
+                <span className="text-gray-900">
+                  {selectedGroup.monthly_fee ? `${Number(selectedGroup.monthly_fee).toLocaleString("uz-UZ")} so'm` : "N/A"}
+                </span>
+              </div>
+
+              {/* O'qituvchi haqida ma'lumotlar */}
+              <h4 className="mt-4 text-lg font-semibold border-t pt-2">O'qituvchi ma'lumotlari</h4>
               {teachers.length === 0 ? (
-                <p>{errors.teachers || "O'qituvchi ma'lumotlari yo'q"}</p>
+                <p className="text-gray-700">{errors.teachers || "O'qituvchi ma'lumotlari yo'q"}</p>
               ) : (
                 teachers
                   .filter((teacher) => teacher.id === selectedGroup.teacher_id)
                   .map((teacher) => (
-                    <div key={teacher.id}>
-                      <p>
-                        <strong>F.I.Sh:</strong>{" "}
-                        {`${teacher.first_name} ${teacher.last_name}`}
-                      </p>
-                      <p>
-                        <strong>Telefon raqami:</strong> {teacher.phone_number}
-                      </p>
+                    <div key={teacher.id} className="grid grid-cols-2 gap-4 mt-2">
+                      <span className="font-semibold text-gray-700">F.I.Sh:</span>
+                      <span className="text-gray-900">{`${teacher.first_name} ${teacher.last_name}`}</span>
+
+                      <span className="font-semibold text-gray-700">Telefon raqami:</span>
+                      <span className="text-gray-900">{teacher.phone_number}</span>
                     </div>
                   ))
               )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import { MessageSquare, Trash2 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../styles/styles.css";
@@ -52,7 +52,7 @@ function Requests() {
       if (todayResponse.ok) {
         todayData = await todayResponse.json();
       } else if (todayResponse.status === 404) {
-        toast.warn("Bugun hech qanday murojaat kelib tushmagan", { position: "top-right", autoClose: 3000 } )
+        toast.info("Bugun hech qanday murojaat kelib tushmagan", { position: "top-right", autoClose: 3000 } )
 
       } else {
         throw new Error("Bugungi murojaatlarni olishda xatolik");
@@ -63,7 +63,7 @@ function Requests() {
       if (allResponse.ok) {
         allData = await allResponse.json();
       } else if (allResponse.status === 404) {
-        toast.warn("Oxirgi 10 kunda murojaat qilinmagan...", { position: "top-right", autoClose: 3000 } )
+        toast.info("Oxirgi 10 kunda murojaat yo'q", { position: "top-right", autoClose: 2000 } )
       } else {
         throw new Error("Oxirgi 10 kunlik murojaatlarni olishda xatolik");
       }
@@ -103,7 +103,7 @@ function Requests() {
       });
 
       if (response.ok) {
-        setSuccess("Xabar yuborildi 🎉");
+        setSuccess("Xabar yuborildi");
         toast.success("O'quvchiga to'lov qilishi lozimligi haqida xabar yuborildi!", { position: "top-right", autoClose: 3000 });
         setIsModalOpen(false);
         fetchRequests(); // Ma'lumotlarni yangilash
@@ -223,7 +223,10 @@ function Requests() {
 
   return (
     <div>
-      <h1>Murojaatlar</h1>
+      <div className="flex items-center gap-2">
+        <MessageSquare size={24} color="#104292"/>
+        <h1 className="text-2xl font-bold">Murojaatlar</h1>
+      </div>
       <ToastContainer/>
       {/* Filtrlash paneli */}
       <div style={{ marginBottom: "20px", display: "flex", gap: "20px" }}>
@@ -231,12 +234,12 @@ function Requests() {
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          style={{ padding: "8px", borderRadius: "4px", marginLeft: "20px", marginTop: "20px" }}
+          style={{ padding: "8px", borderRadius: "4px", border: "1px solid blue", marginLeft: "20px", marginTop: "20px" }}
         />
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{ padding: "8px", borderRadius: "4px", cursor: "pointer", marginTop: "20px" }}
+          style={{ padding: "8px", borderRadius: "4px", cursor: "pointer", border: "1px solid blue", marginTop: "20px" }}
         >
           <option value="all">Barcha murojaatlar</option>
           <option value="answered">Javob berilganlar</option>
@@ -246,7 +249,7 @@ function Requests() {
 
       {/* Today's Requests */}
       <div className="card">
-        <h3 style={{ marginBottom: "20px" }}>
+        <h3 style={{ marginBottom: "20px", fontWeight: "bold" }}>
           Bugungi murojaatlar ({filterRequests(todayRequests).length ? `${filterRequests(todayRequests).length} ta` : 0})
         </h3>
 
@@ -304,7 +307,7 @@ function Requests() {
 
       {/* Past Requests */}
       <div className="card">
-        <h3 style={{ marginBottom: "20px" }}>
+        <h3 style={{ marginBottom: "20px", fontWeight: "bold" }}>
           Kecha va undan oldingi barcha murojaatlar ({filterRequests(pastRequests).length !== 0 ? `${filterRequests(pastRequests).length} ta` : 0})
         </h3>
 

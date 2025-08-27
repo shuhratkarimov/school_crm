@@ -1,18 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Trash2, Edit2, X } from "lucide-react";
+import { Trash2, GraduationCap, Plus, Pen, X } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
-import InputMask from "react-input-mask";
 
 function Teachers() {
   const [teachers, setTeachers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [students, setStudents] = useState([]);
+  const [teacherPayments, setTeacherPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState("");
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentFormData, setPaymentFormData] = useState({
+    teacher_id: "",
+    payment_type: "avans",
+    given_by: "",
+    payment_amount: "",
+  });
   const [groupsError, setGroupsError] = useState("");
   const [teachersError, setTeachersError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,10 +27,12 @@ function Teachers() {
   const [salaryFilter, setSalaryFilter] = useState("all");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [teacherGroups, setTeacherGroups] = useState([]);
+  const [teacherBalances, setTeacherBalances] = useState({});
 
-  const openDetailModal = (teacher) => {
+  const openDetailModal = async (teacher) => {
     setSelectedTeacher(teacher);
     const filteredGroups = groups
       .filter((group) => group.teacher_id === teacher.id)
@@ -35,6 +44,27 @@ function Teachers() {
       }));
     setTeacherGroups(filteredGroups);
     setIsDetailModalOpen(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/get_teacher_payments/${teacher.id}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        console.log(data);
+        setTeacherPayments(data);
+      } else {
+        setTeacherPayments([]);
+      }
+    } catch (err) {
+      console.error("To‘lovlarni olishda xatolik:", err);
+      setTeacherPayments([]);
+    }
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedTeacher(null);
+    setTeacherGroups([]);
   };
 
   const [editFormData, setEditFormData] = useState({
@@ -45,8 +75,11 @@ function Teachers() {
     birth_date: "",
     phone_number: "",
     subject: "",
-    salary_amount: "",
+    salary_amount: 0,
     got_salary_for_this_month: false,
+    username: "",
+    password: "",
+    hashPassword: false,
   });
 
   const [formData, setFormData] = useState({
@@ -56,9 +89,31 @@ function Teachers() {
     birth_date: "",
     phone_number: "",
     subject: "",
-    salary_amount: "",
+    salary_amount: 0,
     got_salary_for_this_month: false,
+    username: "",
+    password: "",
   });
+
+  const fetchTeacherBalance = async (teacherId) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/get_teacher_balance/${teacherId}`
+      );
+      if (response.ok) {
+        const balanceData = await response.json();
+        return balanceData.balance;
+      } else {
+        throw new Error("Balansni olishda xatolik");
+      }
+    } catch (err) {
+      toast.error("Balansni olishda xatolik", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return 0;
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -66,10 +121,20 @@ function Teachers() {
       setGroupsError("");
       setTeachersError("");
 
-      const [groupsResponse, teachersResponse, studentsResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({ ok: false })),
+      const [
+        groupsResponse,
+        teachersResponse,
+        studentsResponse,
+      ] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({
+          ok: false,
+        })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({
+          ok: false,
+        })),
+        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({
+          ok: false,
+        })),
       ]);
 
       if (groupsResponse.ok) {
@@ -87,6 +152,17 @@ function Teachers() {
       if (teachersResponse.ok) {
         const teachersData = await teachersResponse.json();
         setTeachers(teachersData);
+
+        const balancePromises = teachersData.map(async (teacher) => {
+          const balance = await fetchTeacherBalance(teacher.id);
+          return { id: teacher.id, balance };
+        });
+        const balances = await Promise.all(balancePromises);
+        const balanceMap = balances.reduce((acc, { id, balance }) => {
+          acc[id] = balance;
+          return acc;
+        }, {});
+        setTeacherBalances(balanceMap);
       } else {
         setTeachers([]);
         setTeachersError("Ustozlar hali mavjud emas");
@@ -123,30 +199,38 @@ function Teachers() {
 
   const addTeacher = async (e) => {
     e.preventDefault();
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_teacher`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          father_name: formData.father_name,
-          birth_date: formData.birth_date,
-          phone_number: formData.phone_number,
-          subject: formData.subject,
-          salary_amount: Number(formData.salary_amount),
-          got_salary_for_this_month: formData.got_salary_for_this_month,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/create_teacher`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            father_name: formData.father_name,
+            birth_date: formData.birth_date,
+            phone_number: formData.phone_number,
+            subject: formData.subject,
+            salary_amount: Number(formData.salary_amount),
+            got_salary_for_this_month: formData.got_salary_for_this_month,
+            username: formData.username,
+            password: formData.password !== "********" && formData.password !== "O‘rnatilmagan"
+              ? formData.password
+              : null
+          }),
+        }
+      );
 
       if (response.ok) {
         const newTeacher = await response.json();
         setTeachers([...teachers, newTeacher]);
-        toast.success("Yangi ustoz muvaffaqiyatli qo'shildi!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        // Yangi o'qituvchi uchun balansni olish
+        const balance = await fetchTeacherBalance(newTeacher.id);
+        setTeacherBalances((prev) => ({
+          ...prev,
+          [newTeacher.id]: balance,
+        }));
         setFormData({
           first_name: "",
           last_name: "",
@@ -154,10 +238,17 @@ function Teachers() {
           birth_date: "",
           phone_number: "",
           subject: "",
-          salary_amount: "",
+          salary_amount: 0,
           got_salary_for_this_month: false,
+          username: "",
+          password: "",
         });
-        setSearchTerm("");
+        setIsAddModalOpen(false);
+        fetchData(); // Refresh data after add
+        toast.success("Yangi ustoz muvaffaqiyatli qo'shildi!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       } else {
         throw new Error("Ustoz qo'shishda xatolik");
       }
@@ -171,13 +262,14 @@ function Teachers() {
 
   const updateTeacher = async (e) => {
     e.preventDefault();
-
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/update_teacher/${editFormData.id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             first_name: editFormData.first_name,
             last_name: editFormData.last_name,
@@ -187,26 +279,28 @@ function Teachers() {
             subject: editFormData.subject,
             salary_amount: Number(editFormData.salary_amount),
             got_salary_for_this_month: editFormData.got_salary_for_this_month,
+            username: editFormData.username,
+            password:
+              editFormData.password &&
+                editFormData.password !== "********" &&
+                editFormData.password !== "O‘rnatilmagan"
+                ? editFormData.password
+                : null,
           }),
         }
       );
 
-      if (response.ok) {
-        const updatedTeacher = await response.json();
-        setTeachers(teachers.map((t) => (t.id === editFormData.id ? updatedTeacher : t)));
-        toast.success("Ustoz ma'lumotlari muvaffaqiyatli yangilandi.", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        setIsEditModalOpen(false);
-      } else {
-        throw new Error("Ustoz yangilashda xatolik");
+      if (!response.ok) {
+        throw new Error("Xatolik yuz berdi");
       }
-    } catch (err) {
-      toast.error("Ustoz yangilashda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      else {
+        toast.success("O‘qituvchi ma’lumotlari yangilandi");
+      }
+      setIsEditModalOpen(false);
+      fetchData(); // ro‘yxatni yangilash
+    } catch (error) {
+      toast.error("Yangilashda muammo yuz berdi");
+      console.error(error);
     }
   };
 
@@ -221,10 +315,12 @@ function Teachers() {
 
       if (response.ok) {
         setTeachers(teachers.filter((t) => t.id !== id));
-        toast.success("Ustoz muvaffaqiyatli o'chirildi!", {
-          position: "top-right",
-          autoClose: 3000,
+        setTeacherBalances((prev) => {
+          const newBalances = { ...prev };
+          delete newBalances[id];
+          return newBalances;
         });
+        toast.success("Ustoz muvaffaqiyatli o'chirildi");
       } else {
         throw new Error("Ustoz o'chirishda xatolik");
       }
@@ -236,10 +332,95 @@ function Teachers() {
     }
   };
 
+  const openPaymentModal = (teacher) => {
+    setPaymentFormData({ ...paymentFormData, teacher_id: teacher.id });
+    setIsPaymentModalOpen(true);
+  };
+
+  const addPayment = async (e) => {
+    e.preventDefault();
+    try {
+      const currentBalance = teacherBalances[paymentFormData.teacher_id] || 0;
+      if (Number(paymentFormData.payment_amount) > currentBalance) {
+        toast.error(
+          `Kiritilgan summa ustoz balansidan katta!\nBalans: ${currentBalance.toLocaleString(
+            "uz-UZ"
+          )} so'm`,
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
+        );
+        return;
+      }
+      else if (Number(paymentFormData.payment_amount) < 1000) {
+        toast.error(
+          `Kamida 1000 so'm kiritish shart!
+Balans: ${currentBalance.toLocaleString(
+            "uz-UZ"
+          )} so'm`,
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
+        );
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/create_payment_teacher`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teacher_id: paymentFormData.teacher_id,
+            payment_type: paymentFormData.payment_type,
+            given_by: paymentFormData.given_by,
+            payment_amount: Number(paymentFormData.payment_amount),
+            given_date: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const newPayment = await response.json();
+        setTeacherPayments([...teacherPayments, newPayment]);
+        const updatedBalance = await fetchTeacherBalance(
+          paymentFormData.teacher_id
+        );
+        setTeacherBalances((prev) => ({
+          ...prev,
+          [paymentFormData.teacher_id]: updatedBalance,
+        }));
+        toast.success("To'lov muvaffaqiyatli qo'shildi!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setIsPaymentModalOpen(false);
+        setPaymentFormData({
+          teacher_id: "",
+          payment_type: "avans",
+          given_by: "",
+          payment_amount: "",
+        });
+      } else {
+        throw new Error("To'lov qo'shishda xatolik");
+      }
+    } catch (err) {
+      toast.error("To'lov qo'shishda xatolik: " + err.message, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
   const showDeleteToast = (id) => {
     toast(
       <div>
-        <p>Diqqat! Ushbu ustozga tegishli barcha ma'lumotlar o'chiriladi! O'chirishga ishonchingiz komilmi?</p>
+        <p>
+          Diqqat! Ushbu ustozga tegishli barcha ma'lumotlar o'chiriladi!
+          O'chirishga ishonchingiz komilmi?
+        </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
@@ -282,30 +463,32 @@ function Teachers() {
     );
   };
 
-  const openEditModal = (teacher) => {
+  const openEditModal = async (teacher) => {
     setEditFormData({
       id: teacher.id,
-      first_name: teacher.first_name,
-      last_name: teacher.last_name,
-      father_name: teacher.father_name,
-      birth_date: teacher.birth_date,
-      phone_number: teacher.phone_number,
-      subject: teacher.subject,
-      salary_amount: teacher.salary_amount,
-      got_salary_for_this_month: teacher.got_salary_for_this_month,
+      first_name: teacher.first_name || "",
+      last_name: teacher.last_name || "",
+      father_name: teacher.father_name || "",
+      birth_date: teacher.birth_date || "",
+      phone_number: teacher.phone_number || "",
+      subject: teacher.subject || "",
+      salary_amount: teacher.salary_amount || 0,
+      got_salary_for_this_month: teacher.got_salary_for_this_month || false,
+      username: teacher.username || "",
+      password: teacher.password ? "********" : "O‘rnatilmagan",
+      hashPassword: teacher.password || false,
     });
     setIsEditModalOpen(true);
   };
 
-  // Extract unique subjects from teachers
-  const uniqueSubjects = [...new Set(teachers.map((teacher) => teacher.subject))];
-
   const filteredTeachers = teachers.filter((teacher) => {
-    const nameMatch = `${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""}`
+    const nameMatch = `${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""
+      }`
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
 
-    const subjectMatch = subjectFilter === "all" || teacher.subject === subjectFilter;
+    const subjectMatch =
+      subjectFilter === "all" || teacher.subject === subjectFilter;
     const salaryMatch =
       salaryFilter === "all" ||
       (salaryFilter === "paid" && teacher.got_salary_for_this_month) ||
@@ -338,147 +521,262 @@ function Teachers() {
 
   return (
     <div>
-      <h1>Ustozlar</h1>
-{/* 
-      {success && <div className="success">{success}</div>}
-      {groupsError && <div className="error">{groupsError}</div>}
-      {teachersError && <div className="error">{teachersError}</div>} */}
-
       <ToastContainer />
-
-      {/* Ustoz qo'shish formasi */}
-      <div className="card">
-        <h3 style={{ marginBottom: "20px" }}>Yangi ustoz qo'shish</h3>
-        <form onSubmit={addTeacher}>
-          <div
-            className="form-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "16px",
-              padding: "16px",
-            }}
-          >
-            <div className="form-group">
-              <label>Ism</label>
-              <input
-                type="text"
-                className="input"
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                placeholder="Ustoz ismi"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Familiya</label>
-              <input
-                type="text"
-                className="input"
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                placeholder="Ustoz familiyasi"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Otasining ismi</label>
-              <input
-                type="text"
-                className="input"
-                value={formData.father_name}
-                onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
-                placeholder="Otasining ismi (ixtiyoriy)"
-              />
-            </div>
-            <div className="form-group">
-              <label>Tug'ilgan sana</label>
-              <input
-                type="date"
-                className="input"
-                value={formData.birth_date}
-                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Telefon raqami</label>
-              <InputMask
-                mask="+998 (99) 999-99-99"
-                value={formData.phone_number}
-                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-              >
-                {(inputProps) => (
-                  <input
-                    {...inputProps}
-                    type="tel"
-                    className="input"
-                    placeholder="+998 (99) 999-99-99"
-                    required
-                  />
-                )}
-              </InputMask>
-            </div>
-            <div className="form-group">
-              <label>Fan</label>
-              <input
-                type="text"
-                className="input"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                placeholder="O'qitadigan fani"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Oylik maosh</label>
-              <input
-                type="number"
-                className="input"
-                value={formData.salary_amount}
-                onChange={(e) => setFormData({ ...formData, salary_amount: e.target.value })}
-                placeholder="Maosh miqdori"
-                min="0"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Ushbu oy uchun maosh olganmi?</label>
-              <div style={{ marginTop: "8px" }}>
-                <label style={{ marginRight: "16px" }}>
-                  <input
-                    type="radio"
-                    name="salary"
-                    style={{ scale: "1.5", marginLeft: "5px", cursor: "pointer" }}
-                    checked={formData.got_salary_for_this_month === true}
-                    onChange={() =>
-                      setFormData({ ...formData, got_salary_for_this_month: true })
-                    }
-                  />{" "}
-                  Ha
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="salary"
-                    style={{ scale: "1.5", marginLeft: "5px", cursor: "pointer" }}
-                    checked={formData.got_salary_for_this_month === false}
-                    onChange={() =>
-                      setFormData({ ...formData, got_salary_for_this_month: false })
-                    }
-                  />{" "}
-                  Yo'q
-                </label>
-              </div>
-            </div>
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Ustoz qo'shish
-          </button>
-        </form>
+      <div className="flex justify-between items-center gap-2 pl-6 pr-6 mb-6">
+        <div className="flex items-center gap-2">
+          <GraduationCap size={24} color="#104292" />
+          <h1 className="text-2xl font-bold">Ustozlar</h1>
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => setIsAddModalOpen(true)}
+          style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          <Plus size={20} />
+          Yangi ustoz qo'shish
+        </button>
       </div>
 
-      {/* Ustoz yangilash modali */}
+      {isAddModalOpen && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            style={{
+              backgroundColor: "#fff",
+              padding: "20px",
+              borderRadius: "10px",
+              width: "500px",
+              maxWidth: "90%",
+            }}
+          >
+            <h3 style={{ marginBottom: "20px", fontWeight: "bold", fontSize: "1.2rem", textAlign: "center" }}>Yangi ustoz qo'shish</h3>
+            <form onSubmit={addTeacher}>
+              <div
+                className="form-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                  gap: "16px",
+                  padding: "16px",
+                }}
+              >
+                <div className="form-group">
+                  <label>Ism</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.first_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, first_name: e.target.value })
+                    }
+                    placeholder="Ustoz ismi"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Familiya</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.last_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, last_name: e.target.value })
+                    }
+                    placeholder="Ustoz familiyasi"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Otasining ismi</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.father_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, father_name: e.target.value })
+                    }
+                    placeholder="Otasining ismi (ixtiyoriy)"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tug'ilgan sana</label>
+                  <input
+                    type="date"
+                    className="input"
+                    value={formData.birth_date}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birth_date: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Telefon raqami</label>
+                  <input
+                    type="tel"
+                    className="input"
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_number: e.target.value })
+                    }
+                    placeholder="+998 (__) ___-__-__"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Fan</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.subject}
+                    onChange={(e) =>
+                      setFormData({ ...formData, subject: e.target.value })
+                    }
+                    placeholder="O'qitadigan fani"
+                    required
+                  />
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                  marginTop: "16px",
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setIsAddModalOpen(false)}
+                >
+                  Bekor qilish
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Ustoz qo'shish
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isPaymentModalOpen && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            style={{
+              backgroundColor: "#fff",
+              padding: "20px",
+              borderRadius: "10px",
+              width: "400px",
+              maxWidth: "90%",
+            }}
+          >
+            <h3 style={{ marginBottom: "16px", textAlign: "center", fontSize: "1.3rem", fontWeight: "700" }}>To'lov qo'shish</h3>
+            <form onSubmit={addPayment}>
+              <div className="form-group">
+                <label>To'lov turi</label>
+                <select
+                  className="input"
+                  value={paymentFormData.payment_type}
+                  onChange={(e) =>
+                    setPaymentFormData({
+                      ...paymentFormData,
+                      payment_type: e.target.value,
+                    })
+                  }
+                  required
+                >
+                  <option value="avans">Avans</option>
+                  <option value="hisob">Hisob</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Kim tomonidan berildi</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={paymentFormData.given_by}
+                  onChange={(e) =>
+                    setPaymentFormData({
+                      ...paymentFormData,
+                      given_by: e.target.value,
+                    })
+                  }
+                  placeholder="Kim tomonidan berildi"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>To'lov summasi</label>
+                <input
+                  type="number"
+                  className="input"
+                  value={paymentFormData.payment_amount}
+                  onChange={(e) =>
+                    setPaymentFormData({
+                      ...paymentFormData,
+                      payment_amount: e.target.value,
+                    })
+                  }
+                  placeholder="To'lov summasi"
+                  min="0"
+                  required
+                />
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                  marginTop: "16px",
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setIsPaymentModalOpen(false)}
+                >
+                  Bekor qilish
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  To'lov qo'shish
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {isEditModalOpen && (
         <div
           className="modal-backdrop"
@@ -505,7 +803,9 @@ function Teachers() {
               maxWidth: "90%",
             }}
           >
-            <h3 style={{ marginBottom: "16px" }}>Ustoz ma'lumotlarini yangilash</h3>
+            <h3 style={{ marginBottom: "16px", textAlign: "center", fontSize: "1.3rem", fontWeight: "700" }}>
+              Ustoz ma'lumotlarini yangilash
+            </h3>
             <form onSubmit={updateTeacher}>
               <div
                 className="form-grid"
@@ -523,7 +823,10 @@ function Teachers() {
                     className="input"
                     value={editFormData.first_name}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, first_name: e.target.value })
+                      setEditFormData({
+                        ...editFormData,
+                        first_name: e.target.value,
+                      })
                     }
                     placeholder="Ustoz ismi"
                     required
@@ -536,7 +839,10 @@ function Teachers() {
                     className="input"
                     value={editFormData.last_name}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, last_name: e.target.value })
+                      setEditFormData({
+                        ...editFormData,
+                        last_name: e.target.value,
+                      })
                     }
                     placeholder="Ustoz familiyasi"
                     required
@@ -549,7 +855,10 @@ function Teachers() {
                     className="input"
                     value={editFormData.father_name}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, father_name: e.target.value })
+                      setEditFormData({
+                        ...editFormData,
+                        father_name: e.target.value,
+                      })
                     }
                     placeholder="Otasining ismi (ixtiyoriy)"
                   />
@@ -561,7 +870,10 @@ function Teachers() {
                     className="input"
                     value={editFormData.birth_date}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, birth_date: e.target.value })
+                      setEditFormData({
+                        ...editFormData,
+                        birth_date: e.target.value,
+                      })
                     }
                     required
                   />
@@ -573,9 +885,12 @@ function Teachers() {
                     className="input"
                     value={editFormData.phone_number}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, phone_number: e.target.value })
+                      setEditFormData({
+                        ...editFormData,
+                        phone_number: e.target.value,
+                      })
                     }
-                    placeholder="+998901234567"
+                    placeholder="+998 (__) ___-__-__"
                     required
                   />
                 </div>
@@ -586,58 +901,55 @@ function Teachers() {
                     className="input"
                     value={editFormData.subject}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, subject: e.target.value })
+                      setEditFormData({
+                        ...editFormData,
+                        subject: e.target.value,
+                      })
                     }
                     placeholder="O'qitadigan fani"
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Oylik maosh</label>
+                  <label>Foydalanuvchi nomi</label>
                   <input
-                    type="number"
+                    type="text"
                     className="input"
-                    value={editFormData.salary_amount}
+                    value={editFormData.username || "O‘rnatilmagan"}
+                    onFocus={(e) => {
+                      if (e.target.value === "O‘rnatilmagan") {
+                        setEditFormData({ ...editFormData, username: "" });
+                      }
+                    }}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, salary_amount: e.target.value })
+                      setEditFormData({
+                        ...editFormData,
+                        username: e.target.value,
+                      })
                     }
-                    placeholder="Maosh miqdori"
-                    min="0"
-                    required
+                    placeholder="Foydalanuvchi nomini kiriting"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Ushbu oy uchun maosh olganmi?</label>
-                  <div style={{ marginTop: "8px" }}>
-                    <label style={{ marginRight: "16px" }}>
-                      <input
-                        type="radio"
-                        name="edit_salary"
-                        checked={editFormData.got_salary_for_this_month === true}
-                        onChange={() =>
-                          setEditFormData({
-                            ...editFormData,
-                            got_salary_for_this_month: true,
-                          })
-                        }
-                      />{" "}
-                      Ha
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="edit_salary"
-                        checked={editFormData.got_salary_for_this_month === false}
-                        onChange={() =>
-                          setEditFormData({
-                            ...editFormData,
-                            got_salary_for_this_month: false,
-                          })
-                        }
-                      />{" "}
-                      Yo'q
-                    </label>
-                  </div>
+                  <label>Parol</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={editFormData.password}
+                    onFocus={(e) => {
+                      if (e.target.value === "********" || e.target.value === "O‘rnatilmagan") {
+                        setEditFormData({ ...editFormData, password: "" });
+                      }
+                    }}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        password: e.target.value,
+                        hasPassword: true,
+                      })
+                    }
+                    placeholder="Yangi parol kiriting"
+                  />
                 </div>
               </div>
               <div
@@ -664,7 +976,6 @@ function Teachers() {
         </div>
       )}
 
-      {/* Ustoz ma'lumotlari modali */}
       {isDetailModalOpen && selectedTeacher && (
         <div
           className="modal-backdrop"
@@ -687,27 +998,75 @@ function Teachers() {
               backgroundColor: "#fff",
               padding: "20px",
               borderRadius: "10px",
-              width: "600px",
-              maxWidth: "90%",
+              width: "800px",
+              maxWidth: "95%",
               maxHeight: "90vh",
               overflowY: "auto",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
             }}
           >
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
+                justifyContent: "end",
                 alignItems: "center",
                 marginBottom: "20px",
               }}
             >
-              <h2>Ustoz ma'lumotlari</h2>
               <button
-                onClick={() => setIsDetailModalOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer" }}
+                onClick={closeDetailModal}
+                style={{
+                  background: "red",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#fff",
+                  padding: "8px",
+                  borderRadius: "50%",
+                }}
               >
                 <X size={24} />
               </button>
+            </div>
+            <div>
+              <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", textAlign: "center" }}>Ustoz ma'lumotlari</h2>
+            </div>
+            <div style={{ marginBottom: "24px" }}>
+              <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Ism</td>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.first_name}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Familiya</td>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.last_name}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Otasining ismi</td>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.father_name || "Mavjud emas"}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Tug'ilgan sana</td>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>
+                      {new Date(selectedTeacher.birth_date).toLocaleDateString("ru-RU")}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Telefon</td>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.phone_number}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Fan</td>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.subject}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Joriy balans</td>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>
+                      {(teacherBalances[selectedTeacher.id] || 0).toLocaleString("ru-RU")} so'm
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             <div style={{ marginBottom: "24px" }}>
@@ -716,50 +1075,63 @@ function Teachers() {
                   marginBottom: "16px",
                   borderBottom: "1px solid #eee",
                   paddingBottom: "8px",
+                  fontSize: "1.2rem",
+                  fontWeight: "600",
+                  textAlign: "center",
                 }}
               >
-                Asosiy ma'lumotlar
+                To'lovlar tarixi
               </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                <div>
-                  <p>
-                    <strong>Ism:</strong> {selectedTeacher.first_name}
-                  </p>
-                  <p>
-                    <strong>Familiya:</strong> {selectedTeacher.last_name}
-                  </p>
-                  <p>
-                    <strong>Otasining ismi:</strong>{" "}
-                    {selectedTeacher.father_name || "Mavjud emas"}
-                  </p>
-                </div>
-                <div>
-                  <p>
-                    <strong>Tug'ilgan sana:</strong>{" "}
-                    {new Date(selectedTeacher.birth_date).toLocaleDateString("uz-UZ")}
-                  </p>
-                  <p>
-                    <strong>Telefon:</strong> {selectedTeacher.phone_number}
-                  </p>
-                  <p>
-                    <strong>Fan:</strong> {selectedTeacher.subject}
-                  </p>
-                </div>
-              </div>
-              <div style={{ marginTop: "16px" }}>
-                <p>
-                  <strong>Oylik maosh:</strong>{" "}
-                  {Number(selectedTeacher.salary_amount).toLocaleString("uz-UZ")} so'm
+              {teacherPayments.filter((p) => p.teacher_id === selectedTeacher.id)
+                .length > 0 ? (
+                <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>№</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>To'lov turi</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Summasi</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Kim tomonidan</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Sana</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teacherPayments
+                      .filter((p) => p.teacher_id === selectedTeacher.id)
+                      .map((payment, index) => (
+                        <tr key={payment.id}>
+                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{index + 1}</td>
+                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
+                            {payment.payment_type === "avans"
+                              ? "Avans"
+                              : "Hisob"}
+                          </td>
+                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
+                            {Number(payment.payment_amount).toLocaleString(
+                              "ru-RU"
+                            )}{" "}
+                            so'm
+                          </td>
+                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{payment.given_by}</td>
+                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
+                            {new Date(payment.given_date).toLocaleDateString(
+                              "ru-RU"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p
+                  style={{
+                    textAlign: "center",
+                    padding: "20px",
+                    color: "#666",
+                  }}
+                >
+                  To'lovlar tarixi mavjud emas
                 </p>
-                <p>
-                  <strong>Maosh holati:</strong>{" "}
-                  {selectedTeacher.got_salary_for_this_month ? (
-                    <span style={{ color: "#388e3c" }}>Berildi</span>
-                  ) : (
-                    <span style={{ color: "#d32f2f" }}>Berilmagan</span>
-                  )}
-                </p>
-              </div>
+              )}
             </div>
 
             <div>
@@ -768,53 +1140,74 @@ function Teachers() {
                   marginBottom: "16px",
                   borderBottom: "1px solid #eee",
                   paddingBottom: "8px",
+                  fontSize: "1.2rem",
+                  fontWeight: "600",
+                  textAlign: "center",
                 }}
               >
                 Guruhlar ({teacherGroups.length} ta)
               </h3>
               {teacherGroups.length > 0 ? (
-                <table className="table" style={{ width: "100%" }}>
+                <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      <th>№</th>
-                      <th>Guruh nomi</th>
-                      <th>O'quvchilar soni</th>
-                      <th>Kunlari</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>№</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Guruh nomi</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>O'quvchilar soni</th>
+                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Kunlari</th>
                     </tr>
                   </thead>
                   <tbody>
                     {teacherGroups.map((group, index) => (
                       <tr key={group.id}>
-                        <td>{index + 1}</td>
-                        <td>{group.group_subject}</td>
-                        <td>{group.students_amount || 0}</td>
-                        <td>{group.days || "Mavjud emas"}</td>
+                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{index + 1}</td>
+                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{group.group_subject}</td>
+                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{group.students_amount || 0}</td>
+                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{group.days || "Mavjud emas"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <p style={{ textAlign: "center", padding: "20px", color: "#666" }}>
+                <p
+                  style={{
+                    textAlign: "center",
+                    padding: "20px",
+                    color: "#666",
+                  }}
+                >
                   Ustozga hozircha guruh biriktirilmagan
                 </p>
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "20px",
+                gap: "10px",
+              }}
+            >
               <button
                 className="btn btn-primary"
                 onClick={() => {
                   setIsDetailModalOpen(false);
-                  openEditModal(selectedTeacher);
+                  openPaymentModal(selectedTeacher)
                 }}
-                style={{ marginRight: "10px" }}
+              >
+                To'lov qo'shish
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  openEditModal(selectedTeacher)
+                }}
               >
                 Tahrirlash
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setIsDetailModalOpen(false)}
-              >
+              <button className="btn btn-secondary" onClick={closeDetailModal}>
                 Yopish
               </button>
             </div>
@@ -826,28 +1219,34 @@ function Teachers() {
         <table className="table">
           <thead>
             <tr>
-              <th>№</th>
-              <th>F.I.Sh.</th>
-              <th>Tug'ilgan sana</th>
-              <th>Fan</th>
-              <th>Oylik maosh</th>
-              <th>Maosh holati</th>
-              <th>Guruhlar soni</th>
-              <th>Amallar</th>
+              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>№</th>
+              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>F.I.Sh.</th>
+              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Tug'ilgan sana</th>
+              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Fan</th>
+              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Guruhlar soni</th>
+              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Joriy balans (so'm)</th> {/* O'zgartirilgan sarlavha */}
+              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Amallar</th>
             </tr>
           </thead>
           <tbody>
             {filteredTeachers.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: "center", padding: "40px" }}>
-                  {searchTerm || subjectFilter !== "all" || salaryFilter !== "all"
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "40px" }}
+                >
+                  {searchTerm ||
+                    subjectFilter !== "all" ||
+                    salaryFilter !== "all"
                     ? "Qidiruv bo'yicha natija topilmadi"
                     : teachersError || "Hali ustozlar qo'shilmagan"}
                 </td>
               </tr>
             ) : (
               filteredTeachers.map((teacher, index) => {
-                const groupsCount = groups.filter((g) => g.teacher_id === teacher.id).length;
+                const groupsCount = groups.filter(
+                  (g) => g.teacher_id === teacher.id
+                ).length;
                 return (
                   <tr key={teacher.id}>
                     <td>{index + 1}</td>
@@ -855,49 +1254,44 @@ function Teachers() {
                       style={{ cursor: "pointer", color: "#104292" }}
                       onClick={() => openDetailModal(teacher)}
                     >
-                      {`${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""}`}
+                      {`${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""
+                        }`}
                     </td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       {teacher.birth_date
-                        ? new Date(teacher.birth_date).toLocaleDateString("uz-UZ")
+                        ? new Date(teacher.birth_date).toLocaleDateString(
+                          "uz-UZ"
+                        )
                         : "N/A"}
                     </td>
-                    <td>{teacher.subject || "N/A"}</td>
-                    <td>
-                      {teacher.salary_amount
-                        ? Number(teacher.salary_amount).toLocaleString("uz-UZ") + " so'm"
-                        : "N/A"}
+                    <td style={{ textAlign: "center" }}>{teacher.subject || "N/A"}</td>
+                    <td style={{ textAlign: "center" }}>{groupsCount} ta</td>
+                    <td style={{ textAlign: "center" }}>
+                      {(teacherBalances[teacher.id] || 0).toLocaleString(
+                        "uz-UZ"
+                      )}{" "}
+                      so'm
                     </td>
-                    <td>
-                      {teacher.got_salary_for_this_month ? (
-                        <span style={{ color: "#388e3c" }}>Berildi</span>
-                      ) : (
-                        <span style={{ color: "#d32f2f" }}>Berilmagan</span>
-                      )}
-                    </td>
-                    <td>{groupsCount} ta</td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>              <button
+                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(teacher);
+                      }}
+                      title="Tahrirlash"
+                    >
+                      <Pen size={16} />
+                    </button>
                       <button
-                        className="btn btn-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(teacher);
-                        }}
-                        style={{ marginRight: "6px", padding: "4px 8px" }}
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        className="btn btn-danger"
+                        className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition ml-2"
                         onClick={(e) => {
                           e.stopPropagation();
                           showDeleteToast(teacher.id);
                         }}
-                        style={{ padding: "4px 8px" }}
+                        title="O'chirish"
                       >
                         <Trash2 size={16} />
-                      </button>
-                    </td>
+                      </button></td>
                   </tr>
                 );
               })

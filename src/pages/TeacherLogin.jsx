@@ -1,47 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, AnimatePresence } from "framer-motion";
 
-function Login({ setIsAuthenticated }) {
-  const [email, setEmail] = useState("");
+function TeacherLogin({ setTeacherAuthenticated }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const savedEmail = localStorage.getItem("savedEmail");
-    if (savedEmail) setEmail(savedEmail);
-  }, []);
-
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
+      setLoading(true);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/teacher_login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
         credentials: "include",
-        body: JSON.stringify({ email, password }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.message || "Email yoki parol noto‘g‘ri");
-
-      localStorage.setItem("savedEmail", email);
-
-      setIsAuthenticated(true);
-      setShowSuccess(true);
-
-      setTimeout(() => navigate("/dashboard"), 2000);
+      const data = await res.json();
+      if (data.status === "success") {
+        setTeacherAuthenticated(true);
+        setShowSuccess(true);
+        setTimeout(() => navigate("/teacher/dashboard"), 2000);
+      } else {
+        toast.error(data.message || "Login xatolik");
+      }
     } catch (err) {
-      toast.error(err.message || "Kirishda xatolik yuz berdi");
+      toast.error(`Server bilan aloqa xatolik: ${err}`);
     } finally {
       setLoading(false);
     }
@@ -51,7 +42,7 @@ function Login({ setIsAuthenticated }) {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 relative overflow-hidden px-4">
       <ToastContainer />
 
-      {/* ✅ Success overlay (tick bilan) */}
+      {/* Success overlay */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
@@ -82,7 +73,6 @@ function Login({ setIsAuthenticated }) {
                   <path
                     className="stroke-green-500"
                     fill="none"
-                    strokeWidth="2"
                     d="M14.1 27.2l7.1 7.2 16.7-16.8"
                     strokeDasharray="48"
                     strokeDashoffset="48"
@@ -116,26 +106,24 @@ function Login({ setIsAuthenticated }) {
 
         {/* Title */}
         <h1 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-2">
-          "Intellectually Progress Star"
+          "Intellectual Progress Star"
         </h1>
         <p className="text-center text-gray-600 text-sm sm:text-base mb-6">
-          <span className="text-blue-600 font-semibold">CRM</span> tizimiga kirish
+          <span className="text-blue-600 font-semibold">Ustozlar</span> platformasiga xush kelibsiz!
         </p>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 w-full">
+        <form onSubmit={handleLogin} className="space-y-4 w-full">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              Foydalanuvchi nomi
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
-              placeholder="Email kiriting"
               autoComplete="username"
-              required
             />
           </div>
           <div>
@@ -147,9 +135,7 @@ function Login({ setIsAuthenticated }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
-              placeholder="Parolni kiriting"
               autoComplete="current-password"
-              required
             />
           </div>
 
@@ -175,18 +161,8 @@ function Login({ setIsAuthenticated }) {
             )}
           </motion.button>
         </form>
-
-        <div className="text-right mt-4 w-full">
-          <span
-            onClick={() => navigate("/teacher/login")}
-            className="text-blue-600 underline cursor-pointer hover:text-blue-400"
-          >
-            Ustozlar paneliga o'tish
-          </span>
-        </div>
       </motion.div>
 
-      {/* ✅ tick animatsiya keyframes */}
       <style jsx>{`
         @keyframes tickStroke {
           to {
@@ -198,4 +174,4 @@ function Login({ setIsAuthenticated }) {
   );
 }
 
-export default Login;
+export default TeacherLogin;

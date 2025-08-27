@@ -1,4 +1,4 @@
-  "use client";
+"use client";
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect, Suspense, lazy } from "react";
@@ -8,6 +8,9 @@ import LottieLoading from "./components/Loading";
 import LottieNotFound from "./components/LottieNotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./i18n";
+import Expenses from "./pages/Expenses";
+import Notes from "./pages/Notes";
+import Calculator from "./pages/Calculator";
 
 // Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -19,38 +22,54 @@ const Requests = lazy(() => import("./pages/Requests"));
 const Teachers = lazy(() => import("./pages/Teachers"));
 const RoomManagement = lazy(() => import("./pages/Classroom"));
 const Login = lazy(() => import("./pages/Login"));
+const TeacherLogin = lazy(() => import("./pages/TeacherLogin"));
+const TeacherDashboard = lazy(() => import("./pages/TeacherDashboard"));
+const TeacherAttendance = lazy(() => import("./pages/TeacherAttendance"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
 }
 
+function TeacherRoute({ children, isAuthenticated }) {
+  return isAuthenticated ? children : <Navigate to="/teacher/login" />;
+}
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Admin autentifikatsiyasi
+  const [teacherAuthenticated, setTeacherAuthenticated] = useState(false); // O'qituvchi autentifikatsiyasi
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Backenddan autentifikatsiyani tekshirish
-    const checkAuth = async () => {
+    // Admin auth check
+    const checkAdminAuth = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/check-auth`, {
           method: "GET",
-          credentials: "include", // HttpOnly cookie'lar bilan ishlash
+          credentials: "include", // cookie yuboradi
         });
-
-        if (response.ok) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
+        setIsAuthenticated(response.ok);
+      } catch {
         setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
       }
     };
 
-    checkAuth();
+    // Teacher auth check
+    const checkTeacherAuth = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/check-teacher-auth`, {
+          method: "GET",
+          credentials: "include", // cookie yuboradi
+        });
+        setTeacherAuthenticated(response.ok);
+      } catch {
+        setTeacherAuthenticated(false);
+      }
+    };
+
+    Promise.all([checkAdminAuth(), checkTeacherAuth()]).finally(() =>
+      setLoading(false)
+    );
   }, []);
 
   if (loading) {
@@ -62,10 +81,19 @@ function App() {
       <Suspense fallback={<LottieLoading />}>
         <ErrorBoundary>
           <Routes>
+            {/* Admin Login */}
             <Route
               path="/login"
               element={<Login setIsAuthenticated={setIsAuthenticated} />}
             />
+
+            {/* Teacher Login */}
+            <Route
+              path="/teacher/login"
+              element={<TeacherLogin setTeacherAuthenticated={setTeacherAuthenticated} />}
+            />
+
+            {/* Admin Dashboard va boshqa sahifalar */}
             <Route
               path="/"
               element={
@@ -88,6 +116,22 @@ function App() {
                 </PrivateRoute>
               }
             />
+
+            <Route
+              path="/calculator"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <Calculator />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+
             <Route
               path="/students"
               element={
@@ -186,6 +230,71 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <AdminDashboard />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Teacher Dashboard va Attendance */}
+            <Route
+              path="/teacher/dashboard"
+              element={
+                <TeacherRoute isAuthenticated={teacherAuthenticated}>
+                  <TeacherDashboard />
+                </TeacherRoute>
+              }
+            />
+            <Route
+              path="/teacher/attendance/:groupId"
+              element={
+                <TeacherRoute isAuthenticated={teacherAuthenticated}>
+                  <TeacherAttendance />
+                </TeacherRoute>
+              }
+            />
+
+            {/* Expenses */}
+            <Route
+              path="/expenses"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <Expenses />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Notes */}
+            <Route
+              path="/notes"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <Notes />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+
             <Route path="*" element={<LottieNotFound />} />
           </Routes>
         </ErrorBoundary>
