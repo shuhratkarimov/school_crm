@@ -405,11 +405,6 @@ async function getAvailableRooms(
       },
     });
 
-    console.log("Query params:", req.query);
-    console.log("Parsed days:", parsedDays);
-    console.log("Conflicting schedules:", conflictingSchedules.length);
-    console.log("Available rooms:", availableRooms.length);
-
     res.status(200).json(availableRooms);
   } catch (error: any) {
     next(error);

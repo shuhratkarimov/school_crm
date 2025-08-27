@@ -19,7 +19,8 @@ import { CenterRouter } from './router/centers.router';
 import { NotificationsRouter } from './router/notifications_router';
 import { RoomRouter } from './router/room.router';
 import ScheduleRouter from './router/schedules.router';
-
+import { NoteRouter } from './router/note.router';
+import { ExpenseRouter } from './router/expenses.router';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -29,7 +30,7 @@ const app = express();
 app.use(i18nextMiddleware.handle(i18next));
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ credentials: true, origin: process.env.ALLOWED_ORIGINS || '*' }));
+app.use(cors({ credentials: true, origin: process.env.ALLOWED_ORIGINS }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
@@ -43,7 +44,9 @@ app.use(SearchRouter);
 app.use(NotificationsRouter);
 app.use(CenterRouter);
 app.use(RoomRouter);
-app.use(ScheduleRouter)
+app.use(ScheduleRouter);
+app.use(NoteRouter);
+app.use(ExpenseRouter);
 
 // Error handling
 app.use(errorMiddleware as any);

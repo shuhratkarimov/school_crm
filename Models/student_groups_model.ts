@@ -25,7 +25,15 @@ StudentGroup.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false
-    }
+    },
+    month: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    year: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   },
   {
     sequelize,
@@ -36,6 +44,6 @@ StudentGroup.init(
   }
 );
 
-StudentGroup.sync({force: true})
+StudentGroup.sync({force: false})
 
 export default StudentGroup;

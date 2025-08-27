@@ -2,9 +2,11 @@ import schedule from 'node-cron';
 import { Sequelize, Op } from 'sequelize';
 import { sendSMS } from '../Utils/sms-service';
 import { Student, Payment } from '../Models/index';
+import cron from "node-cron";
+import { resetPaymentsForNewMonth } from "../Utils/reset-payment";
 
 const task = schedule.schedule(
-  '47 17 * * *', // Har kuni soat 17:45 da ishlaydi
+  '47 17 * * *',
   async () => {
     try {
       const now = new Date();
@@ -16,7 +18,7 @@ const task = schedule.schedule(
             required: false,
             where: {
               for_which_month: currentMonth,
-              id: { [Op.is]: null }, // Faqat to'lov amalga oshirilmagan talabalar
+              id: { [Op.is]: null },
             },
           },
         ],
@@ -37,3 +39,7 @@ const task = schedule.schedule(
     timezone: 'Asia/Tashkent'
   }
 );
+
+cron.schedule("0 0 1 * *", async () => {
+  await resetPaymentsForNewMonth();
+});

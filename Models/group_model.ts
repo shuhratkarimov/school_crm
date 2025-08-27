@@ -37,7 +37,7 @@ Group.init(
       onUpdate: 'CASCADE',
     },
     monthly_fee: {
-      type: DataTypes.DECIMAL(10, 2),
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     students_amount: {

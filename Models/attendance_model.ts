@@ -1,7 +1,7 @@
-import { Model, DataTypes } from 'sequelize';
-import sequelize from '../config/database.config';
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../config/database.config";
 
-class Attendance extends Model {}
+export class Attendance extends Model {}
 Attendance.init(
   {
     id: {
@@ -13,30 +13,59 @@ Attendance.init(
     group_id: {
       type: DataTypes.UUID,
       allowNull: false,
-      references: {
-        model: 'groups',
-        key: 'id',
-      },
-      onDelete: 'CASCADE',
-      onUpdate: 'CASCADE',
     },
     date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-    },
-    came_students: {
-      type: DataTypes.JSONB,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
   },
   {
     sequelize,
-    tableName: 'attendances',
+    tableName: "attendances",
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 );
 
-export default Attendance;
+export class AttendanceRecord extends Model {}
+AttendanceRecord.init(
+  {
+    id: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4,
+    },
+    attendance_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+    student_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM("present", "absent"),
+      allowNull: false,
+    },
+    reason: {
+      type: DataTypes.ENUM("excused", "unexcused"),
+      allowNull: true,
+    },
+    note: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+  },
+  {
+    sequelize,
+    tableName: "attendance_records",
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  }
+);
+
+Attendance.sync({ force: false });
+AttendanceRecord.sync({ force: false });

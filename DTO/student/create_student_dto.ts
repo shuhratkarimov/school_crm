@@ -11,4 +11,6 @@ export interface ICreateStudentDto {
   came_in_school?: string;
   img_url?: string;
   left_school?: string;
+  month: number;
+  year: number
 }

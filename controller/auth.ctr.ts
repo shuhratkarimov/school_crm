@@ -9,6 +9,7 @@ import i18next from "../Utils/lang";
 import { ICreateUserDto } from "../DTO/user/create_user_dto";
 import { IVerifyEmailDto } from "../DTO/user/verify_user_dto";
 import { ILoginDto } from "../DTO/user/login_user_dto";
+import { Teacher } from "../Models";
 
 dotenv.config();
 
@@ -25,6 +26,21 @@ async function checkAuth(req: Request, res: Response, next: NextFunction) {
     res.status(200).json({ message: "Authenticated" });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
+  }
+}
+
+async function checkTeacherAuth(req: Request, res: Response) {
+  try {
+    const token = req.cookies.accesstoken;
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+    const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
+    const teacher = await Teacher.findByPk(decoded.id);
+    if (!teacher) return res.status(401).json({ message: "Teacher not found" });
+
+    res.status(200).json({ teacher: { id: teacher.dataValues.id, username: teacher.dataValues.username } });
+  } catch (err) {
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 }
 
@@ -240,4 +256,4 @@ function logout(req: Request, res: Response, next: NextFunction) {
     });
 }
 
-export { register, login, verify, logout, resendVerificationCode, checkAuth };
+export { register, login, verify, logout, resendVerificationCode, checkAuth, checkTeacherAuth };

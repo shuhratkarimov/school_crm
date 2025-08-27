@@ -1,17 +1,39 @@
 import { NextFunction, Request, Response } from "express";
-import { Group, Payment } from "../Models/index";
+import { Group, Payment, Student, StudentGroup } from "../Models/index";
 import { ICreatePaymentDto } from "../DTO/payment/create_payment_dto";
-import { BaseError } from "../Utils/base_error";
 import { IUpdatePaymentDto } from "../DTO/payment/update_payment_dto";
-import { Student } from "../Models/index";
+import { BaseError } from "../Utils/base_error";
 import i18next from "../Utils/lang";
-import StudentGroup from "../Models/student_groups_model";
+import { updateTeacherBalance } from "./teacher.ctr";
+import { Op, Sequelize } from "sequelize";
+import sequelize from "../config/database.config";
 
-async function getPayments(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
+interface IMonthlyPaymentSummary {
+  month: string;
+  totalAmount: number;
+}
+
+const monthsInUzbek: Record<number, string> = {
+  1: "Yanvar",
+  2: "Fevral",
+  3: "Mart",
+  4: "Aprel",
+  5: "May",
+  6: "Iyun",
+  7: "Iyul",
+  8: "Avgust",
+  9: "Sentabr",
+  10: "Oktabr",
+  11: "Noyabr",
+  12: "Dekabr",
+};
+
+function getMonthsInWord(monthNumber?: number): string {
+  const thisMonth: number = monthNumber || new Date().getMonth() + 1;
+  return monthsInUzbek[thisMonth] || "Yanvar";
+}
+
+async function getPayments(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
     const payments = await Payment.findAll({
       include: [
@@ -32,11 +54,7 @@ async function getPayments(
   }
 }
 
-async function getOnePayment(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
+async function getOnePayment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
     const payment = await Payment.findByPk(req.params.id as string);
     if (!payment) {
@@ -48,30 +66,28 @@ async function getOnePayment(
   }
 }
 
-async function createPayment(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
+async function createPayment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
-    const {
+    let {
       pupil_id,
       payment_amount,
       payment_type,
       received,
       for_which_month,
       for_which_group,
+      comment,
     } = req.body as ICreatePaymentDto;
 
-    const payment = await Payment.create({
-      pupil_id,
-      payment_amount,
-      payment_type,
-      received,
-      for_which_month,
-      for_which_group,
-    });
+    payment_amount = Number(payment_amount.toFixed(2));
+    // Validate input
+    if (!pupil_id || !payment_amount || !for_which_group || !for_which_month) {
+      return next(BaseError.BadRequest(400, i18next.t("missing_fields")));
+    }
 
+    const year = new Date().getFullYear();
+    const month = for_which_month
+
+    // Check if student exists
     const student = await Student.findByPk(pupil_id, {
       include: [
         {
@@ -81,89 +97,133 @@ async function createPayment(
         },
       ],
     });
-
     if (!student) {
-      return res.status(404).json({ message: "O'quvchi topilmadi!" });
+      return next(BaseError.BadRequest(404, "O'quvchi topilmadi!"));
     }
 
-    const totalGroups = student.dataValues.groups.length;
-
-    const Sequelize = require("sequelize");
-    const Op = Sequelize.Op;
-
-    const existingPayments = await Payment.findAll({
-      where: {
-        pupil_id,
-        for_which_month,
-      },
-    });
-
-    const uniqueGroupIds = new Set(
-      existingPayments.map((p) => p.dataValues.for_which_group)
-    );
-    const paidGroupsCount = uniqueGroupIds.size;
-
-    await student.update({
-      paid_groups: paidGroupsCount,
-      total_groups: totalGroups,
-    });
-
-    function getMonthsInWord() {
-      let thisMonth: string | Number = new Date().getMonth() + 1;
-      let months: Record<number, string> = {
-        1: "yanvar",
-        2: "fevral",
-        3: "mart",
-        4: "aprel",
-        5: "may",
-        6: "iyun",
-        7: "iyul",
-        8: "avgust",
-        9: "sentabr",
-        10: "oktabr",
-        11: "noyabr",
-        12: "dekabr",
-      };
-      for (const key in months) {
-        if (key == thisMonth.toString()) {
-          thisMonth = months[key];
-          return thisMonth;
-        }
-      }
+    // Check if group exists
+    const foundGroup = await Group.findByPk(for_which_group);
+    if (!foundGroup) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
     }
-    console.log(for_which_month, getMonthsInWord()?.toLowerCase());
 
+    // Check if student is enrolled in the group
     const studentGroup = await StudentGroup.findOne({
       where: { student_id: pupil_id, group_id: for_which_group },
     });
-    if (
-      studentGroup &&
-      for_which_month.toLowerCase() === getMonthsInWord()?.toLowerCase()
-    ) {
-      await studentGroup.update({ paid: true });
+    if (!studentGroup) {
+      return next(BaseError.BadRequest(404, "O'quvchi ushbu guruhda ro'yxatdan o'tmagan!"));
     }
 
-    res.status(201).json(payment);
+    const paymentAmount = foundGroup.dataValues.monthly_fee;
+
+    const existingPayment = await Payment.findOne({
+      where: {
+        pupil_id,
+        for_which_group,
+        for_which_month,
+        payment_amount: paymentAmount,
+      },
+    })
+
+    if (existingPayment) {
+      return next(BaseError.BadRequest(400, "To'lov yozuvi mavjud! To'lovni yangilash uchun to'lovni yangilash qismiga o'ting."));
+    }
+
+    // Validate payment amount
+    if (payment_amount > paymentAmount) {
+      return next(BaseError.BadRequest(400, "Guruh to'lov summasidan katta summa kiritildi!"));
+    }
+
+    // Create payment
+    const payment = await Payment.create({
+      pupil_id,
+      payment_amount,
+      payment_type,
+      received,
+      for_which_month: month,
+      for_which_group,
+      comment,
+    });
+
+    // Update payment status in StudentGroup if payment matches monthly fee
+    if (payment_amount === Number(paymentAmount)) {
+      await StudentGroup.update(
+        { paid: true },
+        {
+          where: {
+            student_id: pupil_id,
+            group_id: for_which_group,
+            month,
+            year,
+          },
+        }
+      );
+
+      await student.update({
+        paid_groups: student.dataValues.paid_groups + 1,
+      });
+    }
+
+    // Update teacher balance
+    await updateTeacherBalance(foundGroup.dataValues.teacher_id, payment_amount.toString(), true);
+
+    res.status(201).json({
+      message: "To'lov muvaffaqiyatli qo'shildi!",
+      payment,
+    });
   } catch (error: any) {
     next(error);
   }
 }
 
-async function updatePayment(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
+async function updatePayment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
-    const { payment_amount, payment_type, received, for_which_month } =
-      req.body as IUpdatePaymentDto;
+    const { payment_amount, payment_type, received, for_which_month, comment } = req.body as IUpdatePaymentDto;
     const payment = await Payment.findByPk(req.params.id as string);
-
     if (!payment) {
       return next(BaseError.BadRequest(404, i18next.t("payment_notFound")));
     }
-    payment.update({ payment_amount, payment_type, received, for_which_month });
-    await payment.save();
+
+    const foundGroup = await Group.findByPk(payment.dataValues.for_which_group);
+    if (!foundGroup) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
+    }
+
+    const studentGroup = await StudentGroup.findOne({
+      where: { student_id: payment.dataValues.pupil_id, group_id: payment.dataValues.for_which_group },
+    });
+    if (!studentGroup) {
+      return next(BaseError.BadRequest(404, "O'quvchi ushbu guruhda ro'yxatdan o'tmagan!"));
+    }
+    if (payment_amount) {
+      if (payment_amount > foundGroup.dataValues.monthly_fee) {
+        return next(BaseError.BadRequest(400, "Guruh to'lovidan katta summa kiritildi!"));
+      }
+      if (payment_amount == foundGroup.dataValues.monthly_fee) {
+        await studentGroup.update({ paid: true });
+        const foundStudent = await Student.findByPk(payment.dataValues.pupil_id);
+        if (!foundStudent) {
+          return next(BaseError.BadRequest(404, "O'quvchi topilmadi!"));
+        }
+        await foundStudent.update({ paid_groups: foundStudent.dataValues.paid_groups + 1 });
+      }
+      const amountDifference = payment_amount - payment.dataValues.payment_amount;
+      await updateTeacherBalance(
+        foundGroup.dataValues.teacher_id,
+        Math.abs(amountDifference).toString(),
+        amountDifference > 0
+      );
+    }
+
+    await payment.update({
+      payment_amount,
+      payment_type,
+      received,
+      for_which_month,
+      comment,
+    });
+
     const updatedPayment = await Payment.findByPk(req.params.id as string);
     res.status(200).json(updatedPayment);
   } catch (error: any) {
@@ -171,11 +231,7 @@ async function updatePayment(
   }
 }
 
-async function deletePayment(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
+async function deletePayment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
     const payment = await Payment.findByPk(req.params.id as string);
     if (!payment) {
@@ -189,14 +245,56 @@ async function deletePayment(
   }
 }
 
-export async function latestPayments() {
+async function getStudentPayments(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+  try {
+    const { studentId } = req.params;
+    const year = new Date().getFullYear();
+
+    const payments = await Payment.findAll({
+      attributes: [
+        [Sequelize.fn("TO_CHAR", Sequelize.col("created_at"), "MM"), "month"],
+        [Sequelize.fn("SUM", Sequelize.col("payment_amount")), "jami"],
+      ],
+      where: {
+        pupil_id: studentId,
+        [Op.and]: [
+          Sequelize.where(
+            Sequelize.fn("DATE_PART", "year", Sequelize.col("created_at")),
+            year
+          ),
+        ],
+      },
+      group: [Sequelize.fn("TO_CHAR", Sequelize.col("created_at"), "MM")],
+      raw: true,
+    }) as unknown as IMonthlyPaymentSummary[];
+
+    const paymentsMap = payments.reduce((acc, row) => {
+      acc[row.month] = Number(row.totalAmount);
+      return acc;
+    }, {} as Record<string, number>);
+
+    const result = Array.from({ length: 12 }, (_, i) => {
+      const month = String(i + 1).padStart(2, "0");
+      return {
+        month: `${year}-${month}`,
+        monthName: monthsInUzbek[i + 1],
+        jami: paymentsMap[month] || 0,
+      };
+    });
+
+    res.status(200).json(result);
+  } catch (err: any) {
+    next(err);
+  }
+}
+async function latestPayments() {
   const payments = await Payment.findAll({
     order: [["created_at", "DESC"]],
     limit: 10,
     include: [
       {
         model: Student,
-        as: "student", // aliasni shu bilan mos yozish kerak!
+        as: "student",
         attributes: ["id", "first_name", "last_name"],
       },
     ],
@@ -204,26 +302,58 @@ export async function latestPayments() {
   return payments;
 }
 
-export async function getThisMonthTotalPayments() {
+async function getYearlyPayments(req: Request, res: Response, next: NextFunction) {
+  try {
+    const year = new Date().getFullYear();
+
+    const payments = await Payment.findAll({
+      attributes: [
+        [Sequelize.fn("TO_CHAR", Sequelize.col("created_at"), "MM"), "month"],
+        [Sequelize.fn("SUM", Sequelize.col("payment_amount")), "totalAmount"],
+      ],
+      where: Sequelize.where(
+        Sequelize.fn("DATE_PART", "year", Sequelize.col("created_at")),
+        year
+      ),
+      group: [Sequelize.fn("TO_CHAR", Sequelize.col("created_at"), "MM")],
+      raw: true,
+    }) as unknown as IMonthlyPaymentSummary[];
+
+    const paymentsMap = payments.reduce((acc, row) => {
+      acc[row.month] = Number(row.totalAmount);
+      return acc;
+    }, {} as Record<string, number>);
+
+    const monthNames = [
+      "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
+      "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"
+    ];
+
+    const result = Array.from({ length: 12 }, (_, i) => {
+      const month = String(i + 1).padStart(2, "0");
+      return {
+        month: `${year}-${month}`,
+        monthName: monthNames[i],
+        jami: paymentsMap[month] || 0,
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getThisMonthTotalPayments() {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-      999
-    );
-
-    const { Sequelize } = require("sequelize");
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
     const total = await Payment.sum("payment_amount", {
       where: {
         created_at: {
-          [Sequelize.Op.between]: [startOfMonth, endOfMonth],
+          [Op.between]: [startOfMonth, endOfMonth],
         },
       },
     });
@@ -239,4 +369,8 @@ export {
   createPayment,
   updatePayment,
   deletePayment,
+  latestPayments,
+  getYearlyPayments,
+  getStudentPayments,
+  getThisMonthTotalPayments,
 };

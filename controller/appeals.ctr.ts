@@ -3,7 +3,6 @@ import Appeal from "../Models/appeal_model";
 import { Request, Response } from "express";
 import { Op } from "sequelize";
 import {Group, Student} from "../Models/index";
-import { validate as isUUID } from "uuid";
 import fs from "fs";
 
 let botToken = process.env.BOT_TOKEN;
@@ -17,7 +16,7 @@ if (!botToken) {
 let regex: RegExp = /^[a-zA-Z0-9!@#$%^&*()_+-{}~`, ."':;?//\|]*$/;
 let bot = new TelegramBot(botToken as string, {
   polling: {
-    autoStart: true,
+    autoStart: false,
     interval: 300,
     params: {
       timeout: 10,
@@ -35,12 +34,9 @@ export const sendTelegramMessage = async (req: Request, res: Response) => {
     const formattedMessage = `
 *Intellectual Progress Star O'quv Markazi*
 
-Hurmatli mijozimiz!
+Hurmatli o'quvchi!
 
-Sizga quyidagi xabar yuborildi:
 _${message}_
-
-Iltimos, ushbu xabarga e'tibor bering va zarur bo'lsa, javob bering. Biz har doim sizning qulayligingiz uchun tayyormiz!
 
 Hurmat bilan,
 *Intellectual Progress Star Jamoasi*
@@ -61,7 +57,9 @@ Hurmat bilan,
   }
 };
 
-const loadMessages = (lang: string) => {
+const loadMessages = (langHeader: string) => {
+  const lang = "uz";
+
   try {
     return JSON.parse(fs.readFileSync(`./locales/${lang}.json`, "utf8"));
   } catch (error) {

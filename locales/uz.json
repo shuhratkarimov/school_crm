@@ -56,7 +56,7 @@
   "added_to_group": "Siz {{group_subject}} guruhiga qo‘shildingiz.",
   "removed_from_group": "{first_name} guruhdan olib tashlandi.",
   "data_deleted": "Ma'lumot muvaffaqiyatli o‘chirildi.",
-  "class_not_available": "Bu vaqtda dars mavjud emas.",
+  "class_not_available": "Dars boshlanishiga hali bor",
   "student_id_not_found": "{studentId} ID ga ega talaba topilmadi.",
   "absent_notification": "Siz {{date}} kuni {{startTime}} dan {{endTime}} gacha darsga kelmadingiz.",
   "TEACHERS_NOT_FOUND": "O‘qituvchilar topilmadi",

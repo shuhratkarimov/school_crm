@@ -47,8 +47,7 @@ Student.init(
     },
     telegram_user_id: {
       type: DataTypes.BIGINT,
-      allowNull: true,
-      unique: true,
+      allowNull: true
     },
     came_in_school: {
       type: DataTypes.DATEONLY,

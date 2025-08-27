@@ -3,12 +3,23 @@ import { ICreateGroupDto } from "../DTO/group/create_group_dto";
 import { BaseError } from "../Utils/base_error";
 import { IUpdateGroupDTO } from "../DTO/group/update_group_dto";
 import i18next from "../Utils/lang";
-import { Teacher, Group, Room, Payment, Student, Schedule } from "../Models/index";
+import {
+  Teacher,
+  Group,
+  Room,
+  Payment,
+  Student,
+  Schedule,
+} from "../Models/index";
 import { Op } from "sequelize";
 import { validate as uuidValidate } from "uuid";
 import StudentGroup from "../Models/student_groups_model";
 
-async function getGroups(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+async function getGroups(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
   try {
     const lang = "uz";
     const groups = await Group.findAll({
@@ -16,7 +27,13 @@ async function getGroups(req: Request, res: Response, next: NextFunction): Promi
         {
           model: Teacher,
           as: "teacher",
-          attributes: ["id", "first_name", "last_name", "phone_number", "subject"],
+          attributes: [
+            "id",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "subject",
+          ],
         },
         {
           model: Schedule,
@@ -32,16 +49,22 @@ async function getGroups(req: Request, res: Response, next: NextFunction): Promi
     });
 
     if (groups.length === 0) {
-      return next(BaseError.BadRequest(404, i18next.t("groups_not_found", { lng: lang })));
+      return next(
+        BaseError.BadRequest(404, i18next.t("groups_not_found", { lng: lang }))
+      );
     }
 
-    res.status(200).json(groups);
+    res.json(groups)
   } catch (error: any) {
     next(error);
   }
 }
 
-async function getOneGroup(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+async function getOneGroup(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
   try {
     const lang = "uz";
     const group = await Group.findByPk(req.params.id as string, {
@@ -49,7 +72,13 @@ async function getOneGroup(req: Request, res: Response, next: NextFunction): Pro
         {
           model: Teacher,
           as: "teacher",
-          attributes: ["id", "first_name", "last_name", "phone_number", "subject"],
+          attributes: [
+            "id",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "subject",
+          ],
         },
         {
           model: Schedule,
@@ -60,7 +89,9 @@ async function getOneGroup(req: Request, res: Response, next: NextFunction): Pro
     });
 
     if (!group) {
-      return next(BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang })));
+      return next(
+        BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang }))
+      );
     }
 
     // StudentGroup orqali guruhga bog'langan o'quvchilarni olish
@@ -81,7 +112,39 @@ async function getOneGroup(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-async function createGroup(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+async function getOneGroupForTeacherAttendance(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const groupId = req.query.group_id as string;
+    if (!groupId) return res.status(400).json({ error: "group_id required" });
+
+    const group = await Group.findByPk(groupId, {
+      attributes: ["id", "group_subject", "days", "start_time", "end_time"],
+      include: [
+        {
+          model: Teacher,
+          as: "teacher",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
+    });
+    if (!group) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi"));
+    }
+    res.status(200).json(group);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createGroup(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
   try {
     const lang = "uz";
 
@@ -96,27 +159,48 @@ async function createGroup(req: Request, res: Response, next: NextFunction): Pro
     } = req.body as ICreateGroupDto;
 
     // Validatsiya
-    if (!group_subject || !teacher_id || !room_id || !days || !start_time || !end_time) {
-      return next(BaseError.BadRequest(400, i18next.t("missing_parameters", { lng: lang })));
+    if (
+      !group_subject ||
+      !teacher_id ||
+      !room_id ||
+      !days ||
+      !start_time ||
+      !end_time
+    ) {
+      return next(
+        BaseError.BadRequest(
+          400,
+          i18next.t("missing_parameters", { lng: lang })
+        )
+      );
     }
 
     // UUID formatini tekshirish
     if (!uuidValidate(room_id) || !uuidValidate(teacher_id)) {
-      return next(BaseError.BadRequest(400, i18next.t("invalid_uuid_format", { lng: lang })));
+      return next(
+        BaseError.BadRequest(
+          400,
+          i18next.t("invalid_uuid_format", { lng: lang })
+        )
+      );
     }
 
     const room = await Room.findByPk(room_id);
     if (!room) {
-      return next(BaseError.BadRequest(404, i18next.t("room_not_found", { lng: lang })));
+      return next(
+        BaseError.BadRequest(404, i18next.t("room_not_found", { lng: lang }))
+      );
     }
 
     const teacher = await Teacher.findByPk(teacher_id);
     if (!teacher) {
-      return next(BaseError.BadRequest(404, i18next.t("teacher_not_found", { lng: lang })));
+      return next(
+        BaseError.BadRequest(404, i18next.t("teacher_not_found", { lng: lang }))
+      );
     }
-    
-    const parsedDays = days.split("-").map(item => item.toUpperCase());
-    
+
+    const parsedDays = days.split("-").map((item) => item.toUpperCase());
+
     for (const day of parsedDays) {
       const conflictingSchedules = await Schedule.findAll({
         where: {
@@ -130,7 +214,9 @@ async function createGroup(req: Request, res: Response, next: NextFunction): Pro
       });
 
       if (conflictingSchedules.length > 0) {
-        return next(BaseError.BadRequest(400, i18next.t("room_conflict", { lng: lang })));
+        return next(
+          BaseError.BadRequest(400, i18next.t("room_conflict", { lng: lang }))
+        );
       }
     }
 
@@ -167,7 +253,11 @@ async function createGroup(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-async function updateGroup(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+async function updateGroup(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
   try {
     const lang = "uz";
 
@@ -184,19 +274,28 @@ async function updateGroup(req: Request, res: Response, next: NextFunction): Pro
     const group = await Group.findByPk(req.params.id as string);
 
     if (!group) {
-      return next(BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang })));
+      return next(
+        BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang }))
+      );
     }
 
     if (room_id && days && start_time && end_time) {
       if (!uuidValidate(room_id) || (teacher_id && !uuidValidate(teacher_id))) {
-        return next(BaseError.BadRequest(400, i18next.t("invalid_uuid_format", { lng: lang })));
+        return next(
+          BaseError.BadRequest(
+            400,
+            i18next.t("invalid_uuid_format", { lng: lang })
+          )
+        );
       }
 
       const room = await Room.findByPk(room_id);
       if (!room) {
-        return next(BaseError.BadRequest(404, i18next.t("room_not_found", { lng: lang })));
+        return next(
+          BaseError.BadRequest(404, i18next.t("room_not_found", { lng: lang }))
+        );
       }
-      
+
       const parsedDays = days.split("-");
 
       // Vaqt to‘qnashuvini tekshirish (o‘z guruhini hisobga olmagan holda)
@@ -214,7 +313,9 @@ async function updateGroup(req: Request, res: Response, next: NextFunction): Pro
         });
 
         if (conflictingSchedules.length > 0) {
-          return next(BaseError.BadRequest(400, i18next.t("room_conflict", { lng: lang })));
+          return next(
+            BaseError.BadRequest(400, i18next.t("room_conflict", { lng: lang }))
+          );
         }
       }
 
@@ -252,13 +353,19 @@ async function updateGroup(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-async function deleteGroup(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+async function deleteGroup(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
   try {
     const lang = "uz";
     const group = await Group.findByPk(req.params.id as string);
 
     if (!group) {
-      return next(BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang })));
+      return next(
+        BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang }))
+      );
     }
 
     await Schedule.destroy({ where: { group_id: group.dataValues.id } });
@@ -274,4 +381,11 @@ async function deleteGroup(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-export { getGroups, getOneGroup, createGroup, updateGroup, deleteGroup };
+export {
+  getGroups,
+  getOneGroup,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  getOneGroupForTeacherAttendance,
+};

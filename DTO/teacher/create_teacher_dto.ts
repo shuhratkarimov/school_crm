@@ -6,6 +6,6 @@ export interface ICreateTeacherDto {
   phone_number: string;
   subject: string;
   img_url?: string;
-  got_salary_for_this_month: boolean;
-  salary_amount: number
+  username?: string;
+  password?: string;
 }

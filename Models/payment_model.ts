@@ -31,7 +31,7 @@ Payment.init(
       onUpdate: 'CASCADE',
     },
     payment_amount: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
         min: 0,
@@ -52,6 +52,11 @@ Payment.init(
     for_which_group: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    comment: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: ""
     }
   },
   {

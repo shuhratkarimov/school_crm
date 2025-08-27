@@ -29,8 +29,7 @@ Teacher.init(
     },
     phone_number: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
+      allowNull: false
     },
     subject: {
       type: DataTypes.STRING,
@@ -40,15 +39,16 @@ Teacher.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    got_salary_for_this_month: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
+    username: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
     },
-    salary_amount: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    }
+    password: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
+    },
   },
   {
     sequelize,

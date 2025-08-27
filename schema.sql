@@ -34,10 +34,10 @@ CREATE TABLE IF NOT EXISTS teachers (
     phone_number VARCHAR(255) NOT NULL UNIQUE,
     subject VARCHAR(255) NOT NULL,
     img_url VARCHAR(255),
-    got_salary_for_this_month BOOLEAN NOT NULL DEFAULT FALSE,
-    salary_amount INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    username VARCHAR(255),
+    password VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS rooms (
@@ -155,4 +155,23 @@ CREATE TABLE IF NOT EXISTS schedules (
     end_time TIME NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE teacher_balances (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  teacher_id UUID NOT NULL REFERENCES teachers(id),
+  balance INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE teacher_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
+  teacher_id UUID NOT NULL,
+  payment_type VARCHAR(10) NOT NULL CHECK (payment_type IN ('avans', 'hisob')),
+  given_by VARCHAR(255) NOT NULL,
+  payment_amount INTEGER NOT NULL,
+  given_date TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT fk_teacher FOREIGN KEY (teacher_id) REFERENCES teachers(id)
 );
