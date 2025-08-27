@@ -116,7 +116,7 @@ function Login({ setIsAuthenticated }) {
 
         {/* Title */}
         <h1 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-2">
-          "Intellectually Progress Star"
+          "Intellectual Progress Star" 
         </h1>
         <p className="text-center text-gray-600 text-sm sm:text-base mb-6">
           <span className="text-blue-600 font-semibold">CRM</span> tizimiga kirish
