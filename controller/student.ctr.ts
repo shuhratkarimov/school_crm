@@ -12,6 +12,9 @@ import { getThisMonthTotalPayments, latestPayments } from "./payments.ctr";
 import sequelize from "../config/database.config";
 import StudentGroup from "../Models/student_groups_model";
 import { getRoomsBusinessPercent } from "./room.ctr";
+import { DateTime } from "luxon";
+
+const groupTimeZone = "Asia/Tashkent";
 
 const monthsInUzbek: Record<number, string> = {
   1: "Yanvar",
@@ -673,106 +676,92 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
     // Validate group
     const foundGroup = await Group.findByPk(group_id);
     if (!foundGroup) {
-      return next(
-        BaseError.BadRequest(404, "Guruh topilmadi")
-      );
+      return next(BaseError.BadRequest(404, "Guruh topilmadi"));
     }
 
     // Validate date
-    const inputDate = new Date(date);
-    const today = new Date();
-    if (inputDate.toISOString().split("T")[0] > today.toISOString().split("T")[0]) {
+    const inputDate = DateTime.fromISO(date, { zone: "Asia/Tashkent" });
+    const today = DateTime.now().setZone("Asia/Tashkent");
+    if (inputDate > today.endOf("day")) {
       return next(
         BaseError.BadRequest(400, "Hali kelmagan sana kiritildi")
       );
     }
 
-    // Check class time
-    const startTime = foundGroup.dataValues.start_time;
-    const endTime = foundGroup.dataValues.end_time;
-    const [startHours, startMinutes] = startTime.split(":").map(Number);
-    const [endHours, endMinutes] = endTime.split(":").map(Number);
-    const classStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startHours, startMinutes);
-    classStart.setMinutes(classStart.getMinutes() - 10); // 10 minutes before
-    const classEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHours, endMinutes);
+    // Class start and end time
+    const [startHours, startMinutes] = foundGroup.dataValues.start_time.split(":").map(Number);
+    const [endHours, endMinutes] = foundGroup.dataValues.end_time.split(":").map(Number);
 
-    const currentTime = new Date();
-    const TEN_MINUTES = 10 * 60 * 1000; // 10 daqiqa millisekundlarda
-    const ONE_HOUR = 60 * 60 * 1000;    // 1 soat millisekundlarda
+    const classStart = DateTime.fromObject(
+      { year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: startHours, minute: startMinutes },
+      { zone: "Asia/Tashkent" }
+    ).minus({ minutes: 10 }); // 10 daqiqa oldin
+
+    const classEnd = DateTime.fromObject(
+      { year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: endHours, minute: endMinutes },
+      { zone: "Asia/Tashkent" }
+    ).plus({ hours: 1 }); // 1 soat qo‘shimcha
+
+    const now = DateTime.now().setZone("Asia/Tashkent");
+
+    if (now < classStart) {
+      const diff = classStart.diff(now, ["hours", "minutes"]);
+      const hours = diff.hours;
+      const minutes = Math.round(diff.minutes);
     
-    const attendanceStart = classStart.getTime() - TEN_MINUTES;
-    const attendanceEnd = classEnd.getTime() + ONE_HOUR;
-    
-    // currentTime ni raqamga aylantirish
-    const now = currentTime instanceof Date ? currentTime.getTime() : currentTime;
-    
-    if (now < attendanceStart) {
-      const minutesLeft = Math.ceil((attendanceStart - now) / (60 * 1000));
       return next(
         BaseError.BadRequest(
           400,
-          `Dars boshlanishiga hali ${minutesLeft} daqiqa bor. Yo‘qlama qilish mumkin emas.`
+          `Dars boshlanishiga hali ${hours} soat ${minutes} daqiqa qoldi. Yo‘qlama qilish mumkin emas.`
         )
       );
-    }
-    
-    if (now > attendanceEnd) {
-      const minutesOver = Math.ceil((now - attendanceEnd) / (60 * 1000));
+    }    
+
+    if (now > classEnd) {
+      const diff = now.diff(classEnd, ["hours", "minutes"]);
+      const hours = diff.hours;
+      const minutes = Math.round(diff.minutes);
       return next(
         BaseError.BadRequest(
           400,
-          `Dars tugagach bir soat qo‘shimcha vaqt ham ${minutesOver} daqiqa o‘tdi. Yo‘qlama qilish mumkin emas.`
+          `Dars tugagach bir soat qo‘shimcha vaqt ham ${hours} soat ${minutes} daqiqa o‘tdi. Yo‘qlama qilish mumkin emas.`
         )
       );
     }
 
     // Check existing attendance
     const existing = await Attendance.findOne({
-      where: { group_id, date },
+      where: { group_id, date: inputDate.toISODate() },
     });
     if (existing) {
-      return next(
-        BaseError.BadRequest(400, "Yo'qlama qilingan")
-      );
+      return next(BaseError.BadRequest(400, "Yo'qlama qilingan"));
     }
 
-    // Create attendance
+    // Create attendance transaction
     const t = await sequelize.transaction();
     try {
       const attendance = await Attendance.create(
-        { group_id, date },
+        { group_id, date: inputDate.toISODate() },
         { transaction: t }
       );
 
-      // Validate and create records
       for (const item of records) {
         const { student_id, status, reason, note } = item;
         if (!student_id || typeof student_id !== "string") {
-          throw BaseError.BadRequest(
-            400,
-            "Noto'g'ri o'quvchi ID'si kiritildi"
-          );
+          throw BaseError.BadRequest(400, "Noto'g'ri o'quvchi ID'si kiritildi");
         }
 
         const foundStudent = await Student.findByPk(student_id, { transaction: t });
         if (!foundStudent) {
-          throw BaseError.BadRequest(
-            404,
-            "O'quvchi topilmadi"
-          );
+          throw BaseError.BadRequest(404, "O'quvchi topilmadi");
         }
 
         if (!["present", "absent"].includes(status)) {
-          throw BaseError.BadRequest(
-            400,
-            "Yo'qlama uchun noto'g'ri status kiritildi"
-          );
+          throw BaseError.BadRequest(400, "Yo'qlama uchun noto'g'ri status kiritildi");
         }
+
         if (status === "absent" && reason && !["excused", "unexcused"].includes(reason)) {
-          throw BaseError.BadRequest(
-            400,
-            "Yo'qlama uchun noto'g'ri sabab kiritildi"
-          );
+          throw BaseError.BadRequest(400, "Yo'qlama uchun noto'g'ri sabab kiritildi");
         }
 
         await AttendanceRecord.create(
@@ -788,7 +777,7 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
 
         if (status === "present") {
           await foundStudent.update(
-            { came_in_school: new Date().toISOString() },
+            { came_in_school: now.toISO() },
             { transaction: t }
           );
         }
@@ -807,6 +796,7 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
     next(error);
   }
 }
+
 
 async function getAttendanceByDate(req: Request, res: Response, next: NextFunction) {
   try {
@@ -854,39 +844,47 @@ async function getTodayAttendanceStats(
   res: Response,
   next: NextFunction
 ) {
-  const daysInUzbek = ["YAKSHANBA", "DUSHANBA", "SESHANBA", "CHORSHANBA", "PAYSHANBA", "JUMA", "SHANBA"];
   try {
-    const now = new Date();
-    const today = now.toISOString().split("T")[0]; // YYYY-MM-DD
-    const dayOfWeek = now.getDay(); // 0 = Yakshanba, 1 = Dushanba ...
-    const groups = await Group.findAll();
-    const todaysGroups = groups.filter((g) =>
-      g.dataValues.days.split("-").map((d: string) => d.trim()).includes(daysInUzbek[dayOfWeek])
-    );
-    console.log(`Todays groups: ${JSON.stringify(todaysGroups)}`);
-    console.log(`Day of week: ${dayOfWeek}`);
-    console.log(`Groups: ${JSON.stringify(groups)}`);
+    const lang = "uz";
+    const groupTimeZone = "Asia/Tashkent";
 
-    // Valid guruhlarni filtr qilish
+    // Hozirgi vaqt Luxon bilan
+    const now = DateTime.now().setZone(groupTimeZone);
+    const todayStr = now.toISODate(); // YYYY-MM-DD
+    const dayOfWeek = now.weekday; // 1 = Dushanba ... 7 = Yakshanba
+    const daysInUzbek = ["YAKSHANBA", "DUSHANBA", "SESHANBA", "CHORSHANBA", "PAYSHANBA", "JUMA", "SHANBA"];
+    const todayDayName = daysInUzbek[dayOfWeek % 7]; // Luxon 1-7, biz array 0-6
+
+    const groups = await Group.findAll();
+
+    // Bugungi darslar uchun guruhlarni filtr qilish
+    const todaysGroups = groups.filter((g) =>
+      g.dataValues.days
+        .split("-")
+        .map((d: string) => d.trim())
+        .includes(todayDayName)
+    );
+
+    // Valid guruhlarni tekshirish: hozir dars davom etmoqda yoki 10 daqiqa oldin boshlanadi
     const validGroupIds = todaysGroups
       .filter((g) => {
-        const [sh, sm, ss] = g.dataValues.start_time.split(":").map(Number);
-        const [eh, em, es] = g.dataValues.end_time.split(":").map(Number);
+        const [sh, sm] = g.dataValues.start_time.split(":").map(Number);
+        const [eh, em] = g.dataValues.end_time.split(":").map(Number);
 
-        const start = new Date(now);
-        start.setHours(sh, sm, ss || 0, 0);
+        const classStart = DateTime.fromObject(
+          { year: now.year, month: now.month, day: now.day, hour: sh, minute: sm },
+          { zone: groupTimeZone }
+        ).minus({ minutes: 10 }); // 10 daqiqa oldin
 
-        const end = new Date(now);
-        end.setHours(eh, em, es || 0, 0);
+        const classEnd = DateTime.fromObject(
+          { year: now.year, month: now.month, day: now.day, hour: eh, minute: em },
+          { zone: groupTimeZone }
+        ).plus({ hours: 1 }); // 1 soat qo‘shimcha
 
-        const diffMinutes = (start.getTime() - now.getTime()) / 60000;
-
-        return (
-          (start <= now && now <= end) || // hozir dars davom etmoqda
-          (diffMinutes > 0 && diffMinutes <= 10) // boshlanishiga 10 daqiqa qolgan
-        );
+        return now >= classStart && now <= classEnd;
       })
       .map((g) => g.dataValues.id);
+
     if (!validGroupIds.length) {
       return res.status(200).json({
         present: 0,
@@ -895,6 +893,7 @@ async function getTodayAttendanceStats(
         percent: 0,
       });
     }
+
     const stats = await AttendanceRecord.findAll({
       attributes: [
         [
@@ -915,10 +914,7 @@ async function getTodayAttendanceStats(
           ),
           "absent",
         ],
-        [
-          Sequelize.fn("COUNT", Sequelize.col("AttendanceRecord.id")),
-          "total",
-        ],
+        [Sequelize.fn("COUNT", Sequelize.col("AttendanceRecord.id")), "total"],
       ],
       include: [
         {
@@ -928,21 +924,26 @@ async function getTodayAttendanceStats(
           required: true,
           where: {
             group_id: { [Op.in]: validGroupIds },
-            date: today,
+            date: todayStr,
           },
         },
       ],
       raw: true,
-    }) as unknown as Array<{ present: number | null, absent: number | null, total: number | null }>;
+    }) as unknown as Array<{ present: number | null; absent: number | null; total: number | null }>;
 
     const row = stats[0] || { present: 0, absent: 0, total: 0 };
-    const result: AttendanceStats = {
-      present: Number(row.present) || 0,
-      absent: Number(row.absent) || 0,
-      total: Number(row.total) || 0
-    };
+    const present = Number(row.present) || 0;
+    const absent = Number(row.absent) || 0;
+    const total = Number(row.total) || 0;
 
-    return res.json(result);
+    const percent = total > 0 ? Math.round((present / total) * 100) : 0;
+
+    return res.status(200).json({
+      present,
+      absent,
+      total,
+      percent,
+    });
   } catch (error) {
     next(error);
   }
