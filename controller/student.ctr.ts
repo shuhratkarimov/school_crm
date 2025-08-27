@@ -697,9 +697,32 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
     const classEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHours, endMinutes);
 
     const currentTime = new Date();
-    if (currentTime < classStart || currentTime > classEnd) {
+    const TEN_MINUTES = 10 * 60 * 1000; // 10 daqiqa millisekundlarda
+    const ONE_HOUR = 60 * 60 * 1000;    // 1 soat millisekundlarda
+    
+    const attendanceStart = classStart.getTime() - TEN_MINUTES;
+    const attendanceEnd = classEnd.getTime() + ONE_HOUR;
+    
+    // currentTime ni raqamga aylantirish
+    const now = currentTime instanceof Date ? currentTime.getTime() : currentTime;
+    
+    if (now < attendanceStart) {
+      const minutesLeft = Math.ceil((attendanceStart - now) / (60 * 1000));
       return next(
-        BaseError.BadRequest(400, "Dars boshlanishiga hali bor")
+        BaseError.BadRequest(
+          400,
+          `Dars boshlanishiga hali ${minutesLeft} daqiqa bor. Yo‘qlama qilish mumkin emas.`
+        )
+      );
+    }
+    
+    if (now > attendanceEnd) {
+      const minutesOver = Math.ceil((now - attendanceEnd) / (60 * 1000));
+      return next(
+        BaseError.BadRequest(
+          400,
+          `Dars tugagach bir soat qo‘shimcha vaqt ham ${minutesOver} daqiqa o‘tdi. Yo‘qlama qilish mumkin emas.`
+        )
       );
     }
 
