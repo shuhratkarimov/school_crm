@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from "express"
-import { createPayment, createTeacher, deleteTeacher, getOneTeacher, getTeacherBalance, getTeacherData, getTeacherGroups, getTeacherPayments, getTeachers, teacherLogin, updateTeacher } from "../controller/teacher.ctr"
+import { createPayment, createTeacher, deleteTeacher, getOneTeacher, getTeacherBalance, getTeacherDashboardStudentPayments, getTeacherData, getTeacherGroups, getTeacherPayments, getTeachers, teacherLogin, updateTeacher } from "../controller/teacher.ctr"
 const TeacherRouter:Router = Router()
 
 TeacherRouter.get("/get_teachers", getTeachers as RequestHandler)
@@ -13,6 +13,7 @@ TeacherRouter.post("/create_payment_teacher", createPayment as RequestHandler)
 TeacherRouter.get("/get_teacher_balance/:id", getTeacherBalance as RequestHandler)
 TeacherRouter.get("/get_teacher_payments/:id", getTeacherPayments as RequestHandler)
 TeacherRouter.get("/get_teacher_data", getTeacherData as RequestHandler)
+TeacherRouter.get("/get_teacher_dashboard_student_payments", getTeacherDashboardStudentPayments as RequestHandler)
 
 export {
     TeacherRouter

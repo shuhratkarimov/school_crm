@@ -13,7 +13,7 @@ interface IMonthlyPaymentSummary {
   totalAmount: number;
 }
 
-const monthsInUzbek: Record<number, string> = {
+export const monthsInUzbek: Record<number, string> = {
   1: "Yanvar",
   2: "Fevral",
   3: "Mart",
@@ -22,7 +22,7 @@ const monthsInUzbek: Record<number, string> = {
   6: "Iyun",
   7: "Iyul",
   8: "Avgust",
-  9: "Sentabr",
+  9: "Sentyabr",
   10: "Oktabr",
   11: "Noyabr",
   12: "Dekabr",
@@ -107,12 +107,20 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
       return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
     }
 
-    // Check if student is enrolled in the group
-    const studentGroup = await StudentGroup.findOne({
-      where: { student_id: pupil_id, group_id: for_which_group },
+    let studentGroup = await StudentGroup.findOne({
+      where: { student_id: pupil_id, group_id: for_which_group, month, year },
     });
     if (!studentGroup) {
-      return next(BaseError.BadRequest(404, "O'quvchi ushbu guruhda ro'yxatdan o'tmagan!"));
+      studentGroup = await StudentGroup.create({
+        student_id: pupil_id,
+        group_id: for_which_group,
+        month,
+        year,
+        paid: false,
+      });
+    }
+    if (payment_amount === Number(foundGroup.dataValues.monthly_fee)) {
+      await studentGroup.update({ paid: true });
     }
 
     const paymentAmount = foundGroup.dataValues.monthly_fee;
@@ -166,7 +174,7 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
     }
 
     // Update teacher balance
-    await updateTeacherBalance(foundGroup.dataValues.teacher_id, payment_amount.toString(), true);
+    await updateTeacherBalance(foundGroup.dataValues.teacher_id, Math.round(payment_amount).toString(), true);
 
     res.status(201).json({
       message: "To'lov muvaffaqiyatli qo'shildi!",
@@ -189,12 +197,22 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
     if (!foundGroup) {
       return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
     }
-
-    const studentGroup = await StudentGroup.findOne({
-      where: { student_id: payment.dataValues.pupil_id, group_id: payment.dataValues.for_which_group },
+    let studentGroup = await StudentGroup.findOne({
+      where: { student_id: payment.dataValues.pupil_id, group_id: payment.dataValues.for_which_group, month: payment.dataValues.for_which_month, year: payment.dataValues.for_which_year },
     });
     if (!studentGroup) {
-      return next(BaseError.BadRequest(404, "O'quvchi ushbu guruhda ro'yxatdan o'tmagan!"));
+      studentGroup = await StudentGroup.create({
+        student_id: payment.dataValues.pupil_id,
+        group_id: payment.dataValues.for_which_group,
+        month: payment.dataValues.for_which_month,
+        year: payment.dataValues.for_which_year,
+        paid: false,
+      });
+    }
+    if (payment_amount && payment_amount === foundGroup.dataValues.monthly_fee) {
+      await studentGroup.update({ paid: true });
+    } else if (payment_amount) {
+      await studentGroup.update({ paid: false });
     }
     if (payment_amount) {
       if (payment_amount > foundGroup.dataValues.monthly_fee) {
@@ -211,7 +229,7 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
       const amountDifference = payment_amount - payment.dataValues.payment_amount;
       await updateTeacherBalance(
         foundGroup.dataValues.teacher_id,
-        Math.abs(amountDifference).toString(),
+        Math.round(amountDifference).toString(),
         amountDifference > 0
       );
     }
@@ -226,6 +244,40 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
 
     const updatedPayment = await Payment.findByPk(req.params.id as string);
     res.status(200).json(updatedPayment);
+  } catch (error: any) {
+    next(error);
+  }
+}
+
+const changeMonths = (month: number): string | undefined => {
+  return monthsInUzbek[month];
+};
+
+async function getOverdueStudents(req: Request, res: Response, next: NextFunction) {
+  try {
+    const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+    const currentMonth = changeMonths(new Date().getMonth() + 1);
+    const currentYear = new Date().getFullYear();
+
+    const students = await Student.findAll({
+      include: [
+        {
+          model: Group,
+          as: "groups",
+          attributes: ["id", "group_subject"],
+          through: { attributes: [] },
+        },
+        {
+          model: StudentGroup,
+          as: "studentGroups",
+          attributes: ["group_id", "paid", "month", "year"],
+          where: { month: currentMonth, year: currentYear, paid: false },
+          required: true,
+        },
+      ],
+    });
+
+    res.status(200).json(students);
   } catch (error: any) {
     next(error);
   }
@@ -326,7 +378,7 @@ async function getYearlyPayments(req: Request, res: Response, next: NextFunction
 
     const monthNames = [
       "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
-      "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"
+      "Iyul", "Avgust", "Sentyabr", "Oktabr", "Noyabr", "Dekabr"
     ];
 
     const result = Array.from({ length: 12 }, (_, i) => {

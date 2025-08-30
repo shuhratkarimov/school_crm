@@ -4,11 +4,13 @@ import { ICreateTeacherDto } from "../DTO/teacher/create_teacher_dto";
 import { BaseError } from "../Utils/base_error";
 import { IUpdateTeacherDto } from "../DTO/teacher/update_teacher_dto";
 import i18next from "i18next";
-import { Group, Payment } from "../Models";
+import { Group, Payment, Student } from "../Models";
 import TeacherPayment from "../Models/teacher-payment.model";
 import TeacherBalance from "../Models/teacher-balance.model";
 import bcryptjs from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken"
+import { monthsInUzbek } from "./payments.ctr";
+import { col, fn, Op, where, literal } from "sequelize";
 
 async function getTeachers(
   req: Request,
@@ -322,7 +324,7 @@ async function createPayment(
     });
 
     await teacherBalance.update({
-      balance: teacherBalance.dataValues.balance - Number(payment_amount),
+      balance: Math.round(teacherBalance.dataValues.balance - Number(payment_amount)),
     });
 
     res.status(200).json(payment);
@@ -364,12 +366,80 @@ async function updateTeacherBalance(teacherId: string, paymentAmount: string, sh
 
   if (teacherBalance) {
     if (shouldAdd) {
-      await teacherBalance.update({ balance: balance + Number(paymentAmount) / 2 }, { transaction: t });
+      await teacherBalance.update({ balance: Math.round(balance + Number(paymentAmount) / 2) }, { transaction: t });
     } else {
-      await teacherBalance.update({ balance: balance - Number(paymentAmount) / 2 }, { transaction: t });
+      await teacherBalance.update({ balance: Math.round(balance - Number(paymentAmount) / 2) }, { transaction: t });
     }
   } else {
     await TeacherBalance.create({ teacher_id: teacherId, balance: Number(paymentAmount) / 2 }, { transaction: t });
+  }
+}
+
+async function getTeacherDashboardStudentPayments(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.cookies.accesstoken;
+    if (!token) {
+      return next(BaseError.BadRequest(404, "Token topilmadi"));
+    }
+
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.ACCESS_SECRET_KEY as string
+      ) as JwtPayload;
+
+      const teacherId = decoded.id;
+      const { month: monthParam, year: yearParam } = req.query;
+      let month = typeof monthParam === 'string' ? parseInt(monthParam, 10) : 0;
+      let year = typeof yearParam === 'string' ? parseInt(yearParam, 10) : new Date().getFullYear();
+      
+      const teacherGroups = await Group.findAll({
+        where: { teacher_id: teacherId },
+        attributes: ["id"],
+      });
+
+      const groupIds = teacherGroups.map((group) => group.dataValues.id);
+
+      const payments = await Student.findAll({
+        include: [
+          {
+            model: Group,
+            as: "groups",
+            through: { attributes: [] },
+            where: { id: groupIds },
+            attributes: ["id", "group_subject", "monthly_fee"],
+          },
+          {
+            model: Payment,
+            as: "payments",
+            where: {
+              for_which_month: monthsInUzbek[month],
+              [Op.and]: [
+                where(
+                  fn("DATE_PART", literal("'year'"), col("payments.created_at")),
+                  year
+                ),
+              ],
+            },
+            required: false,
+          },
+        ],
+        attributes: [
+          "id",
+          "first_name",
+          "last_name",
+          "phone_number",
+          "parents_phone_number",
+        ],
+      });
+
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching teacher payments:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -385,5 +455,6 @@ export {
   getTeacherBalance,
   updateTeacherBalance,
   getTeacherPayments,
-  getTeacherData
+  getTeacherData,
+  getTeacherDashboardStudentPayments
 };

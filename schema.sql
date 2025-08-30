@@ -170,3 +170,13 @@ CREATE TABLE IF NOT EXISTS teacher_payments (
     given_date TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE "Achievements" (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    achiever_id UUID NOT NULL,
+    achiever_type VARCHAR(20) NOT NULL CHECK (achiever_type IN ('student', 'teacher')),
+    type VARCHAR(255) NOT NULL,
+    achievement_title VARCHAR(255) NOT NULL,
+    description TEXT,
+    date TIMESTAMP
+);
+

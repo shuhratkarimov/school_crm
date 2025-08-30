@@ -93,7 +93,7 @@ async function verify(req: Request, res: Response, next: NextFunction) {
 
     if (!foundUser) {
       return next(
-        BaseError.BadRequest(404, i18next.t("user_not_found", { lng: lang }))
+        BaseError.BadRequest(404, "Foydalanuvchi topilmadi")
       );
     }
 
@@ -113,7 +113,7 @@ async function verify(req: Request, res: Response, next: NextFunction) {
       return next(
         BaseError.BadRequest(
           401,
-          i18next.t("verification_failed", { lng: lang })
+          "Tasdiqlash kodi xato"
         )
       );
     }
@@ -134,13 +134,13 @@ async function resendVerificationCode(
 
     if (!foundUser) {
       return next(
-        BaseError.BadRequest(404, i18next.t("not_registered", { lng: lang }))
+        BaseError.BadRequest(404, "Foydalanuvchi topilmadi")
       );
     }
 
     if (foundUser.dataValues.is_verified) {
       return next(
-        BaseError.BadRequest(403, i18next.t("already_verified", { lng: lang }))
+        BaseError.BadRequest(403, "Foydalanuvchi allaqachon ro'yxatdan o'tgan")
       );
     }
 
@@ -159,7 +159,7 @@ async function resendVerificationCode(
     });
 
     res.status(200).json({
-      message: i18next.t("new_code_sent", { lng: lang, email }),
+      message: "Yangi tasdiqlash kodi yuborildi",
     });
   } catch (error) {
     next(error);
@@ -174,7 +174,7 @@ async function login(req: Request, res: Response, next: NextFunction) {
 
     if (!foundUser) {
       return next(
-        BaseError.BadRequest(401, i18next.t("not_registered", { lng: lang }))
+        BaseError.BadRequest(401, "Foydalanuvchi topilmadi")
       );
     }
 
@@ -184,10 +184,11 @@ async function login(req: Request, res: Response, next: NextFunction) {
     );
     if (!checkPassword) {
       return next(
-        BaseError.BadRequest(401, i18next.t("wrong_password", { lng: lang }))
+        BaseError.BadRequest(401, "Noto'g'ri parol")
       );
     }
-    const payload: { username: string; email: string; role: string } = {
+    const payload: { id: string; username: string; email: string; role: string } = {
+      id: foundUser.dataValues.id,
       username: foundUser.dataValues.username,
       email: foundUser.dataValues.email,
       role: foundUser.dataValues.role,
@@ -256,4 +257,62 @@ function logout(req: Request, res: Response, next: NextFunction) {
     });
 }
 
-export { register, login, verify, logout, resendVerificationCode, checkAuth, checkTeacherAuth };
+async function changePassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email, oldPassword, newPassword } = req.body;
+    const foundUser = await User.findOne({ where: { email: email } });
+    if (!foundUser) {
+      return next(
+        BaseError.BadRequest(404, "Foydalanuvchi topilmadi")
+      );
+    }
+    const checkPassword = await bcryptjs.compare(
+      oldPassword,
+      foundUser.dataValues.password
+    );
+    if (!checkPassword) {
+      return next(
+        BaseError.BadRequest(401, "Noto'g'ri parol")
+      );
+    }
+    const encodedPassword = await bcryptjs.hash(newPassword, 12);
+    await foundUser.update({ password: encodedPassword });
+    res.status(200).json({ message: "Parol muvaffaqiyatli o'zgartirildi" });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.cookies.accesstoken;
+    if (!token) return next(BaseError.BadRequest(401, "Token topilmadi"));
+
+    const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
+    const user = await User.findByPk(decoded.id);
+    if (!user) return next(BaseError.BadRequest(404, "Foydalanuvchi topilmadi"));
+
+    res.status(200).json({ user: { id: user.dataValues.id, username: user.dataValues.username, email: user.dataValues.email } });
+  } catch (err) {
+    next(BaseError.BadRequest(401, "Token xato"));
+  }
+}
+
+async function updateProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email, username } = req.body;  
+    const foundUser = await User.findOne({ where: { email: email } });
+    if (!foundUser) {
+      return next(
+        BaseError.BadRequest(404, "Foydalanuvchi topilmadi")
+      );
+    }
+    await foundUser.update({ username: username });
+    res.status(200).json({ message: "Foydalanuvchi muvaffaqiyatli o'zgartirildi" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export { register, login, verify, logout, resendVerificationCode, checkAuth, checkTeacherAuth, changePassword, getProfile, updateProfile };

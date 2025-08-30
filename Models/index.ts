@@ -11,6 +11,7 @@ import NotificationToCenter from "./notification_center.model";
 import Schedule from "./schedule_model";
 import Room from "./room_model";
 import StudentGroup from "./student_groups_model";
+import Achievement from "./achievement_model";
 
 // 1. Teacher ↔ Group
 Teacher.hasMany(Group, {
@@ -57,6 +58,12 @@ Student.belongsToMany(Group, {
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
+
+Student.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "student" } });
+Achievement.belongsTo(Student, { foreignKey: "achiever_id", constraints: false, as: "student" });
+
+Teacher.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "teacher" } });
+Achievement.belongsTo(Teacher, { foreignKey: "achiever_id", constraints: false, as: "teacher" });
 
 // 4. Student ↔ Payment
 Student.hasMany(Payment, {

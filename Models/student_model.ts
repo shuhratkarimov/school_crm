@@ -35,12 +35,6 @@ Student.init(
       type: DataTypes.STRING(20),
       allowNull: true,
     },
-    paid_groups: {
-      type: DataTypes.INTEGER
-    },
-    total_groups: {
-      type: DataTypes.INTEGER
-    },
     parents_phone_number: {
       type: DataTypes.STRING(20),
       allowNull: true,

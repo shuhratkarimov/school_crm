@@ -78,6 +78,12 @@ async function generateStudentId(transaction?: any): Promise<string> {
 async function getStudents(req: Request, res: Response, next: NextFunction) {
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+    const currentMonth = changeMonths(new Date().getMonth() + 1);
+    const currentYear = new Date().getFullYear();
+
+    // Query param sifatida month va year olish (ixtiyoriy)
+    const month = (req.query.month as string) || currentMonth;
+    const year = parseInt(req.query.year as string) || currentYear;
 
     const students = await Student.findAll({
       include: [
@@ -103,15 +109,23 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
       ],
     });
 
-    if (students.length === 0) {
-      return next(
-        BaseError.BadRequest(
-          404,
-          i18next.t("students_not_found", { lng: lang })
-        )
-      );
+    // Har bir student uchun total_groups va paid_groups ni hisoblash
+    const studentsWithGroups = students.map(student => {
+      const studentGroups = student.dataValues.studentGroups.filter((sg: any) => sg.month === month && sg.year === year);
+      const totalGroups = studentGroups.length;
+      const paidGroups = studentGroups.filter((sg: any) => sg.paid).length;
+
+      return {
+        ...student.dataValues,
+        total_groups: totalGroups, // Dinamik hisoblanadi
+        paid_groups: paidGroups,  // Dinamik hisoblanadi
+      };
+    });
+
+    if (studentsWithGroups.length === 0) {
+      return next(BaseError.BadRequest(404, i18next.t("students_not_found", { lng: lang })));
     }
-    res.status(200).json(students);
+    res.status(200).json(studentsWithGroups);
   } catch (error: any) {
     next(error);
   }
@@ -712,7 +726,7 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
       return next(
         BaseError.BadRequest(
           400,
-          `Dars boshlanishiga hali ${hours} soat ${minutes} daqiqa qoldi. Yo‘qlama qilish mumkin emas.`
+          `Dars boshlanishiga hali ${hours} soat ${minutes} daqiqa bor. Yo‘qlama qilish mumkin emas.`
         )
       );
     }    
@@ -724,7 +738,7 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
       return next(
         BaseError.BadRequest(
           400,
-          `Dars tugagach bir soat qo‘shimcha vaqt ham ${hours} soat ${minutes} daqiqa o‘tdi. Yo‘qlama qilish mumkin emas.`
+          `Dars tugagach bir soat qo‘shimcha vaqtdan ${hours} soat ${minutes} daqiqa o‘tdi. Yo‘qlama qilish mumkin emas.`
         )
       );
     }
@@ -865,27 +879,7 @@ async function getTodayAttendanceStats(
         .includes(todayDayName)
     );
 
-    // Valid guruhlarni tekshirish: hozir dars davom etmoqda yoki 10 daqiqa oldin boshlanadi
-    const validGroupIds = todaysGroups
-      .filter((g) => {
-        const [sh, sm] = g.dataValues.start_time.split(":").map(Number);
-        const [eh, em] = g.dataValues.end_time.split(":").map(Number);
-
-        const classStart = DateTime.fromObject(
-          { year: now.year, month: now.month, day: now.day, hour: sh, minute: sm },
-          { zone: groupTimeZone }
-        ).minus({ minutes: 10 }); // 10 daqiqa oldin
-
-        const classEnd = DateTime.fromObject(
-          { year: now.year, month: now.month, day: now.day, hour: eh, minute: em },
-          { zone: groupTimeZone }
-        ).plus({ hours: 1 }); // 1 soat qo‘shimcha
-
-        return now >= classStart && now <= classEnd;
-      })
-      .map((g) => g.dataValues.id);
-
-    if (!validGroupIds.length) {
+    if (!todaysGroups.length) {
       return res.status(200).json({
         present: 0,
         absent: 0,
@@ -923,7 +917,7 @@ async function getTodayAttendanceStats(
           attributes: [],
           required: true,
           where: {
-            group_id: { [Op.in]: validGroupIds },
+            group_id: { [Op.in]: todaysGroups.map((g) => g.dataValues.id) },
             date: todayStr,
           },
         },

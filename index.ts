@@ -21,6 +21,7 @@ import { RoomRouter } from './router/room.router';
 import ScheduleRouter from './router/schedules.router';
 import { NoteRouter } from './router/note.router';
 import { ExpenseRouter } from './router/expenses.router';
+import { AchievementsRouter } from './router/achievements.router';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ app.use(RoomRouter);
 app.use(ScheduleRouter);
 app.use(NoteRouter);
 app.use(ExpenseRouter);
+app.use(AchievementsRouter);
 
 // Error handling
 app.use(errorMiddleware as any);
