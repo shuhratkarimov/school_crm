@@ -18,6 +18,7 @@ const config = {
     extend: {
       fontFamily: {
         marcellus: ["'Marcellus SC'", "cursive"],
+        numans: ["'Numans'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -152,7 +152,7 @@ function Header({ setIsAuthenticated }) {
           />
         </div>
         <div>
-          <h1 className="font-bold text-[1.65rem] text-gray-800 dark:text-white font-marcellus">
+          <h1 className="text-[1.50rem] text-gray-800 font-bold dark:text-white font-numans">
             "Intellectual Progress Star" o'quv markazi CRM tizimi
           </h1>
         </div>

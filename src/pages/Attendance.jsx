@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Pen, BookOpen, Plus, X, Search, Check, Calendar } from "lucide-react";
+import { Trash2, Pen, BookOpen, Plus, X, Search, Check, Calendar, Clock } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CalendarEl from "react-datepicker";
@@ -28,6 +28,12 @@ export default function Attendance() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState("");
+  const [extendModal, setExtendModal] = useState(false);
+  const [selectedGroupForExtension, setSelectedGroupForExtension] = useState(null);
+  const [extensionData, setExtensionData] = useState({
+    date: "",
+    time: "",
+  });
   const [errors, setErrors] = useState({
     groups: "",
     teachers: "",
@@ -35,6 +41,7 @@ export default function Attendance() {
     payments: "",
     rooms: "",
   });
+  const [extensionInfo, setExtensionInfo] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [editModal, setEditModal] = useState(false);
@@ -74,6 +81,97 @@ export default function Attendance() {
     "SHANBA",
     "YAKSHANBA",
   ];
+
+  const extendAttendanceTime = async () => {
+    if (!selectedGroupForExtension || !extensionData.date || !extensionData.time) {
+      toast.warning("Iltimos, sana va vaqtni kiriting", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    const extendedUntil = `${extensionData.date}T${extensionData.time}:00`;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/extend-attendance-time`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          group_id: selectedGroupForExtension.id,
+          extended_until: extendedUntil
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Davomat vaqti muvaffaqiyatli uzaytirildi", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setExtendModal(false);
+        setExtensionData({ date: "", time: "" });
+      } else if (response.status === 400) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Vaqt uzaytirishda xatolik");
+      }
+    } catch (err) {
+      toast.error(`${err.message || "Vaqt uzaytirishda xatolik"}`, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const fetchExtensionInfo = async (groupId) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/get_extend_attendance_time/${groupId}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setExtensionInfo(data);
+      } else if (response.status === 404) {
+        setExtensionInfo(null); // Uzaytirish mavjud emas
+      } else {
+        throw new Error("Uzaytirish ma'lumotlarini olishda xatolik");
+      }
+    } catch (error) {
+      console.error("Uzaytirish ma'lumotlarini olishda xatolik:", error);
+      setExtensionInfo(null);
+    }
+  };
+
+  // Modalni ochish funksiyasi
+  const openExtendModal = async (group) => {
+    setSelectedGroupForExtension(group);
+    setExtendModal(true);
+
+    // Uzaytirish ma'lumotlarini yuklash
+    await fetchExtensionInfo(group.id);
+
+    // Agar uzaytirish mavjud bo'lsa, formani to'ldirish
+    if (extensionInfo && extensionInfo.extended_until) {
+      const extendedDate = new Date(extensionInfo.extended_until);
+      const dateStr = extendedDate.toISOString().split('T')[0];
+      const timeStr = extendedDate.toTimeString().slice(0, 5);
+
+      setExtensionData({
+        date: dateStr,
+        time: timeStr
+      });
+    } else {
+      // Yangi uzaytirish uchun boshlang'ich qiymatlar
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateStr = tomorrow.toISOString().split('T')[0];
+
+      setExtensionData({
+        date: dateStr,
+        time: "23:59"
+      });
+    }
+  };
 
   // Checkbox’lar uchun handler
   const handleDaysChange = (day, isEdit = false) => {
@@ -875,7 +973,7 @@ export default function Attendance() {
                 const [eh, em] = group.end_time.split(":").map(Number);
                 const start = new Date(now);
                 start.setHours(sh, sm, 0, 0);
-              
+
                 const end = new Date(now);
                 end.setHours(eh, em, 0, 0);
 
@@ -921,6 +1019,16 @@ export default function Attendance() {
                       </p>
                     </div>
                     <div className="flex gap-2">
+                      <button
+                        className="bg-green-600 text-white rounded-full p-2 hover:bg-green-700 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openExtendModal(group);
+                        }}
+                        title="Davomat vaqtini uzaytirish"
+                      >
+                        <Clock size={16} />
+                      </button>
                       <button
                         className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
                         onClick={(e) => {
@@ -1145,137 +1253,339 @@ export default function Attendance() {
       </div>
 
       {/* Add Modal */}
+      {/* Add Modal - Yangilangan versiya */}
       {addModal && (
-        <div className="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="modal-content bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
-            <div className="modal-header bg-[#104292] p-2 text-white rounded-t-lg">
-              <h3 className="text-center text-lg font-bold">Yangi guruh qo'shish</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Plus size={24} className="bg-white text-blue-600 p-1 rounded-full" />
+                  <h3 className="text-xl font-bold">Yangi guruh qo'shish</h3>
+                </div>
+                <button
+                  onClick={() => setAddModal(false)}
+                  className="text-white hover:bg-blue-700 p-1 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-blue-100 text-sm mt-1">Yangi guruh ma'lumotlarini to'ldiring</p>
             </div>
-            <form onSubmit={addGroup}>
-              <div className="form-grid grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div className="form-group">
-                  <label>Guruh nomi</label>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <form onSubmit={addGroup} className="space-y-6">
+                {/* Guruh nomi */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Guruh nomi *
+                  </label>
                   <input
                     type="text"
-                    className="input w-full border border-gray-300 rounded-md p-2"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     value={formData.group_subject}
-                    onChange={(e) =>
-                      setFormData({ ...formData, group_subject: e.target.value })
-                    }
-                    placeholder="Guruh nomini kiriting"
+                    onChange={(e) => setFormData({ ...formData, group_subject: e.target.value })}
+                    placeholder="Masalan: Matematika 1-guruh"
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>O'qituvchi</label>
-                  <select
-                    className="select w-full border border-gray-300 rounded-md p-2"
-                    value={formData.teacher_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, teacher_id: e.target.value })
-                    }
-                    required
-                    disabled={teachers.length === 0}
-                  >
-                    <option value="">
-                      {errors.teachers ? "O'qituvchilar yo'q" : "Tanlang"}
-                    </option>
-                    {teachers.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>
-                        {`${teacher.first_name} ${teacher.last_name} (${teacher.subject})`}
-                      </option>
-                    ))}
-                  </select>
+
+                {/* O'qituvchi va Xona */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      O'qituvchi *
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      value={formData.teacher_id}
+                      onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                      required
+                      disabled={teachers.length === 0}
+                    >
+                      <option value="">O'qituvchi tanlang</option>
+                      {teachers.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id}>
+                          {teacher.first_name} {teacher.last_name} ({teacher.subject})
+                        </option>
+                      ))}
+                    </select>
+                    {teachers.length === 0 && (
+                      <p className="text-red-500 text-xs mt-1">O'qituvchilar mavjud emas</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Xona *
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      value={formData.room_id}
+                      onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                      required
+                      disabled={rooms.length === 0}
+                    >
+                      <option value="">Xona tanlang</option>
+                      {rooms.map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {room.name} ({room.capacity || 0} o'rin)
+                        </option>
+                      ))}
+                    </select>
+                    {rooms.length === 0 && (
+                      <p className="text-red-500 text-xs mt-1">Xonalar mavjud emas</p>
+                    )}
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Xona</label>
-                  <select
-                    className="select w-full border border-gray-300 rounded-md p-2"
-                    value={formData.room_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, room_id: e.target.value })
-                    }
-                    required
-                    disabled={rooms.length === 0}
-                  >
-                    <option value="">
-                      {errors.rooms ? "Xonalar yo'q" : "Tanlang"}
-                    </option>
-                    {rooms.map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {`${room.name} (${room.capacity || "Belgilanmagan"})`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group md:col-span-2">
-                  <label>Dars kunlari</label>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+
+                {/* Dars kunlari */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Dars kunlari *
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {daysOfWeek.map((day) => (
-                      <label key={day} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <label
+                        key={day}
+                        className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.days.includes(day)
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                      >
                         <input
                           type="checkbox"
                           checked={formData.days.includes(day)}
                           onChange={() => handleDaysChange(day)}
-                          style={{ scale: "1.5", cursor: "pointer" }}
+                          className="hidden"
                         />
-                        {day}
+                        <div className={`w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.days.includes(day)
+                            ? 'border-blue-500 bg-blue-500 text-white'
+                            : 'border-gray-400'
+                          }`}>
+                          {formData.days.includes(day) && <Check size={14} />}
+                        </div>
+                        <span className="text-sm font-medium">{day}</span>
                       </label>
                     ))}
                   </div>
+                  {formData.days.length === 0 && (
+                    <p className="text-red-500 text-xs mt-2">Kamida bitta kun tanlanishi kerak</p>
+                  )}
                 </div>
-                <div className="form-group">
-                  <label>Boshlanish vaqti</label>
-                  <input
-                    type="time"
-                    className="input w-full border border-gray-300 rounded-md p-2"
-                    value={formData.start_time}
-                    onChange={(e) =>
-                      setFormData({ ...formData, start_time: e.target.value })
+
+                {/* Vaqt oralig'i */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Boshlanish vaqti *
+                    </label>
+                    <input
+                      type="time"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={formData.start_time}
+                      onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tugash vaqti *
+                    </label>
+                    <input
+                      type="time"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={formData.end_time}
+                      onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Oylik to'lov */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Oylik to'lov summasi (so'm) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={formData.monthly_fee}
+                      onChange={(e) => setFormData({ ...formData, monthly_fee: e.target.value })}
+                      placeholder="Masalan: 225000"
+                      min="0"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setAddModal(false)}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium flex items-center gap-2"
+                    disabled={formData.days.length === 0}
+                  >
+                    <Plus size={18} />
+                    Guruh qo'shish
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Davomat vaqtini uzaytirish modal oynasi */}
+      {extendModal && (
+        <div className="modal" onClick={() => setExtendModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+            <div className="modal-header bg-green-600 p-2 text-white rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock size={20} />
+                  <h3 className="text-lg font-bold">Davomat vaqtini uzaytirish</h3>
+                </div>
+                <button
+                  type="button"
+                  className="text-white hover:bg-green-700 rounded-full p-1"
+                  onClick={() => setExtendModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-gray-600 mb-2">
+                  <strong>{selectedGroupForExtension?.group_subject}</strong> guruhi uchun davomat vaqtini uzaytiring
+                </p>
+                <p className="text-sm text-gray-500">
+                  Uzaytirilgan vaqtgacha o'qituvchilar yo'qlama qilish va yangilash imkoniyatiga ega bo'ladilar
+                </p>
+              </div>
+
+              {/* Mavjud uzaytirish ma'lumotlari */}
+              {extensionInfo && extensionInfo.extended_until && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <Check size={16} />
+                    <span className="font-medium">Joriy uzaytirish mavjud:</span>
+                  </div>
+
+                  {(() => {
+                    const date = new Date(extensionInfo.extended_until);
+
+                    // bugun va ertaga aniqlash
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(today.getDate() + 1);
+
+                    const extendedDay = new Date(date);
+                    extendedDay.setHours(0, 0, 0, 0);
+
+                    let prefix = "";
+                    if (extendedDay.getTime() === today.getTime()) {
+                      prefix = "Bugun, ";
+                    } else if (extendedDay.getTime() === tomorrow.getTime()) {
+                      prefix = "Ertaga, ";
                     }
+                    else {
+                      prefix = ""
+                    }
+
+                    return (
+                      <p className="text-sm text-blue-600 mt-1">
+                        {prefix}
+                        {date.getDate()}-{monthsUZ[date.getMonth()].toLowerCase()} soat {date.getHours()}:00 gacha
+                      </p>
+                    );
+                  })()}
+
+                  {extensionInfo.extended_by && (
+                    <p className="text-xs text-blue-500 mt-1">
+                      Admin tomonidan uzaytirilgan
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="form-group">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sana *
+                  </label>
+                  <input
+                    type="date"
+                    className="input"
+                    value={extensionData.date}
+                    onChange={(e) => setExtensionData({ ...extensionData, date: e.target.value })}
                     required
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
+
                 <div className="form-group">
-                  <label>Tugash vaqti</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vaqt *
+                  </label>
                   <input
                     type="time"
-                    className="input w-full border border-gray-300 rounded-md p-2"
-                    value={formData.end_time}
-                    onChange={(e) =>
-                      setFormData({ ...formData, end_time: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-group md:col-span-2">
-                  <label>Oylik to'lov summasi (so'm)</label>
-                  <input
-                    type="number"
-                    className="input w-full border border-gray-300 rounded-md p-2"
-                    value={formData.monthly_fee}
-                    onChange={(e) =>
-                      setFormData({ ...formData, monthly_fee: e.target.value })
-                    }
-                    placeholder="Masalan: 225000"
-                    min="0"
+                    className="input"
+                    value={extensionData.time}
+                    onChange={(e) => setExtensionData({ ...extensionData, time: e.target.value })}
                     required
                   />
                 </div>
               </div>
-              <div className="modal-footer flex justify-end gap-2 mt-4">
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-yellow-800">
+                  ⏰ Eslatma: Uzaytirish vaqti hozirgi vaqtdan keyin bo'lishi kerak.
+                  Tanlangan vaqtgacha bu guruh uchun yo'qlama qilish mumkin bo'ladi.
+                </p>
+              </div>
+            </div>
+
+            <div className="modal-footer bg-gray-50 px-6 rounded-b-lg h-12">
+              <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  className="btn btn-secondary px-4 py-2 bg-gray-500 text-white rounded-md"
-                  onClick={() => setAddModal(false)}
+                  className="btn btn-secondary"
+                  onClick={() => setExtendModal(false)}
                 >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary px-4 py-2 bg-blue-600 text-white rounded-md">
-                  Saqlash
+                <button
+                  type="button"
+                  className="btn btn-success flex items-center bg-green-600 hover:bg-green-700 text-white"
+                  onClick={extendAttendanceTime}
+                  disabled={!extensionData.date || !extensionData.time}
+                >
+                  <Clock size={16} className="mr-2" />
+                  {extensionInfo ? "Vaqtni yangilash" : "Vaqtni uzaytirish"}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

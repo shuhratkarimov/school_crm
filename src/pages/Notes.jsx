@@ -95,7 +95,7 @@ export default function Notes() {
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
+    <div className="bg-gray-50 min-h-screen">
       <ToastContainer />
       <div className="flex items-center gap-2 mb-6">
         <Book size={24} color="#104292" />

@@ -518,6 +518,7 @@ function Students() {
                     value={formData.birth_date}
                     onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
                     max={today}
+                    format="dd.MM.yyyy"
                   />
                 </div>
 

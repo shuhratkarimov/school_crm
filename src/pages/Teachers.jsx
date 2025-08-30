@@ -571,116 +571,322 @@ Balans: ${currentBalance.toLocaleString(
             className="modal-content"
             style={{
               backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              width: "500px",
+              padding: "0",
+              borderRadius: "12px",
+              width: "600px",
               maxWidth: "90%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
             }}
           >
-            <h3 style={{ marginBottom: "20px", fontWeight: "bold", fontSize: "1.2rem", textAlign: "center" }}>Yangi ustoz qo'shish</h3>
-            <form onSubmit={addTeacher}>
-              <div
-                className="form-grid"
+            {/* Modal Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "20px 24px",
+                borderBottom: "1px solid #eaeaea",
+                backgroundColor: "#f9fafb",
+                borderTopLeftRadius: "12px",
+                borderTopRightRadius: "12px",
+              }}
+            >
+              <h3
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "16px",
-                  padding: "16px",
+                  margin: 0,
+                  fontWeight: "600",
+                  fontSize: "1.25rem",
+                  color: "#104292",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
                 }}
               >
-                <div className="form-group">
-                  <label>Ism</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={formData.first_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, first_name: e.target.value })
-                    }
-                    placeholder="Ustoz ismi"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Familiya</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={formData.last_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, last_name: e.target.value })
-                    }
-                    placeholder="Ustoz familiyasi"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Otasining ismi</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={formData.father_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, father_name: e.target.value })
-                    }
-                    placeholder="Otasining ismi (ixtiyoriy)"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Tug'ilgan sana</label>
-                  <input
-                    type="date"
-                    className="input"
-                    value={formData.birth_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, birth_date: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Telefon raqami</label>
-                  <input
-                    type="tel"
-                    className="input"
-                    value={formData.phone_number}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone_number: e.target.value })
-                    }
-                    placeholder="+998 (__) ___-__-__"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Fan</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={formData.subject}
-                    onChange={(e) =>
-                      setFormData({ ...formData, subject: e.target.value })
-                    }
-                    placeholder="O'qitadigan fani"
-                    required
-                  />
+                <Plus size={22} />
+                Yangi ustoz qo'shish
+              </h3>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                  padding: "4px",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                onMouseOver={(e) => (e.target.style.color = "#374151")}
+                onMouseOut={(e) => (e.target.style.color = "#6b7280")}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={addTeacher}>
+              <div
+                style={{
+                  padding: "24px",
+                }}
+              >
+                <div
+                  className="form-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                    gap: "16px",
+                  }}
+                >
+                  <div className="form-group">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontWeight: "500",
+                        color: "#374151",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      Ism *
+                    </label>
+                    <input
+                      type="text"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "0.875rem",
+                        transition: "border-color 0.2s",
+                      }}
+                      value={formData.first_name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, first_name: e.target.value })
+                      }
+                      placeholder="Ustoz ismi"
+                      required
+                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontWeight: "500",
+                        color: "#374151",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      Familiya *
+                    </label>
+                    <input
+                      type="text"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "0.875rem",
+                        transition: "border-color 0.2s",
+                      }}
+                      value={formData.last_name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, last_name: e.target.value })
+                      }
+                      placeholder="Ustoz familiyasi"
+                      required
+                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontWeight: "500",
+                        color: "#374151",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      Otasining ismi
+                    </label>
+                    <input
+                      type="text"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "0.875rem",
+                        transition: "border-color 0.2s",
+                      }}
+                      value={formData.father_name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, father_name: e.target.value })
+                      }
+                      placeholder="Otasining ismi (ixtiyoriy)"
+                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontWeight: "500",
+                        color: "#374151",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      Tug'ilgan sana *
+                    </label>
+                    <input
+                      type="date"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "0.875rem",
+                        transition: "border-color 0.2s",
+                      }}
+                      value={formData.birth_date}
+                      onChange={(e) =>
+                        setFormData({ ...formData, birth_date: e.target.value })
+                      }
+                      required
+                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontWeight: "500",
+                        color: "#374151",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      Telefon raqami *
+                    </label>
+                    <input
+                      type="tel"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "0.875rem",
+                        transition: "border-color 0.2s",
+                      }}
+                      value={formData.phone_number}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone_number: e.target.value })
+                      }
+                      placeholder="+998 (__) ___-__-__"
+                      required
+                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontWeight: "500",
+                        color: "#374151",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      Fan *
+                    </label>
+                    <input
+                      type="text"
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "0.875rem",
+                        transition: "border-color 0.2s",
+                      }}
+                      value={formData.subject}
+                      onChange={(e) =>
+                        setFormData({ ...formData, subject: e.target.value })
+                      }
+                      placeholder="O'qitadigan fani"
+                      required
+                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                    />
+                  </div>
                 </div>
               </div>
+
+              {/* Modal Footer */}
               <div
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: "10px",
-                  marginTop: "16px",
+                  gap: "12px",
+                  padding: "16px 24px",
+                  borderTop: "1px solid #eaeaea",
+                  backgroundColor: "#f9fafb",
+                  borderBottomLeftRadius: "12px",
+                  borderBottomRightRadius: "12px",
                 }}
               >
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    transition: "background-color 0.2s",
+                  }}
                   onClick={() => setIsAddModalOpen(false)}
+                  onMouseOver={(e) => (e.target.style.backgroundColor = "#4b5563")}
+                  onMouseOut={(e) => (e.target.style.backgroundColor = "#6b7280")}
                 >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#104292",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseOver={(e) => (e.target.style.backgroundColor = "#0d366e")}
+                  onMouseOut={(e) => (e.target.style.backgroundColor = "#104292")}
+                >
+                  <Plus size={18} />
                   Ustoz qo'shish
                 </button>
               </div>
@@ -1287,26 +1493,26 @@ Balans: ${currentBalance.toLocaleString(
                       so'm
                     </td>
                     <td style={{ textAlign: "center" }}>
-                    <button
-                      className="bg-green-600 text-white rounded-full p-2 hover:bg-green-700 transition"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openPaymentModal(teacher);
-                      }}
-                      title="To'lov qilish"
-                    >
-                      <Euro size={16} />
-                    </button>
                       <button
-                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition ml-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(teacher);
-                      }}
-                      title="Tahrirlash"
-                    >
-                      <Pen size={16} />
-                    </button>
+                        className="bg-green-600 text-white rounded-full p-2 hover:bg-green-700 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openPaymentModal(teacher);
+                        }}
+                        title="To'lov qilish"
+                      >
+                        <Euro size={16} />
+                      </button>
+                      <button
+                        className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition ml-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(teacher);
+                        }}
+                        title="Tahrirlash"
+                      >
+                        <Pen size={16} />
+                      </button>
                       <button
                         className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition ml-2"
                         onClick={(e) => {

@@ -134,7 +134,7 @@ function Dashboard() {
       animateValue(0, stats.totalGroups || 0, 1500, setAnimatedGroups);
       animateValue(0, stats.totalPaymentThisMonth || 0, 1500, setAnimatedPayment);
       animateValue(0, stats.totalTeachers || 0, 1500, setAnimatedTeachers);
-      const totalStudents = stats.studentsGender.male + stats.studentsGender.female;
+      const totalStudents = stats.totalStudents?.count;
       const malePercent = totalStudents ? Math.round((stats.studentsGender.male / totalStudents) * 100) : 0;
       const femalePercent = totalStudents ? Math.round((stats.studentsGender.female / totalStudents) * 100) : 0;
       animateValue(0, malePercent, 1500, setAnimatedMalePercent);

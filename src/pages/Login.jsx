@@ -39,7 +39,7 @@ function Login({ setIsAuthenticated }) {
       setIsAuthenticated(true);
       setShowSuccess(true);
 
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/dashboard"), 1000);
     } catch (err) {
       toast.error(err.message || "Kirishda xatolik yuz berdi");
     } finally {
@@ -64,7 +64,7 @@ function Login({ setIsAuthenticated }) {
               className="flex flex-col items-center gap-4"
               initial={{ scale: 0.3, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="w-20 h-20 relative">
                 <svg className="w-full h-full" viewBox="0 0 52 52">
@@ -77,7 +77,7 @@ function Login({ setIsAuthenticated }) {
                     strokeWidth="2"
                     strokeDasharray="166"
                     strokeDashoffset="166"
-                    style={{ animation: "tickStroke 0.6s forwards" }}
+                    style={{ animation: "tickStroke 0.3s forwards" }}
                   />
                   <path
                     className="stroke-green-500"
@@ -86,7 +86,7 @@ function Login({ setIsAuthenticated }) {
                     d="M14.1 27.2l7.1 7.2 16.7-16.8"
                     strokeDasharray="48"
                     strokeDashoffset="48"
-                    style={{ animation: "tickStroke 0.3s 0.8s forwards" }}
+                    style={{ animation: "tickStroke 0.3s 0.3s forwards" }}
                   />
                 </svg>
               </div>
@@ -111,7 +111,7 @@ function Login({ setIsAuthenticated }) {
           className="h-32 w-auto mb-6 top-0 left-1/33 transform -translate-x-1/2 absolute"
           initial={{ scale: 0.7, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.3 }}
         />
 
         {/* Title */}

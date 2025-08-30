@@ -94,7 +94,7 @@ function TeacherDashboard() {
     });
     setTimeout(() => {
       navigate("/teacher/login");
-    }, 2000);
+    }, 1000);
   };
 
   const daysInUzbek = {
