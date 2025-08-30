@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, GraduationCap, Plus, Pen, X } from "lucide-react";
+import { Trash2, GraduationCap, Plus, Pen, X, Euro } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
@@ -291,15 +291,22 @@ function Teachers() {
       );
 
       if (!response.ok) {
+        toast.error("Xatolik yuz berdi");
         throw new Error("Xatolik yuz berdi");
       }
       else {
-        toast.success("O‘qituvchi ma’lumotlari yangilandi");
+        fetchData();
+        toast.success("O‘qituvchi ma’lumotlari yangilandi", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
       setIsEditModalOpen(false);
-      fetchData(); // ro‘yxatni yangilash
     } catch (error) {
-      toast.error("Yangilashda muammo yuz berdi");
+      toast.error("Yangilashda muammo yuz berdi", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       console.error(error);
     }
   };
@@ -314,13 +321,20 @@ function Teachers() {
       );
 
       if (response.ok) {
+        toast.success("Ustoz muvaffaqiyatli o'chirildi", {
+          position: "top-right",
+          autoClose: 3000,
+        });
         setTeachers(teachers.filter((t) => t.id !== id));
         setTeacherBalances((prev) => {
           const newBalances = { ...prev };
           delete newBalances[id];
           return newBalances;
         });
-        toast.success("Ustoz muvaffaqiyatli o'chirildi");
+        toast.success("Ustoz muvaffaqiyatli o'chirildi", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       } else {
         throw new Error("Ustoz o'chirishda xatolik");
       }
@@ -1230,7 +1244,7 @@ Balans: ${currentBalance.toLocaleString(
           </thead>
           <tbody>
             {filteredTeachers.length === 0 ? (
-              <tr>
+              <tr style={{ textAlign: "center", padding: "40px" }}>
                 <td
                   colSpan="8"
                   style={{ textAlign: "center", padding: "40px" }}
@@ -1249,9 +1263,9 @@ Balans: ${currentBalance.toLocaleString(
                 ).length;
                 return (
                   <tr key={teacher.id}>
-                    <td>{index + 1}</td>
+                    <td style={{ textAlign: "center" }}>{index + 1}</td>
                     <td
-                      style={{ cursor: "pointer", color: "#104292" }}
+                      style={{ cursor: "pointer", color: "#104292", textAlign: "center" }}
                       onClick={() => openDetailModal(teacher)}
                     >
                       {`${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""
@@ -1260,7 +1274,7 @@ Balans: ${currentBalance.toLocaleString(
                     <td style={{ textAlign: "center" }}>
                       {teacher.birth_date
                         ? new Date(teacher.birth_date).toLocaleDateString(
-                          "uz-UZ"
+                          "ru-RU"
                         )
                         : "N/A"}
                     </td>
@@ -1268,12 +1282,23 @@ Balans: ${currentBalance.toLocaleString(
                     <td style={{ textAlign: "center" }}>{groupsCount} ta</td>
                     <td style={{ textAlign: "center" }}>
                       {(teacherBalances[teacher.id] || 0).toLocaleString(
-                        "uz-UZ"
+                        "ru-RU"
                       )}{" "}
                       so'm
                     </td>
-                    <td style={{ textAlign: "center" }}>              <button
-                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
+                    <td style={{ textAlign: "center" }}>
+                    <button
+                      className="bg-green-600 text-white rounded-full p-2 hover:bg-green-700 transition"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPaymentModal(teacher);
+                      }}
+                      title="To'lov qilish"
+                    >
+                      <Euro size={16} />
+                    </button>
+                      <button
+                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition ml-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(teacher);

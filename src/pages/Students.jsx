@@ -10,6 +10,27 @@ import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
 import uz from "date-fns/locale/uz";
 registerLocale("uz", uz);
+const monthsInUzbek = {
+  1: "Yanvar",
+  2: "Fevral",
+  3: "Mart",
+  4: "Aprel",
+  5: "May",
+  6: "Iyun",
+  7: "Iyul",
+  8: "Avgust",
+  9: "Sentyabr",
+  10: "Oktabr",
+  11: "Noyabr",
+  12: "Dekabr",
+};
+
+const InfoRow = ({ label, value }) => (
+  <div className="flex">
+    <span className="text-sm font-medium text-gray-600 w-1/3">{label}:</span>
+    <span className="text-gray-800 font-medium flex-1">{value}</span>
+  </div>
+);
 
 function Students() {
   const [students, setStudents] = useState([]);
@@ -22,8 +43,9 @@ function Students() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [addModal, setAddModal] = useState(false);
+  const [monthFilter, setMonthFilter] = useState(getCurrentMonth());
+  const [yearFilter, setYearFilter] = useState(getCurrentYear());
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [studentsPerPage] = useState(10);
 
@@ -54,37 +76,28 @@ function Students() {
     groups: [],
   });
 
-  const monthsInUzbek = {
-    1: "Yanvar",
-    2: "Fevral",
-    3: "Mart",
-    4: "Aprel",
-    5: "May",
-    6: "Iyun",
-    7: "Iyul",
-    8: "Avgust",
-    9: "Sentabr",
-    10: "Oktabr",
-    11: "Noyabr",
-    12: "Dekabr",
-  };
-
   const today = new Date().toLocaleDateString("en-CA");
   const minDate = "1990-01-01";
   const twentyYearsAgo = new Date();
   twentyYearsAgo.setFullYear(twentyYearsAgo.getFullYear() - 20);
   const defaultBirthDate = twentyYearsAgo.toISOString().split("T")[0];
 
-  const getCurrentMonth = () => new Date().getMonth() + 1;
-  const getCurrentYear = () => new Date().getFullYear();
+  function getCurrentMonth() {
+    return monthsInUzbek[new Date().getMonth() + 1];
+  };
 
-  const getPaymentRatio = (student, currentMonth, currentYear) => {
-    const totalGroups = student.groups ? student.groups.length : 0;
-    if (totalGroups === 0) return "0/0";
-    const paidGroups = student.paid_groups || 0;
-    return `${paidGroups}/${totalGroups} (${Math.round(
-      (paidGroups / totalGroups) * 100
-    )}%)`;
+  function getCurrentYear() {
+    return new Date().getFullYear();
+  };
+
+  const getPaymentRatio = (student) => {
+    const totalGroups = student.studentGroups?.filter(
+      (sg) => sg.month === monthFilter && sg.year === yearFilter
+    ).length || 0;
+    const paidGroups = student.studentGroups?.filter(
+      (sg) => sg.month === monthFilter && sg.year === yearFilter && sg.paid
+    ).length || 0;
+    return totalGroups ? `${paidGroups}/${totalGroups} (${Math.round((paidGroups / totalGroups) * 100)}%)` : "0/0";
   };
 
   const FormattedDate = (isoDate) => {
@@ -95,11 +108,13 @@ function Students() {
     const year = date.getFullYear();
     return `${day}.${month}.${year}`;
   };
-
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_students`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/get_students?month=${monthFilter}&year=${yearFilter}`
+      );
+      if (!response.ok) throw new Error("O'quvchilarni olishda xatolik yuz berdi!");
       const data = await response.json();
       setStudents(data);
     } catch (err) {
@@ -131,17 +146,6 @@ function Students() {
     } catch (err) {
       setError("Ustozlar ma'lumotlarini olishda muammo yuzaga keldi!");
       toast.error("Ustozlar ma'lumotlarini olishda xatolik yuz berdi: hali mavjud emas", { position: "top-right", autoClose: 3000 });
-    }
-  };
-
-  const fetchStudentPayments = async (studentId) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_student_payments/${studentId}`);
-      if (!response.ok) throw new Error("O'quvchi to'lovlarini olishda xatolik yuz berdi!");
-      const data = await response.json();
-      // Note: This function is defined but not used in the provided code; keeping it as is.
-    } catch (err) {
-      console.error("O'quvchi to'lovlarini olishda xatolik:", err);
     }
   };
 
@@ -329,8 +333,12 @@ function Students() {
         const matchesName = `${student.first_name} ${student.last_name}`
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
-        const totalGroups = student.groups ? student.groups.length : 0;
-        const paidGroups = student?.paid_groups || 0;
+        const totalGroups = student.studentGroups?.filter(
+          (sg) => sg.month === monthFilter && sg.year === yearFilter
+        ).length || 0;
+        const paidGroups = student.studentGroups?.filter(
+          (sg) => sg.month === monthFilter && sg.year === yearFilter && sg.paid
+        ).length || 0;
         const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
         const isPartiallyPaid = totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
         const isUnpaid = totalGroups > 0 && paidGroups === 0;
@@ -352,10 +360,19 @@ function Students() {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   useEffect(() => {
+    setMonthFilter(getCurrentMonth());
+    setYearFilter(getCurrentYear());
+  }, []);
+
+  useEffect(() => {
     fetchStudents();
     fetchGroups();
     fetchTeachers();
   }, []);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [monthFilter, yearFilter]);
 
   useEffect(() => {
     if (success) {
@@ -401,211 +418,204 @@ function Students() {
 
 
       {addModal && (
-        <div className="modal">
-          <div className="modal-content">
-            <div className="modal-header bg-[#104292] p-2 text-white rounded-[10px]">
-              <h3 className="text-center text-lg font-bold">Yangi o'quvchi qo'shish</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-t-xl">
+              <h2 className="text-2xl font-bold">Yangi o'quvchi qo'shish</h2>
+              <button
+                className="p-2 rounded-full hover:bg-blue-600 transition-colors"
+                onClick={() => setAddModal(false)}
+              >
+                <X size={24} />
+              </button>
             </div>
-            <form onSubmit={addStudent}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Ism</label>
+
+            <form onSubmit={addStudent} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Ism */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ism <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                     placeholder="O'quvchining ismi"
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Familiya</label>
+
+                {/* Familiya */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Familiya <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                     placeholder="O'quvchining familiyasi"
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Telefon raqami</label>
+
+                {/* Telefon raqami */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Telefon raqami <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="tel"
-                    className="input"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.phone_number}
                     onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                     placeholder="+998901234567"
                     required
                   />
                 </div>
-                <div className="form-group" style={{ marginBottom: "20px" }}>
-                  <label style={{ display: "block", fontWeight: "600" }}>
-                    Guruhlar
+
+                {/* Ota/onasining ismi */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ota/onasining ismi
                   </label>
-                  <select
-                    className="select"
-                    value=""
-                    onChange={(e) => {
-                      const selectedGroupId = e.target.value;
-                      if (selectedGroupId && !formData.group_ids.includes(selectedGroupId)) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          group_ids: [...prev.group_ids, selectedGroupId],
-                        }));
-                      }
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      borderRadius: "6px",
-                      border: "1px solid #ced4da",
-                      marginBottom: "12px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <option value="">Guruhni tanlang</option>
-                    {groups
-                      .filter((group) => !formData.group_ids.includes(group.id))
-                      .map((group) => (
-                        <option key={group.id} value={group.id}>
-                          {group.group_subject}
-                        </option>
-                      ))}
-                  </select>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                    {formData.group_ids.map((groupId) => {
-                      const group = groups.find((g) => g.id === groupId);
-                      if (!group) return null;
-                      return (
-                        <div
-                          key={groupId}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            background: "#104292",
-                            padding: "6px 10px",
-                            borderRadius: "20px",
-                            fontSize: "14px",
-                            color: "white",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                          }}
-                        >
-                          {group.group_subject}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                group_ids: prev.group_ids.filter((id) => id !== groupId),
-                              }))
-                            }
-                            style={{
-                              marginLeft: "8px",
-                              background: "white",
-                              border: "none",
-                              color: "red",
-                              borderRadius: "50%",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              padding: 0,
-                            }}
-                          >
-                            <X size={23} />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Ota/onasining ismi va familiyasi</label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.father_name}
                     onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
                     placeholder="Ota/onasining ismi va familiyasi"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Ota/onasining telefon raqami</label>
+
+                {/* Ota/onasining telefon raqami */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ota/onasining telefon raqami <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="tel"
-                    className="input"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.parents_phone_number}
                     onChange={(e) => setFormData({ ...formData, parents_phone_number: e.target.value })}
                     placeholder="+998901234567"
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Tug'ilgan sana</label>
-                  <DatePicker
-                    selected={formData.birth_date}
-                    onChange={(date) => setFormData({ ...formData, birth_date: date })}
-                    onChangeRaw={(e) => {
-                      const value = e?.target?.value;
-                      if (!value) return;
-                      const parts = value.split(".");
-                      if (parts.length === 3) {
-                        const day = parseInt(parts[0], 10);
-                        const month = parseInt(parts[1], 10) - 1;
-                        const year = parseInt(parts[2], 10);
-                        const date = new Date(year, month, day);
-                        if (!isNaN(date)) {
-                          setFormData({ ...formData, birth_date: date });
-                        }
-                      }
-                    }}
-                    dateFormat="dd.MM.yyyy"
-                    showYearDropdown
-                    scrollableMonthYearDropdown
-                    className="input"
-                    locale="uz"
-                    placeholderText="Tug'ilgan sana"
-                    minDate={minDate}
-                    maxDate={today}
+
+                {/* Tug'ilgan sana */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tug'ilgan sana
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.birth_date}
+                    onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                    max={today}
                   />
                 </div>
-                <div className="form-group">
-                  <label>O'qishga kelgan vaqti</label>
+
+                {/* O'qishga kelgan vaqti */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    O'qishga kelgan vaqti
+                  </label>
                   <DatePicker
-                    selected={formData.came_in_school}
+                    selected={formData.came_in_school ? new Date(formData.came_in_school) : null}
                     onChange={(date) => setFormData({ ...formData, came_in_school: date })}
-                    onChangeRaw={(e) => {
-                      const value = e?.target?.value;
-                      if (!value) return;
-                      const parts = value.split(".");
-                      if (parts.length === 3) {
-                        const day = parseInt(parts[0], 10);
-                        const month = parseInt(parts[1], 10) - 1;
-                        const year = parseInt(parts[2], 10);
-                        const date = new Date(year, month, day);
-                        if (!isNaN(date)) {
-                          setFormData({ ...formData, came_in_school: date });
-                        }
-                      }
-                    }}
                     dateFormat="dd.MM.yyyy"
                     showYearDropdown
                     scrollableMonthYearDropdown
-                    className="input"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     locale="uz"
                     placeholderText="O'qishga kelgan vaqti"
-                    minDate={minDate}
-                    maxDate={today}
+                    minDate={new Date("1990-01-01")}
+                    maxDate={new Date()}
                   />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setAddModal(false)}>
+
+              {/* Guruhlar */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Guruhlar <span className="text-red-500">*</span>
+                </label>
+
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
+                  value=""
+                  onChange={(e) => {
+                    const selectedGroupId = e.target.value;
+                    if (selectedGroupId && !formData.group_ids.includes(selectedGroupId)) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        group_ids: [...prev.group_ids, selectedGroupId],
+                      }));
+                    }
+                  }}
+                >
+                  <option value="">Guruhni tanlang</option>
+                  {groups
+                    .filter((group) => !formData.group_ids.includes(group.id))
+                    .map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.group_subject}
+                      </option>
+                    ))}
+                </select>
+
+                <div className="flex flex-wrap gap-2">
+                  {formData.group_ids.map((groupId) => {
+                    const group = groups.find((g) => g.id === groupId);
+                    if (!group) return null;
+                    return (
+                      <div
+                        key={groupId}
+                        className="flex items-center bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm font-medium"
+                      >
+                        {group.group_subject}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              group_ids: prev.group_ids.filter((id) => id !== groupId),
+                            }))
+                          }
+                          className="ml-2 text-red-500 hover:text-red-700"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {formData.group_ids.length === 0 && (
+                  <p className="text-red-500 text-sm mt-1">Iltimos, kamida bitta guruhni tanlang!</p>
+                )}
+              </div>
+
+              {/* Modal footer */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  className="px-5 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  onClick={() => setAddModal(false)}
+                >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <Plus size={18} />
                   Saqlash
                 </button>
               </div>
@@ -641,12 +651,39 @@ function Students() {
               className="select"
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              style={{ minWidth: "150px" }}
+              style={{ minWidth: "180px" }}
             >
               <option value="all">Barcha o'quvchilar</option>
               <option value="fullyPaid">To'liq to'lagan</option>
               <option value="partiallyPaid">Qisman to'lagan</option>
               <option value="unpaid">Umuman to'lamagan</option>
+            </select>
+            <select
+              className="select"
+              value={monthFilter}
+              onChange={(e) => {
+                setMonthFilter(e.target.value);
+                setCurrentPage(1); // Yangi oy tanlanganda paginationni reset qilish
+              }}
+              style={{ minWidth: "100px" }}
+            >
+              <option value={getCurrentMonth()}>Joriy oy</option>
+              {Object.values(monthsInUzbek).map((month) => (
+                <option key={month} value={month}>{month}</option>
+              ))}
+            </select>
+            <select
+              className="select"
+              value={yearFilter}
+              onChange={(e) => {
+                setYearFilter(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              style={{ minWidth: "100px" }}
+            >
+              {[getCurrentYear() - 1, getCurrentYear(), getCurrentYear() + 1].map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -659,7 +696,9 @@ function Students() {
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>Telefon raqami</th>
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>Guruhlar</th>
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>Ota/onasining F.I.Sh.</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>To'lov ({monthsInUzbek[getCurrentMonth()]})</th>
+              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>
+                To'lov ({monthFilter})
+              </th>
               <th style={{ backgroundColor: "#104292", color: "white", textAlign: "center" }}>Amallar</th>
             </tr>
           </thead>
@@ -682,7 +721,7 @@ function Students() {
                   <td style={{ textAlign: "center" }}>{student.phone_number}</td>
                   <td style={{ paddingLeft: "30px" }}>{student.groups?.map((group) => group.group_subject).map((g, i) => <p key={i}>{i + 1}. {g}</p>) || "N/A"}</td>
                   <td style={{ textAlign: "center" }}>{student.father_name || "N/A"}</td>
-                  <td style={{ textAlign: "center" }}>{getPaymentRatio(student, getCurrentMonth(), getCurrentYear())}</td>
+                  <td style={{ textAlign: "center" }}>{getPaymentRatio(student)}</td>
                   <td>
                     <div className="flex gap-2 justify-center">
                       <div className="relative group">
@@ -757,49 +796,139 @@ function Students() {
       </div>
 
       {editModal && (
-        <div className="modal">
-          <div className="modal-content">
-            <div className="modal-header bg-[#104292] p-2 text-white rounded-[10px]">
-              <h3 className="text-center text-lg font-bold">O'quvchi ma'lumotlarini yangilash</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-t-xl">
+              <h2 className="text-2xl font-bold">O'quvchi ma'lumotlarini tahrirlash</h2>
+              <button
+                className="p-2 rounded-full hover:bg-blue-600 transition-colors"
+                onClick={() => setEditModal(false)}
+              >
+                <X size={24} />
+              </button>
             </div>
-            <form onSubmit={editStudent}>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>O'quvchi ismi</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={editFormData.first_name}
-                  onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
-                  required
-                />
+
+            <form onSubmit={editStudent} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Ism */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ism <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editFormData.first_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                {/* Familiya */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Familiya <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editFormData.last_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                {/* Telefon raqami */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Telefon raqami <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editFormData.phone_number}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone_number: e.target.value })}
+                    placeholder="+998 (__) ___-__-__"
+                    required
+                  />
+                </div>
+
+                {/* Ota/onasining ismi */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ota/onasining ismi
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editFormData.father_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, father_name: e.target.value })}
+                  />
+                </div>
+
+                {/* Ota/onasining telefon raqami */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ota/onasining telefon raqami <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editFormData.parents_phone_number}
+                    onChange={(e) => setEditFormData({ ...editFormData, parents_phone_number: e.target.value })}
+                    placeholder="+998 (__) ___-__-__"
+                    required
+                  />
+                </div>
+
+                {/* Tug'ilgan sana */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tug'ilgan sana
+                  </label>
+                  <DatePicker
+                    selected={editFormData.birth_date ? new Date(editFormData.birth_date) : null}
+                    onChange={(date) => setEditFormData({ ...editFormData, birth_date: date })}
+                    dateFormat="dd.MM.yyyy"
+                    showYearDropdown
+                    scrollableMonthYearDropdown
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    locale="uz"
+                    placeholderText="Tug'ilgan sana"
+                    minDate={new Date('1980-01-01')}
+                    maxDate={new Date()}
+                  />
+                </div>
+
+                {/* O'qishga kelgan vaqti */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    O'qishga kelgan vaqti
+                  </label>
+                  <DatePicker
+                    selected={editFormData.came_in_school ? new Date(editFormData.came_in_school) : null}
+                    onChange={(date) => setEditFormData({ ...editFormData, came_in_school: date })}
+                    dateFormat="dd.MM.yyyy"
+                    showYearDropdown
+                    scrollableMonthYearDropdown
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    locale="uz"
+                    placeholderText="O'qishga kelgan vaqti"
+                    minDate={new Date('2010-01-01')}
+                    maxDate={new Date()}
+                  />
+                </div>
               </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>O'quvchi familiyasi</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={editFormData.last_name}
-                  onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>O'quvchi telefon raqami</label>
-                <input
-                  type="tel"
-                  className="input"
-                  value={editFormData.phone_number}
-                  onChange={(e) => setEditFormData({ ...editFormData, phone_number: e.target.value })}
-                  placeholder="+998 (__) ___-__-__"
-                  required
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: "20px" }}>
-                <label style={{ display: "block", fontWeight: "600" }}>
-                  Guruhlar
+
+              {/* Guruhlar */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Guruhlar <span className="text-red-500">*</span>
                 </label>
+
                 <select
-                  className="select"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
                   value=""
                   onChange={(e) => {
                     const selectedGroupId = e.target.value;
@@ -809,14 +938,6 @@ function Students() {
                         group_ids: [...prev.group_ids, selectedGroupId],
                       }));
                     }
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #ced4da",
-                    marginBottom: "12px",
-                    cursor: "pointer",
                   }}
                 >
                   <option value="">Guruhni tanlang</option>
@@ -828,23 +949,15 @@ function Students() {
                       </option>
                     ))}
                 </select>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+
+                <div className="flex flex-wrap gap-2">
                   {editFormData.group_ids.map((groupId) => {
                     const group = groups.find((g) => g.id === groupId);
                     if (!group) return null;
                     return (
                       <div
                         key={groupId}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          background: "#104292",
-                          padding: "6px 10px",
-                          borderRadius: "20px",
-                          fontSize: "14px",
-                          color: "white",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                        }}
+                        className="flex items-center bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm font-medium"
                       >
                         {group.group_subject}
                         <button
@@ -855,74 +968,33 @@ function Students() {
                               group_ids: prev.group_ids.filter((id) => id !== groupId),
                             }))
                           }
-                          style={{
-                            marginLeft: "8px",
-                            background: "white",
-                            border: "none",
-                            color: "red",
-                            borderRadius: "50%",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            padding: 0,
-                          }}
+                          className="ml-2 text-red-500 hover:text-red-700"
                         >
-                          <X size={23} />
+                          <X size={16} />
                         </button>
                       </div>
                     );
                   })}
                 </div>
+
+                {editFormData.group_ids.length === 0 && (
+                  <p className="text-red-500 text-sm mt-1">Iltimos, kamida bitta guruhni tanlang!</p>
+                )}
               </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Ota/onasining F.I.Sh.</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={editFormData.father_name}
-                  onChange={(e) => setEditFormData({ ...editFormData, father_name: e.target.value })}
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Ota/onasining telefon raqami</label>
-                <input
-                  type="tel"
-                  className="input"
-                  value={editFormData.parents_phone_number}
-                  onChange={(e) => setEditFormData({ ...editFormData, parents_phone_number: e.target.value })}
-                  placeholder="+998 (__) ___-__-__"
-                  required
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Tug'ilgan sana</label>
-                <input
-                  type="date"
-                  min={new Date('1980-01-01').toISOString().split("T")[0]}
-                  max={new Date().toISOString().split("T")[0]}
-                  className="input"
-                  value={editFormData.birth_date}
-                  onChange={(e) => setEditFormData({ ...editFormData, birth_date: e.target.value })}
-                  placeholder="YYYY-MM-DD"
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>O'qishga kelgan vaqti</label>
-                <input
-                  type="date"
-                  min={new Date('2010-01-01').toISOString().split("T")[0]}
-                  max={new Date().toISOString().split("T")[0]}
-                  className="input"
-                  value={editFormData.came_in_school}
-                  onChange={(e) => setEditFormData({ ...editFormData, came_in_school: e.target.value })}
-                  placeholder="YYYY-MM-DD"
-                />
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setEditModal(false)}>
+
+              {/* Modal footer */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  className="px-5 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  onClick={() => setEditModal(false)}
+                >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
                   Saqlash
                 </button>
               </div>
@@ -932,98 +1004,149 @@ function Students() {
       )}
 
       {selectedStudent && (
-        <div className="modal" onClick={() => setSelectedStudent(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={() => setSelectedStudent(null)}
-              style={{ float: "right", padding: "8px", borderRadius: "50%" }}
-            >
-              <X />
-            </button>
-            <div className="modal-body p-4">
-              <div className="modal-header">
-                <h3 style={{ textAlign: "center", fontWeight: "bold", fontSize: "1.5rem", marginBottom: "16px" }}>O'quvchi haqida batafsil ma'lumot</h3>
-              </div>
-              <table className="min-w-full border border-gray-200 overflow-hidden" style={{ borderRadius: "30px", border: "1px solid rgb(0, 52, 103)" }}>
-                <tbody className="bg-white">
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">F.I.Sh.</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{selectedStudent.first_name} {selectedStudent.last_name}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Telefon raqami</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{selectedStudent.phone_number}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Ota/Onasining F.I.Sh.</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{selectedStudent.father_name || "N/A"}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Ota/Onasining telefon raqami</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{selectedStudent.parents_phone_number || "N/A"}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Tug'ilgan sana</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{FormattedDate(selectedStudent.birth_date) || "N/A"}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">O'qishni boshlagan sana</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{FormattedDate(selectedStudent.came_in_school) || "N/A"}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Guruhlar</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{selectedStudent.groups?.map(g => g.group_subject).join(", ") || "N/A"}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">O'quvchining unikal ID raqami</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{`ID${selectedStudent.studental_id}` || "N/A"}</td>
-                  </tr>
-                  <tr>
-                    <td className="px-4 py-2 font-semibold bg-[#104292] text-white">{monthsInUzbek[getCurrentMonth()]} oyi uchun to'lov holati</td>
-                    <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{getPaymentRatio(selectedStudent, getCurrentMonth(), getCurrentYear())}</td>
-                  </tr>
-                </tbody>
-              </table>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedStudent(null)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Modal header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-t-xl">
+              <h2 className="text-2xl font-bold">O'quvchi ma'lumotlari</h2>
+              <button
+                className="p-2 rounded-full hover:bg-blue-600 transition-colors"
+                onClick={() => setSelectedStudent(null)}
+              >
+                <X size={24} />
+              </button>
+            </div>
 
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-2 text-center">Guruhlar to‘lov holati</h3>
-                {selectedStudent.groups?.map((group, index) => {
-                  const groupPaymentStatus = selectedStudent.studentGroups.find(
-                    (sg) => sg.group_id === group.id && sg.month === monthsInUzbek[getCurrentMonth()]
-                  )?.paid;
+            {/* Modal body */}
+            <div className="p-6">
+              {/* Asosiy ma'lumotlar */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                    <Users size={20} />
+                    Shaxsiy ma'lumotlar
+                  </h3>
+                  <div className="space-y-2">
+                    <InfoRow label="F.I.Sh." value={`${selectedStudent.first_name} ${selectedStudent.last_name}`} />
+                    <InfoRow label="Telefon raqami" value={selectedStudent.phone_number} />
+                    <InfoRow label="Tug'ilgan sana" value={FormattedDate(selectedStudent.birth_date) || "N/A"} />
+                    <InfoRow label="O'qishga kelgan sana" value={FormattedDate(selectedStudent.came_in_school) || "N/A"} />
+                  </div>
+                </div>
 
-                  return (
-                    <table key={index} className="min-w-full border border-gray-200 rounded-lg overflow-hidden mb-4">
-                      <tbody className="bg-white">
-                        <tr className="border-b">
-                          <td className="px-4 py-2 font-bold text-center w-10 bg-[#104292] text-white" style={{ borderLeft: "1px solid #e5e7eb", borderTopLeftRadius: "50%", borderBottomLeftRadius: "50%" }}>{index + 1}</td>
-                          <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Guruh</td>
-                          <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{group.group_subject}</td>
-                        </tr>
-                        <tr className="border-b">
-                          <td></td>
-                          <td className="px-4 py-2 font-semibold bg-[#104292] text-white">To‘lov holati</td>
-                          <td className={`px-4 py-2 font-bold ${groupPaymentStatus ? "text-green-600" : "text-red-600"}`} style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>
-                            {groupPaymentStatus ? "To'langan" : "To'lanmagan"}
-                          </td>
-                        </tr>
-                        <tr className="border-b">
-                          <td></td>
-                          <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Ustoz</td>
-                          <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{group.teacher ? `${group.teacher.first_name} ${group.teacher.last_name}` : "N/A"}</td>
-                        </tr>
-                        <tr>
-                          <td></td>
-                          <td className="px-4 py-2 font-semibold bg-[#104292] text-white">Telefon raqami</td>
-                          <td className="px-4 py-2" style={{ borderBottom: "1px solid rgb(0, 52, 103)" }}>{group.teacher ? group.teacher.phone_number : "N/A"}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  );
-                })}
+                <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                  <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center gap-2">
+                    <Users size={20} />
+                    Ota-ona ma'lumotlari
+                  </h3>
+                  <div className="space-y-2">
+                    <InfoRow label="Ota/Onasining ismi" value={selectedStudent.father_name || "N/A"} />
+                    <InfoRow label="Telefon raqami" value={selectedStudent.parents_phone_number || "N/A"} />
+                  </div>
+                </div>
               </div>
+
+              {/* ID va to'lov holati */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                  <h3 className="text-lg font-semibold text-purple-800 mb-3">Identifikator</h3>
+                  <div className="flex items-center justify-center">
+                    <span className="bg-purple-100 text-purple-800 py-2 px-4 rounded-full font-mono text-lg">
+                      ID{selectedStudent.studental_id}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                  <h3 className="text-lg font-semibold text-amber-800 mb-3">To'lov holati ({monthFilter})</h3>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold mb-2">{getPaymentRatio(selectedStudent)}</div>
+                    {(() => {
+                      const totalGroups = selectedStudent.studentGroups?.filter(
+                        sg => sg.month === monthFilter && sg.year === yearFilter
+                      ).length || 0;
+                      const paidGroups = selectedStudent.studentGroups?.filter(
+                        sg => sg.month === monthFilter && sg.year === yearFilter && sg.paid
+                      ).length || 0;
+
+                      let statusClass = "bg-red-100 text-red-800";
+                      if (paidGroups === totalGroups) statusClass = "bg-green-100 text-green-800";
+                      else if (paidGroups > 0) statusClass = "bg-yellow-100 text-yellow-800";
+
+                      return (
+                        <span className={`inline-block py-1 px-3 rounded-full text-sm font-medium ${statusClass}`}>
+                          {paidGroups === totalGroups ? "Toʻliq toʻlangan" :
+                            paidGroups > 0 ? "Qisman toʻlangan" : "Toʻlanmagan"}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Guruhlar ro'yxati */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Users size={24} />
+                  Guruhlar ({selectedStudent.groups?.length || 0})
+                </h3>
+
+                <div className="space-y-4">
+                  {selectedStudent.groups?.map((group, index) => {
+                    const groupPayment = selectedStudent.studentGroups?.find(
+                      sg => sg.group_id === group.id && sg.month === monthFilter && sg.year === yearFilter
+                    );
+
+                    return (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="text-lg font-medium text-blue-800">{group.group_subject}</h4>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${groupPayment?.paid
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                            }`}>
+                            {groupPayment?.paid ? "Toʻlangan" : "Toʻlanmagan"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-600 font-medium">Ustoz:</p>
+                            <p className="text-gray-800">
+                              {group.teacher ? `${group.teacher.first_name} ${group.teacher.last_name}` : "N/A"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 font-medium">Telefon:</p>
+                            <p className="text-gray-800">{group.teacher ? group.teacher.phone_number : "N/A"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+              <button
+                className="px-5 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                onClick={() => setSelectedStudent(null)}
+              >
+                Yopish
+              </button>
+              <button
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditModal(selectedStudent);
+                  setSelectedStudent(null);
+                }}
+              >
+                <Pen size={16} />
+                Tahrirlash
+              </button>
             </div>
           </div>
         </div>

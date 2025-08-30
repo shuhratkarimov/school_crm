@@ -187,7 +187,7 @@ function Login({ setIsAuthenticated }) {
       </motion.div>
 
       {/* ✅ tick animatsiya keyframes */}
-      <style jsx>{`
+      <style>{`
         @keyframes tickStroke {
           to {
             stroke-dashoffset: 0;

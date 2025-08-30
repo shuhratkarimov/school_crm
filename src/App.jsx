@@ -11,11 +11,12 @@ import "./i18n";
 import Expenses from "./pages/Expenses";
 import Notes from "./pages/Notes";
 import Calculator from "./pages/Calculator";
+import Achievements from "./pages/Achievements";
 
 // Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
-const Groups = lazy(() => import("./pages/Groups"));
+// const Groups = lazy(() => import("./pages/Groups"));
 const Payments = lazy(() => import("./pages/Payments"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const Requests = lazy(() => import("./pages/Requests"));
@@ -26,6 +27,7 @@ const TeacherLogin = lazy(() => import("./pages/TeacherLogin"));
 const TeacherDashboard = lazy(() => import("./pages/TeacherDashboard"));
 const TeacherAttendance = lazy(() => import("./pages/TeacherAttendance"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const PaymentReports = lazy(() => import("./components/PaymentReports"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -131,6 +133,14 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/teacher/payments"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <PaymentReports />
+                </PrivateRoute>
+              }
+            />
 
             <Route
               path="/students"
@@ -146,7 +156,7 @@ function App() {
                 </PrivateRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/groups"
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
@@ -155,6 +165,20 @@ function App() {
                     <div className="main-content">
                       <Header setIsAuthenticated={setIsAuthenticated} />
                       <Groups />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            /> */}
+            <Route
+              path="/achievements"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <Achievements />
                     </div>
                   </div>
                 </PrivateRoute>

@@ -85,6 +85,7 @@
     "tsx": "latest",
     "vaul": "^0.9.6",
     "vite": "latest",
+    "xlsx": "^0.18.5",
     "yaml": "latest",
     "zod": "^3.24.1"
   },

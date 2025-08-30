@@ -124,6 +124,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
               onChange={(e) => setUsername(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
               autoComplete="username"
+              required
             />
           </div>
           <div>
@@ -136,6 +137,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
               autoComplete="current-password"
+              required
             />
           </div>
 
@@ -163,7 +165,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
         </form>
       </motion.div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes tickStroke {
           to {
             stroke-dashoffset: 0;

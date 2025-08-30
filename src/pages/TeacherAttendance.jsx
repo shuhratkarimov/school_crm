@@ -8,7 +8,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, CheckCircle2, XCircle, Save, Clock, Book } from "lucide-react";
+import { Calendar, CheckCircle2, XCircle, Save, Clock, Book, Users, ChevronDown, ChevronUp } from "lucide-react";
 
 function TeacherAttendance() {
   const { groupId } = useParams();
@@ -19,6 +19,8 @@ function TeacherAttendance() {
   const [attendance, setAttendance] = useState({});
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [classDays, setClassDays] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
 
   const monthsInUzbek = {
     0: "yanvar",
@@ -72,7 +74,6 @@ function TeacherAttendance() {
         .map((day) => daysMap[day.trim()])
         .filter((day) => day !== undefined);
       setClassDays(classDaysArray);
-      console.log("Class days updated:", classDaysArray);
     }
   }, [group]);
 
@@ -91,7 +92,6 @@ function TeacherAttendance() {
       const data = await res.json();
       if (!data.group) throw new Error("Guruh topilmadi");
       setGroup(data.group);
-      console.log("Group fetched:", data.group);
     } catch (err) {
       console.error("Error fetching group:", err);
       toast.error("Guruh olinmadi", { position: "top-right", autoClose: 2000 });
@@ -110,7 +110,6 @@ function TeacherAttendance() {
       if (!Array.isArray(data)) throw new Error("O'quvchilar ro'yxati noto'g'ri");
       const filteredStudents = data.filter((s) => s.id);
       setStudents(filteredStudents);
-      console.log("Students fetched:", filteredStudents);
     } catch (err) {
       console.error("Error fetching students:", err);
       toast.error("O'quvchilar olinmadi", { position: "top-right", autoClose: 2000 });
@@ -133,7 +132,6 @@ function TeacherAttendance() {
         `${import.meta.env.VITE_API_URL}/get_attendance_by_date/${groupId}?date=${date}`
       );
       const data = await res.json();
-      console.log("Attendance data fetched:", JSON.stringify(data, null, 2));
 
       if (data.records && Array.isArray(data.records) && data.records.length > 0) {
         setHistory(data.records);
@@ -168,7 +166,6 @@ function TeacherAttendance() {
         }
       });
       setAttendance(initialAttendance);
-      console.log("Initial attendance set (no defaults):", initialAttendance);
     }
   }, [students, history]);
 
@@ -234,7 +231,7 @@ function TeacherAttendance() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Davomat saqlandi!", { position: "top-right", autoClose: 2000 });
-        setAttendance({}); // Clear attendance state after saving
+        setAttendance({});
         checkClassDateAndFetchAttendance();
       } else {
         toast.error(data.message || "Xatolik yuz berdi", { position: "top-right", autoClose: 2000 });
@@ -250,18 +247,29 @@ function TeacherAttendance() {
     return classDays.includes(dayOfWeek) ? "highlight-class-day" : "";
   };
 
+  const filteredStudents = () => {
+    if (!history) return students;
+    
+    let filtered = history;
+    if (filterStatus !== "all") {
+      filtered = history.filter(record => record.status === filterStatus);
+    }
+    return filtered;
+  };
+
   if (loading) return <LottieLoading />;
 
   return (
     <>
       <style>{`
         .highlight-class-day {
-          background-color: #ffe6e6;
-          color: #333;
+          background-color: #e6f7ff;
+          color: #1890ff;
           border-radius: 50%;
+          font-weight: 600;
         }
         .react-datepicker__day--selected {
-          background-color: #ff4d4d !important;
+          background-color: #1890ff !important;
           color: white !important;
         }
         .react-datepicker__day {
@@ -272,263 +280,347 @@ function TeacherAttendance() {
           justify-content: center;
           width: 32px;
           height: 32px;
+          border-radius: 50%;
+          transition: all 0.2s;
+        }
+        .react-datepicker__day:hover {
+          background-color: #f0f0f0;
+        }
+        .status-present {
+          background-color: #f6ffed;
+          border: 1px solid #b7eb8f;
+          color: #52c41a;
+        }
+        .status-absent {
+          background-color: #fff2f0;
+          border: 1px solid #ffccc7;
+          color: #ff4d4f;
+        }
+        .status-excused {
+          background-color: #f9f0ff;
+          border: 1px solid #d3adf7;
+          color: #722ed1;
         }
       `}</style>
       <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
         <ToastContainer />
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-[#104292]" />
-            <DatePicker
-              selected={selectedDate}
-              minDate={new Date("2025-08-22")}
-              maxDate={new Date()}
-              onChange={(date) => setSelectedDate(date)}
-              dateFormat="dd.MM.yyyy"
-              className="border rounded-lg px-3 py-2 text-sm sm:text-base focus:ring-2 focus:ring-blue-500"
-              dayClassName={highlightClassDays}
-            />
+        
+        {/* Sarlavha qismi */}
+        <div className="mb-6 bg-white rounded-xl shadow-sm p-4">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Davomatni boshqarish</h1>
+          <p className="text-gray-600">Guruh davomatini kiritish va monitoring qilish</p>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Asosiy ma'lumotlar paneli */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Book className="w-5 h-5 text-blue-600" />
+                Guruh ma'lumotlari
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-500">Guruh nomi</p>
+                  <p className="text-lg font-medium text-gray-800">{group.group_subject || "Noma'lum"}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-500">Dars kunlari</p>
+                  <p className="text-lg font-medium text-gray-800 flex items-center gap-1">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    {group.days || "Noma'lum"}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-500">Dars vaqti</p>
+                  <p className="text-lg font-medium text-gray-800 flex items-center gap-1">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    {group.start_time?.slice(0, 5) || "Noma'lum"} - {group.end_time?.slice(0, 5) || "Noma'lum"}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-500">O'quvchilar soni</p>
+                  <p className="text-lg font-medium text-gray-800 flex items-center gap-1">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    {students.length} ta
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Sana tanlash paneli */}
+            <div className="bg-white rounded-xl shadow-sm p-5">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Sana tanlash</h2>
+              
+              <div className="mb-4">
+                <DatePicker
+                  selected={selectedDate}
+                  minDate={new Date("2025-08-22")}
+                  maxDate={new Date()}
+                  onChange={(date) => setSelectedDate(date)}
+                  dateFormat="dd.MM.yyyy"
+                  className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  dayClassName={highlightClassDays}
+                  placeholderText="Sana tanlang"
+                />
+              </div>
+              
+              <div className="bg-blue-50 rounded-lg p-3">
+                <p className="text-center text-lg font-semibold text-blue-800">
+                  {new Date(selectedDate).getDate()}-{monthsInUzbek[new Date(selectedDate).getMonth()]}, {new Date(selectedDate).getFullYear()}-yil
+                </p>
+                <p className="text-center text-blue-600 capitalize">
+                  {daysInUzbek[new Date(selectedDate).getDay()]}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="mb-6 overflow-x-auto">
-          <table className="min-w-full border border-gray-200 rounded-lg">
-            <tbody>
-              <tr className="border-b">
-                <td className="px-4 py-2 flex items-center gap-2">
-                  <Book className="w-5 h-5 text-[#104292]" />
-                  <span className="text-gray-700 font-medium">Guruh nomi:</span>
-                </td>
-                <td className="px-4 py-2 text-lg font-semibold text-gray-800">
-                  {group.group_subject || "Noma'lum"}
-                </td>
-              </tr>
-              <tr className="border-b">
-                <td className="px-4 py-2 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-[#104292]" />
-                  <span className="text-gray-700 font-medium">Dars kunlari:</span>
-                </td>
-                <td className="px-4 py-2 text-lg font-semibold text-gray-800">
-                  {group.days || "Noma'lum"}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-2 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-[#104292]" />
-                  <span className="text-gray-700 font-medium">Dars vaqti:</span>
-                </td>
-                <td className="px-4 py-2 text-lg font-semibold text-gray-800">
-                  {group.start_time?.slice(0, 5) || "Noma'lum"} - {group.end_time?.slice(0, 5) || "Noma'lum"}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className="mb-6 text-center">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-            {new Date(selectedDate).getDate()}-{monthsInUzbek[new Date(selectedDate).getMonth()]} {new Date(selectedDate).getFullYear()}-yil ({daysInUzbek[new Date(selectedDate).getDay()].toUpperCase()})
-          </h2>
-        </div>
-        <div className="overflow-x-auto shadow-md rounded-lg bg-white">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-[#104292] text-white text-sm sm:text-base">
-                <th className="py-2 px-2 text-left">#</th>
-                <th className="py-2 px-2 text-left">O‘quvchi ismi</th>
-                <th className="py-2 px-2 text-center">Bor/Yo‘q</th>
-                <th className="py-2 px-2 text-center">Sabab</th>
-                <th className="py-2 px-2 text-center">Izoh</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(history && history.length > 0 ? history : students) &&
-                (history?.length > 0 || students?.length > 0) ? (
-                (history && history.length > 0 ? history : students).map((item, idx) => {
-                  const student_id = history ? item.student_id : item.id;
-                  const studentData = attendance[student_id] || { present: null, reason: null, note: "" };
-
-                  return (
-                    <tr
-                      key={student_id}
-                      className="border-b hover:bg-gray-50 transition text-sm sm:text-base"
+          
+          {/* O'quvchilar ro'yxati */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              {/* Jadval sarlavhasi */}
+              <div className="border-b p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  O'quvchilar ro'yxati
+                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    {students.length} ta
+                  </span>
+                </h2>
+                
+                {history && (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800"
                     >
-                      {/* T/r */}
-                      <td className="px-3 py-2">{idx + 1}</td>
-
-                      {/* F.I.O */}
-                      <td className="px-3 py-2">
-                        {history
-                          ? `${item.student?.first_name} ${item.student?.last_name}`
-                          : `${item.first_name} ${item.last_name}`}
-                      </td>
-
-                      {/* Bor/Yo‘q */}
-                      <td className="px-3 py-2 text-center">
-                        {history ? (
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${item.status === "present"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-600"
-                              }`}
-                          >
-                            {item.status === "present" ? (
-                              <CheckCircle2 className="w-4 h-4" />
-                            ) : (
-                              <XCircle className="w-4 h-4" />
-                            )}
-                            {item.status === "present" ? "Bor" : "Yo‘q"}
-                          </span>
-                        ) : studentData.present === null ? (
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() =>
-                                setAttendance((prev) => ({
-                                  ...prev,
-                                  [student_id]: { present: true, reason: null, note: "" },
-                                }))
-                              }
-                              className="p-1 rounded-full text-gray-400 hover:scale-110 transition"
-                            >
-                              <CheckCircle2 className="w-6 h-6" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                setAttendance((prev) => ({
-                                  ...prev,
-                                  [student_id]: {
-                                    present: false,
-                                    reason: "unexcused",
-                                    note: "",
-                                  },
-                                }))
-                              }
-                              className="p-1 rounded-full text-gray-400 hover:scale-110 transition"
-                            >
-                              <XCircle className="w-6 h-6" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => toggleAttendance(student_id)}
-                              className={`p-1 rounded-full ${studentData.present
-                                  ? "bg-green-100 text-green-600"
-                                  : "text-gray-400"
-                                } hover:scale-110 transition`}
-                            >
-                              <CheckCircle2 className="w-6 h-6" />
-                            </button>
-                            <button
-                              onClick={() => toggleAttendance(student_id)}
-                              className={`p-1 rounded-full ${studentData.present === false
-                                  ? "bg-red-100 text-red-600"
-                                  : "text-gray-400"
-                                } hover:scale-110 transition`}
-                            >
-                              <XCircle className="w-6 h-6" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Sabab */}
-                      <td className="py-2 text-center">
-                        {history ? (
-                          item.reason === "excused"
-                            ? "Sababli"
-                            : item.reason === "unexcused"
-                              ? "Sababsiz"
-                              : "-"
-                        ) : (
-                          <AnimatePresence>
-                            {studentData.present === false && (
-                              <motion.div
-                                key={`reason-${student_id}`}
-                                initial={{ opacity: 0, y: -5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                transition={{ duration: 0.25 }}
-                              >
-                                <select
-                                  value={studentData.reason || "unexcused"}
-                                  onChange={(e) =>
-                                    setAttendance((prev) => ({
-                                      ...prev,
-                                      [student_id]: {
-                                        ...prev[student_id],
-                                        reason: e.target.value,
-                                      },
-                                    }))
-                                  }
-                                  className="border rounded py-1 text-sm focus:ring-2 focus:ring-blue-500"
-                                >
-                                  <option value="excused">Sababli</option>
-                                  <option value="unexcused">Sababsiz</option>
-                                </select>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        )}
-                      </td>
-
-                      {/* Izoh */}
-                      <td className="px-3 py-2 text-center">
-                        {history ? (
-                          item.note || "-"
-                        ) : (
-                          <AnimatePresence>
-                            {studentData.present === false &&
-                              studentData.reason === "excused" && (
-                                <motion.input
-                                  key={`note-${student_id}`}
-                                  initial={{ opacity: 0, y: -5 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, y: -5 }}
-                                  transition={{ duration: 0.25 }}
-                                  type="text"
-                                  value={studentData.note || ""}
-                                  onChange={(e) =>
-                                    setAttendance((prev) => ({
-                                      ...prev,
-                                      [student_id]: {
-                                        ...prev[student_id],
-                                        note: e.target.value,
-                                      },
-                                    }))
-                                  }
-                                  className="border rounded py-1 w-full sm:w-40 text-sm focus:ring-2 focus:ring-blue-500"
-                                  placeholder="Sabab yozing..."
-                                />
-                              )}
-                          </AnimatePresence>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="text-center py-6 text-gray-500 italic"
+                      Filtr {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Filtrlar */}
+              <AnimatePresence>
+                {showFilters && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="px-4 py-3 bg-gray-50 border-b flex flex-wrap gap-3"
                   >
-                    Bu guruhga hali o‘quvchilar biriktirilmagan
-                  </td>
-                </tr>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Holati:</span>
+                      <select 
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="text-sm border rounded-md px-2 py-1 focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="all">Barchasi</option>
+                        <option value="present">Bor</option>
+                        <option value="absent">Yo'q</option>
+                      </select>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              {/* Jadval */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 text-gray-600 text-sm">
+                      <th className="py-3 px-4 text-left font-medium">#</th>
+                      <th className="py-3 px-4 text-left font-medium">O'quvchi ismi</th>
+                      <th className="py-3 px-4 text-center font-medium">Holati</th>
+                      <th className="py-3 px-4 text-center font-medium">Sabab</th>
+                      <th className="py-3 px-4 text-center font-medium">Izoh</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filteredStudents().length > 0 ? (
+                      filteredStudents().map((item, idx) => {
+                        const student_id = history ? item.student_id : item.id;
+                        const studentData = attendance[student_id] || { present: null, reason: null, note: "" };
+
+                        return (
+                          <tr key={student_id} className="hover:bg-gray-50 transition">
+                            <td className="py-3 px-4">{idx + 1}</td>
+                            
+                            <td className="py-3 px-4">
+                              <div>
+                                <p className="font-medium text-gray-800">
+                                  {history
+                                    ? `${item.student?.first_name} ${item.student?.last_name}`
+                                    : `${item.first_name} ${item.last_name}`}
+                                </p>
+                              </div>
+                            </td>
+                            
+                            <td className="py-3 px-4 text-center">
+                              {history ? (
+                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${item.status === "present" ? "status-present" : "status-absent"}`}>
+                                  {item.status === "present" ? (
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4" />
+                                  )}
+                                  {item.status === "present" ? "Bor" : "Yo'q"}
+                                </span>
+                              ) : studentData.present === null ? (
+                                <div className="flex justify-center gap-1">
+                                  <button
+                                    onClick={() =>
+                                      setAttendance((prev) => ({
+                                        ...prev,
+                                        [student_id]: { present: true, reason: null, note: "" },
+                                      }))
+                                    }
+                                    className="p-1 text-gray-400 hover:text-green-600 hover:scale-110 transition"
+                                  >
+                                    <CheckCircle2 className="w-6 h-6" />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setAttendance((prev) => ({
+                                        ...prev,
+                                        [student_id]: {
+                                          present: false,
+                                          reason: "unexcused",
+                                          note: "",
+                                        },
+                                      }))
+                                    }
+                                    className="p-1 text-gray-400 hover:text-red-600 hover:scale-110 transition"
+                                  >
+                                    <XCircle className="w-6 h-6" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex justify-center gap-1">
+                                  <button
+                                    onClick={() => toggleAttendance(student_id)}
+                                    className={`p-1 ${studentData.present ? "text-green-600" : "text-gray-400"} hover:scale-110 transition`}
+                                  >
+                                    <CheckCircle2 className="w-6 h-6" />
+                                  </button>
+                                  <button
+                                    onClick={() => toggleAttendance(student_id)}
+                                    className={`p-1 ${studentData.present === false ? "text-red-600" : "text-gray-400"} hover:scale-110 transition`}
+                                  >
+                                    <XCircle className="w-6 h-6" />
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                            
+                            <td className="py-3 px-4 text-center">
+                              {history ? (
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${item.reason === "excused" ? "status-excused" : ""}`}>
+                                  {item.reason === "excused"
+                                    ? "Sababli"
+                                    : item.reason === "unexcused"
+                                    ? "Sababsiz"
+                                    : "-"}
+                                </span>
+                              ) : (
+                                <AnimatePresence>
+                                  {studentData.present === false && (
+                                    <motion.div
+                                      key={`reason-${student_id}`}
+                                      initial={{ opacity: 0, y: -5 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -5 }}
+                                      transition={{ duration: 0.2 }}
+                                    >
+                                      <select
+                                        value={studentData.reason || "unexcused"}
+                                        onChange={(e) =>
+                                          setAttendance((prev) => ({
+                                            ...prev,
+                                            [student_id]: {
+                                              ...prev[student_id],
+                                              reason: e.target.value,
+                                            },
+                                          }))
+                                        }
+                                        className="border rounded-md py-1 px-2 text-sm focus:ring-1 focus:ring-blue-500"
+                                      >
+                                        <option value="excused">Sababli</option>
+                                        <option value="unexcused">Sababsiz</option>
+                                      </select>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              )}
+                            </td>
+                            
+                            <td className="py-3 px-4 text-center">
+                              {history ? (
+                                <span className="text-sm">{item.note || "-"}</span>
+                              ) : (
+                                <AnimatePresence>
+                                  {studentData.present === false &&
+                                    studentData.reason === "excused" && (
+                                      <motion.input
+                                        key={`note-${student_id}`}
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -5 }}
+                                        transition={{ duration: 0.2 }}
+                                        type="text"
+                                        value={studentData.note || ""}
+                                        onChange={(e) =>
+                                          setAttendance((prev) => ({
+                                            ...prev,
+                                            [student_id]: {
+                                              ...prev[student_id],
+                                              note: e.target.value,
+                                            },
+                                          }))
+                                        }
+                                        className="border rounded-md py-1 px-2 text-sm w-full max-w-xs focus:ring-1 focus:ring-blue-500"
+                                        placeholder="Sababini yozing..."
+                                      />
+                                    )}
+                                </AnimatePresence>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="py-8 text-center text-gray-500">
+                          <Users className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+                          <p>O'quvchilar topilmadi</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Saqlash tugmasi */}
+              {!history && students.length > 0 && classDays.includes(selectedDate.getDay()) && (
+                <div className="border-t p-4 bg-gray-50">
+                  <button
+                    onClick={saveAttendance}
+                    className="flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition shadow-md hover:shadow-lg"
+                  >
+                    <Save className="w-5 h-5" />
+                    Davomatni saqlash
+                  </button>
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
-        {!history && students.length > 0 && classDays.includes(selectedDate.getDay()) && (
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={saveAttendance}
-              className="flex items-center gap-2 bg-[#104292] text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-              <Save className="w-5 h-5" />
-              Davomatni saqlash
-            </button>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </>
   );

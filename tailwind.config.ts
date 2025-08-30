@@ -16,6 +16,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        marcellus: ["'Marcellus SC'", "cursive"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
