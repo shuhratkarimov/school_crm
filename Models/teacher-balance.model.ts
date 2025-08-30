@@ -17,6 +17,8 @@ TeacherBalance.init(
         model: "teachers",
         key: "id",
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     balance: {
       type: DataTypes.INTEGER,

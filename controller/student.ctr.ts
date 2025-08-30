@@ -13,6 +13,7 @@ import sequelize from "../config/database.config";
 import StudentGroup from "../Models/student_groups_model";
 import { getRoomsBusinessPercent } from "./room.ctr";
 import { DateTime } from "luxon";
+import { AttendanceExtension } from "../Models/extend_attendance_model";
 
 const groupTimeZone = "Asia/Tashkent";
 
@@ -702,6 +703,14 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
       );
     }
 
+    // Check existing attendance
+    const existing = await Attendance.findOne({
+      where: { group_id, date: inputDate.toISODate() },
+    });
+    if (existing) {
+      return next(BaseError.BadRequest(400, "Yo'qlama qilingan"));
+    }
+
     // Class start and end time
     const [startHours, startMinutes] = foundGroup.dataValues.start_time.split(":").map(Number);
     const [endHours, endMinutes] = foundGroup.dataValues.end_time.split(":").map(Number);
@@ -714,48 +723,57 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
     const classEnd = DateTime.fromObject(
       { year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: endHours, minute: endMinutes },
       { zone: "Asia/Tashkent" }
-    ).plus({ hours: 1 }); // 1 soat qo‘shimcha
+    ).plus({ hours: 1 }); // 1 soat qo'shimcha
 
     const now = DateTime.now().setZone("Asia/Tashkent");
 
-    if (now < classStart) {
-      const diff = classStart.diff(now, ["hours", "minutes"]);
-      const hours = diff.hours;
-      const minutes = Math.round(diff.minutes);
-    
-      return next(
-        BaseError.BadRequest(
-          400,
-          `Dars boshlanishiga hali ${hours} soat ${minutes} daqiqa bor. Yo‘qlama qilish mumkin emas.`
-        )
-      );
-    }    
-
-    if (now > classEnd) {
-      const diff = now.diff(classEnd, ["hours", "minutes"]);
-      const hours = diff.hours;
-      const minutes = Math.round(diff.minutes);
-      return next(
-        BaseError.BadRequest(
-          400,
-          `Dars tugagach bir soat qo‘shimcha vaqtdan ${hours} soat ${minutes} daqiqa o‘tdi. Yo‘qlama qilish mumkin emas.`
-        )
-      );
-    }
-
-    // Check existing attendance
-    const existing = await Attendance.findOne({
-      where: { group_id, date: inputDate.toISODate() },
+    // Check if admin has extended the time for this group
+    const extension = await AttendanceExtension.findOne({
+      where: {
+        group_id,
+        extended_until: { [Op.gt]: now.toISO() }
+      },
+      order: [['extended_until', 'DESC']] // Eng oxirgi uzaytirishni olish
     });
-    if (existing) {
-      return next(BaseError.BadRequest(400, "Yo'qlama qilingan"));
+
+    // Agar uzaytirish mavjud bo'lsa, vaqt cheklovini o'tkazib yuboramiz
+    if (!extension) {
+      // Normal time validation faqat uzaytirish mavjud bo'lmaganda
+      if (now < classStart) {
+        const diff = classStart.diff(now, ["hours", "minutes"]);
+        const hours = diff.hours;
+        const minutes = Math.round(diff.minutes);
+
+        return next(
+          BaseError.BadRequest(
+            400,
+            `Dars boshlanishiga hali ${hours} soat ${minutes} daqiqa bor. Yo'qlama qilish mumkin emas.`
+          )
+        );
+      }
+
+      if (now > classEnd) {
+        const diff = now.diff(classEnd, ["hours", "minutes"]);
+        const hours = diff.hours;
+        const minutes = Math.round(diff.minutes);
+        return next(
+          BaseError.BadRequest(
+            400,
+            `Dars tugagach bir soat qo'shimcha vaqtdan ${hours} soat ${minutes} daqiqa o'tdi. Yo'qlama qilish mumkin emas.`
+          )
+        );
+      }
     }
 
     // Create attendance transaction
     const t = await sequelize.transaction();
     try {
       const attendance = await Attendance.create(
-        { group_id, date: inputDate.toISODate() },
+        {
+          group_id,
+          date: inputDate.toISODate(),
+          extended_until: extension ? extension.dataValues.extended_until : null
+        },
         { transaction: t }
       );
 
@@ -811,6 +829,166 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+async function updateAttendance(req: Request, res: Response, next: NextFunction) {
+  try {
+    const group_id = req.params.groupId;
+    const { date, records } = req.body;
+
+    if (!date || !records || !Array.isArray(records)) {
+      return next(BaseError.BadRequest(400, "Noto'g'ri formatdagi ma'lumot kiritildi"));
+    }
+
+    const attendance = await Attendance.findOne({
+      where: { group_id, date },
+    });
+
+    if (!attendance) {
+      return next(BaseError.BadRequest(404, "Yo'qlama topilmadi"));
+    }
+
+    // Time validation for updates
+    const now = DateTime.now().setZone("Asia/Tashkent");
+    const inputDate = DateTime.fromISO(date, { zone: "Asia/Tashkent" });
+
+    const foundGroup = await Group.findByPk(group_id);
+    if (!foundGroup) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi"));
+    }
+
+    const [endHours, endMinutes] = foundGroup.dataValues.end_time.split(":").map(Number);
+    const classEnd = DateTime.fromObject(
+      { year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: endHours, minute: endMinutes },
+      { zone: "Asia/Tashkent" }
+    ).plus({ hours: 1 });
+
+    // Check extension for this group
+    const extension = await AttendanceExtension.findOne({
+      where: {
+        group_id,
+        extended_until: { [Op.gt]: now.toISO() }
+      },
+      order: [['extended_until', 'DESC']]
+    });
+
+    // Agar uzaytirish mavjud bo'lmasa va vaqt o'tib bo'lsa, yangilashga ruxsat bermaymiz
+    if (!extension && now > classEnd) {
+      return next(
+        BaseError.BadRequest(
+          400,
+          "Yo'qlama vaqti tugagan. Yangilash mumkin emas."
+        )
+      );
+    }
+
+    const t = await sequelize.transaction();
+    try {
+      for (const item of records) {
+        const { student_id, status, reason, note } = item;
+
+        if (!["present", "absent"].includes(status)) {
+          throw BaseError.BadRequest(400, "Status noto'g'ri");
+        }
+
+        const existingRecord = await AttendanceRecord.findOne({
+          where: {
+            attendance_id: attendance.dataValues.id,
+            student_id,
+          },
+          transaction: t,
+        });
+
+        if (existingRecord) {
+          await existingRecord.update(
+            {
+              status,
+              reason: status === "present" ? null : reason || "unexcused",
+              note: status === "present" ? null : note || null,
+            },
+            { transaction: t }
+          );
+        } else {
+          await AttendanceRecord.create(
+            {
+              attendance_id: attendance.dataValues.id,
+              student_id,
+              status,
+              reason: status === "present" ? null : reason || "unexcused",
+              note: status === "present" ? null : note || null,
+            },
+            { transaction: t }
+          );
+        }
+      }
+
+      await t.commit();
+      return res.status(200).json({ message: "Yo'qlama yangilandi" });
+    } catch (err) {
+      await t.rollback();
+      throw err;
+    }
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function extendAttendanceTime(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { group_id, extended_until } = req.body;
+
+    if (!group_id || !extended_until) {
+      return next(BaseError.BadRequest(400, "Guruh ID va uzaytirish vaqti kerak"));
+    }
+
+    // Guruh mavjudligini tekshirish
+    const foundGroup = await Group.findByPk(group_id);
+    if (!foundGroup) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi"));
+    }
+
+    // Vaqtni tekshirish
+    const extensionDate = DateTime.fromISO(extended_until, { zone: "Asia/Tashkent" });
+    const now = DateTime.now().setZone("Asia/Tashkent");
+
+    if (extensionDate <= now) {
+      return next(BaseError.BadRequest(400, "Uzaytirish vaqti hozirgi vaqtdan keyin bo'lishi kerak"));
+    }
+
+    // Uzaytirishni yaratish yoki yangilash
+    const [extension, created] = await AttendanceExtension.findOrCreate({
+      where: { group_id },
+      defaults: {
+        group_id,
+        extended_until: extensionDate.toISO()
+      }
+    });
+
+    if (!created) {
+      await extension.update({ extended_until: extensionDate.toISO() });
+    }
+
+    res.status(200).json({
+      message: `${foundGroup.dataValues.name} guruhining uzaytirish vaqti ${extensionDate.toISO()} gacha muvaffaqiyatli uzaytirildi!`,
+      extended_until: extensionDate.toISO(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getExtendAttendanceTime(req: Request, res: Response, next: NextFunction) {
+  try {
+    const group_id = req.params.groupId;
+    const extension = await AttendanceExtension.findOne({
+      where: { group_id },
+    });
+    if (!extension) {
+      return next(BaseError.BadRequest(404, "Uzaytirish topilmadi"));
+    }
+    res.status(200).json(extension);
+  } catch (error) {
+    next(error);
+  }
+}
 
 async function getAttendanceByDate(req: Request, res: Response, next: NextFunction) {
   try {
@@ -954,4 +1132,7 @@ export {
   getOneGroupStudents,
   getTodayAttendanceStats,
   getAttendanceByDate,
+  updateAttendance,
+  extendAttendanceTime,
+  getExtendAttendanceTime,
 };

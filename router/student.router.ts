@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from "express"
-import { getStudents, getOneStudent, createStudent, updateStudent, deleteStudent, getMonthlyStudentStats, makeAttendance, getOneGroupStudents, getTodayAttendanceStats, getAttendanceByDate } from "../controller/student.ctr";
+import { getStudents, getOneStudent, createStudent, updateStudent, deleteStudent, getMonthlyStudentStats, makeAttendance, getOneGroupStudents, getTodayAttendanceStats, getAttendanceByDate, updateAttendance, extendAttendanceTime, getExtendAttendanceTime } from "../controller/student.ctr";
 const StudentsRouter:Router = Router()
 
 StudentsRouter.get("/get_attendance_by_date/:groupId", getAttendanceByDate as RequestHandler)
@@ -12,6 +12,9 @@ StudentsRouter.post("/create_student", createStudent as RequestHandler)
 StudentsRouter.put("/update_student/:id", updateStudent as RequestHandler)
 StudentsRouter.delete("/delete_student/:id", deleteStudent as RequestHandler)
 StudentsRouter.get("/get_attendance_stats", getTodayAttendanceStats as RequestHandler)
+StudentsRouter.put("/update_attendance/:groupId", updateAttendance as RequestHandler)
+StudentsRouter.put("/extend-attendance-time", extendAttendanceTime as RequestHandler)
+StudentsRouter.get("/get_extend_attendance_time/:groupId", getExtendAttendanceTime as RequestHandler)
 
 export {
     StudentsRouter

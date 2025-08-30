@@ -59,11 +59,11 @@ Student.belongsToMany(Group, {
   onUpdate: "CASCADE",
 });
 
-Student.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "student" } });
-Achievement.belongsTo(Student, { foreignKey: "achiever_id", constraints: false, as: "student" });
+Student.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "student" }, onDelete: "CASCADE", onUpdate: "CASCADE" });
+Achievement.belongsTo(Student, { foreignKey: "achiever_id", constraints: false, as: "student", onDelete: "CASCADE", onUpdate: "CASCADE" });
 
-Teacher.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "teacher" } });
-Achievement.belongsTo(Teacher, { foreignKey: "achiever_id", constraints: false, as: "teacher" });
+Teacher.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "teacher" }, onDelete: "CASCADE", onUpdate: "CASCADE" });
+Achievement.belongsTo(Teacher, { foreignKey: "achiever_id", constraints: false, as: "teacher", onDelete: "CASCADE", onUpdate: "CASCADE" });
 
 // 4. Student ↔ Payment
 Student.hasMany(Payment, {

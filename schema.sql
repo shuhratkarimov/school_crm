@@ -180,3 +180,12 @@ CREATE TABLE "Achievements" (
     date TIMESTAMP
 );
 
+CREATE TABLE attendance_extensions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL,
+    extended_until TIMESTAMP NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT attendance_extensions_group_extended_until_unique UNIQUE (group_id, extended_until)
+);
+

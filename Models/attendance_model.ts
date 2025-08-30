@@ -18,6 +18,10 @@ Attendance.init(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
+    extended_until: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
