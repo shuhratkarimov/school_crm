@@ -32,6 +32,12 @@ const Achievement = sequelize.define("Achievement", {
     type: DataTypes.DATE,
     allowNull: true,
   },
+},
+{
+  tableName: "achievements",
+  timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 Achievement.sync({ force: false });
