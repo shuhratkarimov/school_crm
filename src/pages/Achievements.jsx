@@ -36,8 +36,8 @@ function Achievements() {
         setAchievements(data);
         setFilteredAchievements(data);
       }
-    } catch (err) {
-      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuqlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
+    } catch (error) {
+      toast.error("Yutuqlar ma'lumotlarini olishda xatolik yuz berdi!");
     } finally {
       setLoading(false);
     }
@@ -48,16 +48,15 @@ function Achievements() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/get_students`);
       let data = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(`Xatolik yuz berdi: ${errorData || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`);
-        throw new Error(errorData || "O'quvchilar ma'lumotlarini olishda xatolik!");
+        toast.error("O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!");
+        throw new Error("O'quvchilar ma'lumotlarini olishda xatolik!");
       }
       if (response.status === 200) {
         data = data.length ? data : [];
         setStudents(data);
       }
-    } catch (err) {
-      toast.error(`Xatolik yuz berdi: ${err.message || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`);
+    } catch (error) {
+      toast.error("O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!");
     }
   };
 
@@ -66,16 +65,15 @@ function Achievements() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/get_teachers`);
       let data = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(`Xatolik yuz berdi: ${errorData || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
-        throw new Error(errorData || "Ustozlar ma'lumotlarini olishda xatolik!");
+        toast.error("Ustozlar ma'lumotlarini olishda xatolik yuz berdi!");
+        throw new Error("Ustozlar ma'lumotlarini olishda xatolik!");
       }
       if (response.status === 200) {
         data = data.length ? data : [];
         setTeachers(data);
       }
-    } catch (err) {
-      toast.error(`Xatolik yuz berdi: ${err.message || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
+    } catch (error) {
+      toast.error("Ustozlar ma'lumotlarini olishda xatolik yuz berdi!");
     }
   };
 
@@ -129,9 +127,8 @@ function Achievements() {
         }),
       });
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(`Xatolik yuz berdi: ${errorData || "Yutuq qo'shishda xatolik yuz berdi!"}`);
-        throw new Error(errorData || "Yutuq qo'shishda xatolik!");
+        toast.error("Yutuq qo'shishda xatolik yuz berdi!");
+        throw new Error("Yutuq qo'shishda xatolik!");
       }
       await fetchAchievements();
       setAddModal(false);
@@ -143,7 +140,7 @@ function Achievements() {
       });
       toast.success("Yutuq muvaffaqiyatli qo'shildi!");
     } catch (error) {
-      toast.error(`Xatolik yuz berdi: ${error.message || "Yutuq qo'shishda xatolik yuz berdi!"}`);
+      toast.error("Yutuq qo'shishda xatolik yuz berdi!");
     }
   };
 
@@ -207,16 +204,15 @@ function Achievements() {
       );
   
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(`Xatolik yuz berdi: ${errorData || "Yutuq yangilashda xatolik!"}`);
-        throw new Error(errorData || "Yutuq yangilashda xatolik!");
+        toast.error("Yutuq yangilashda xatolik yuz berdi!");
+        throw new Error("Yutuq yangilashda xatolik!");
       }
   
       await fetchAchievements();
       setEditModal(false);
       toast.success("Yutuq muvaffaqiyatli yangilandi!");
-    } catch (err) {
-      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq yangilashda xatolik yuz berdi!"}`);
+    } catch (error) {
+      toast.error("Yutuq yangilashda xatolik yuz berdi!");
     }
   };
 
@@ -228,8 +224,8 @@ function Achievements() {
       if (!response.ok) throw new Error("Yutuq o'chirishda xatolik!");
       await fetchAchievements();
       toast.success("Yutuq muvaffaqiyatli o'chirildi!");
-    } catch (err) {
-      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq o'chirishda xatolik yuz berdi!"}`);
+    } catch (error) {
+      toast.error("Yutuq o'chirishda xatolik yuz berdi!");
     }
   };
 
