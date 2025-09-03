@@ -26,26 +26,22 @@ jobs:
       - name: Create .env file from GitHub Secrets
         run: |
           echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-        working-directory: ./frontend
 
       - name: Install dependencies
-        run: node --max-old-space-size=4096 $(which npm) install
-        working-directory: ./frontend
+        run: npm install
 
       - name: Build frontend
         run: npm run build
-        working-directory: ./frontend
 
       - name: Copy build files to Nginx root
         run: |
           sudo rm -rf /usr/share/nginx/html/*
-          sudo cp -r ./frontend/dist/* /usr/share/nginx/html/
+          sudo cp -r /home/shuhrat/actions-runner/_work/school_crm/school_crm/dist/* /usr/share/nginx/html/
           sudo chown -R www-data:www-data /usr/share/nginx/html
           sudo systemctl reload nginx
 
       - name: Build frontend Docker image
         run: docker build -t my-vite-frontend:latest .
-        working-directory: ./frontend
 
       - name: Save Docker image as archive
         run: docker save my-vite-frontend:latest | gzip > my-vite-frontend.tar.gz
