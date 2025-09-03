@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
+import { toast } from "react-hot-toast";
 
 function AdminDashboard() {
   const [stats, setStats] = useState({});
@@ -20,10 +19,7 @@ function AdminDashboard() {
       const data = await res.json();
       setStats(data);
     } catch (err) {
-      toast.error("Statistikani yuklashda xatolik", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Statistikani yuklashda xatolik");
     } finally {
       setLoading(false);
     }
@@ -34,7 +30,6 @@ function AdminDashboard() {
   return (
     <div className="card" style={{ margin: "20px" }}>
       <h2>Davomat Statistika</h2>
-      <ToastContainer />
       <div style={{ display: "grid", gap: "16px" }}>
         <div className="card">
           <h3>Kunlik Davomat</h3>

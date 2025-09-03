@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import LottieLoading from "../components/Loading";
-import { DollarSign } from "lucide-react";
-import "react-toastify/dist/ReactToastify.css";
 import "../../styles/styles.css";
 
 // Chart.js

@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { LogOut, Settings, X, KeyRound, User, Mail, Eye, EyeOff, Edit, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 
 function Header({ setIsAuthenticated }) {
   const { t, i18n } = useTranslation();
@@ -94,19 +93,19 @@ function Header({ setIsAuthenticated }) {
         setOldPassword("");
         setNewPassword("");
         setShowPasswordModal(false);
-        toast.success("Parol muvaffaqiyatli yangilandi!", { position: "top-right", autoClose: 2000 });
+        toast.success("Parol muvaffaqiyatli yangilandi!");
       } else {
         const res = await response.json();
-        toast.error(res.message, { position: "top-right", autoClose: 2000 });
+        toast.error(res.message);
       }
     } catch (error) {
-      toast.error("Parolni yangilashda xatolik yuz berdi!", { position: "top-right", autoClose: 2000 });
+      toast.error("Parolni yangilashda xatolik yuz berdi!");
     }
   };
 
   const handleUsernameUpdate = async () => {
     if (!tempUsername.trim()) {
-      toast.error("Foydalanuvchi nomi bo'sh bo'lishi mumkin emas!", { position: "top-right", autoClose: 2000 });
+      toast.error("Foydalanuvchi nomi bo'sh bo'lishi mumkin emas!");
       return;
     }
 
@@ -124,13 +123,13 @@ function Header({ setIsAuthenticated }) {
         const data = await response.json();
         setUser({ ...user, username: tempUsername });
         setIsEditingUsername(false);
-        toast.success("Foydalanuvchi nomi muvaffaqiyatli yangilandi!", { position: "top-right", autoClose: 2000 });
+        toast.success("Foydalanuvchi nomi muvaffaqiyatli yangilandi!");
       } else {
         const res = await response.json();
-        toast.error(res.message, { position: "top-right", autoClose: 2000 });
+        toast.error(res.message);
       }
     } catch (error) {
-      toast.error("Foydalanuvchi nomini yangilashda xatolik yuz berdi!", { position: "top-right", autoClose: 2000 });
+      toast.error("Foydalanuvchi nomini yangilashda xatolik yuz berdi!");
     }
   };
 
@@ -141,7 +140,6 @@ function Header({ setIsAuthenticated }) {
 
   return (
     <div className="header flex justify-between items-center">
-      <ToastContainer />
       {/* Logo va sarlavha */}
       <div className="flex items-center h-[1rem]">
         <div className="relative w-48 h-48 mr-4 overflow-hidden">

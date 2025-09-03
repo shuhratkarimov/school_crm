@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import LoginLoading from "../components/LoginLoading";
 import { Eye, EyeOff } from "lucide-react";
@@ -53,7 +52,6 @@ function Login({ setIsAuthenticated }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 relative overflow-hidden px-4">
-      <ToastContainer />
 
       {/* ✅ Success overlay (tick bilan) */}
       <AnimatePresence>
