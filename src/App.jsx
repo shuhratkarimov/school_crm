@@ -13,6 +13,7 @@ import Notes from "./pages/Notes";
 import Calculator from "./pages/Calculator";
 import Achievements from "./pages/Achievements";
 import { Toaster, toast } from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
 // Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
@@ -43,6 +44,15 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Admin autentifikatsiyasi
   const [teacherAuthenticated, setTeacherAuthenticated] = useState(false); // O'qituvchi autentifikatsiyasi
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (window.location.hostname === "admin.intellectualprogress.uz") {
+      navigate("/login");
+    } else if (window.location.hostname === "teacher.intellectualprogress.uz") {
+      navigate("/teacher/login");
+    }
+  }, []);
 
   useEffect(() => {
     // Admin auth check
