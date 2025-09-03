@@ -32,7 +32,8 @@ const app = express();
 app.use(i18nextMiddleware.handle(i18next));
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ credentials: true, origin: process.env.ALLOWED_ORIGINS }));
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
+app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes

@@ -78,7 +78,6 @@ jobs:
           ls -la
           if [ ! -f "my-express-app.tar.gz" ]; then echo "Error: my-express-app.tar.gz not found"; exit 1; fi
           if [ ! -f "docker-compose.yml" ]; then echo "Error: docker-compose.yml not found"; exit 1; fi
-          if [ ! -f "schema.sql" ]; then echo "Error: schema.sql not found"; exit 1; fi
 
       - name: Validate SSH Key
         run: |
@@ -109,17 +108,6 @@ jobs:
           target: '/home/shuhrat/app'
           overwrite: true
 
-      - name: Copy schema.sql to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: shuhrat
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
-          source: 'schema.sql'
-          target: '/home/shuhrat/app'
-          overwrite: true
-
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
@@ -142,7 +130,6 @@ jobs:
             echo "🧹 Cleaning old containers..."
             docker-compose down --remove-orphans
 
-            echo "🐘 Starting PostgreSQL for schema.sql import..."
             if [ -f "docker-compose.yml" ]; then
               docker-compose up -d db
               sleep 10
@@ -151,15 +138,7 @@ jobs:
               exit 1
             fi
 
-            echo "📥 Importing schema.sql into database..."
-            if [ -f "schema.sql" ]; then
-              cat schema.sql | docker exec -i app_db_1 psql -U postgres -d crm
-            else
-              echo "Error: schema.sql not found"
-              exit 1
-            fi
-
-            echo "🚀 Launching full application stack..."
+            echo " Launching full application stack..."
             docker-compose up -d --force-recreate
 
             echo "🧼 Final cleanup..."

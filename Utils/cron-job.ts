@@ -40,6 +40,6 @@ const task = schedule.schedule(
   }
 );
 
-cron.schedule("0 0 1 * *", async () => {
-  await resetPaymentsForNewMonth();
-});
+// cron.schedule("0 0 1 * *", async () => {
+//   await resetPaymentsForNewMonth();
+// });
