@@ -48,8 +48,9 @@ function Achievements() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/get_students`);
       let data = await response.json();
       if (!response.ok) {
-        toast.error(`Xatolik yuz berdi: ${err.message || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`);
-        throw new Error("O'quvchilar ma'lumotlarini olishda xatolik!");
+        const errorData = await response.json();
+        toast.error(`Xatolik yuz berdi: ${errorData || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`);
+        throw new Error(errorData || "O'quvchilar ma'lumotlarini olishda xatolik!");
       }
       if (response.status === 200) {
         data = data.length ? data : [];
@@ -65,8 +66,9 @@ function Achievements() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/get_teachers`);
       let data = await response.json();
       if (!response.ok) {
-        toast.error(`Xatolik yuz berdi: ${err.message || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
-        throw new Error("Ustozlar ma'lumotlarini olishda xatolik!");
+        const errorData = await response.json();
+        toast.error(`Xatolik yuz berdi: ${errorData || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
+        throw new Error(errorData || "Ustozlar ma'lumotlarini olishda xatolik!");
       }
       if (response.status === 200) {
         data = data.length ? data : [];
@@ -127,8 +129,9 @@ function Achievements() {
         }),
       });
       if (!response.ok) {
-        toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq qo'shishda xatolik yuz berdi!"}`);
-        throw new Error("Yutuq qo'shishda xatolik!");
+        const errorData = await response.json();
+        toast.error(`Xatolik yuz berdi: ${errorData || "Yutuq qo'shishda xatolik yuz berdi!"}`);
+        throw new Error(errorData || "Yutuq qo'shishda xatolik!");
       }
       await fetchAchievements();
       setAddModal(false);
@@ -139,8 +142,8 @@ function Achievements() {
         date: "",
       });
       toast.success("Yutuq muvaffaqiyatli qo'shildi!");
-    } catch (err) {
-      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq qo'shishda xatolik yuz berdi!"}`);
+    } catch (error) {
+      toast.error(`Xatolik yuz berdi: ${error.message || "Yutuq qo'shishda xatolik yuz berdi!"}`);
     }
   };
 
@@ -205,8 +208,8 @@ function Achievements() {
   
       if (!response.ok) {
         const errorData = await response.json();
-        toast.error(`Xatolik yuz berdi: ${errorData.error || "Yutuq yangilashda xatolik!"}`);
-        throw new Error(errorData.error || "Yutuq yangilashda xatolik!");
+        toast.error(`Xatolik yuz berdi: ${errorData || "Yutuq yangilashda xatolik!"}`);
+        throw new Error(errorData || "Yutuq yangilashda xatolik!");
       }
   
       await fetchAchievements();
