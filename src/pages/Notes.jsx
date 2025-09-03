@@ -5,8 +5,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { parseISO, isWithinInterval } from "date-fns";
 import { Book, Pencil, Trash } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 
 export default function Notes() {
   const [records, setRecords] = useState([]);
@@ -25,13 +24,54 @@ export default function Notes() {
       setRecords(data);
     } catch (err) {
       console.error(err);
-      toast.error("Qaydlarni olishda xatolik");
+      toast.error(`Qaydlarni olishda xatolik yuz berdi: ${err.message}`);
     }
   };
 
   useEffect(() => {
     fetchNotes();
   }, []);
+
+  const showDeleteToast = (id) => {
+    toast(
+      <div>
+        <p>
+          Diqqat! Ushbu qaydga tegishli barcha ma'lumotlar o'chiriladi!
+        </p>
+        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+          <button
+            style={{
+              padding: "8px 22px",
+              background: "#dc3545",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              deleteNote(id);
+              toast.dismiss();
+            }}
+          >
+            O'chirish
+          </button>
+          <button
+            style={{
+              padding: "8px 16px",
+              background: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => toast.dismiss()}
+          >
+            Bekor qilish
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // --- Qo‘shish yoki yangilash ---
   const handleAddOrUpdate = async () => {
@@ -59,7 +99,7 @@ export default function Notes() {
       fetchNotes(); // yangilash
     } catch (err) {
       console.error(err);
-      toast.error("Xatolik yuz berdi");
+      toast.error(`Xatolik yuz berdi: ${err.message}`);
     }
   };
 
@@ -70,7 +110,7 @@ export default function Notes() {
   };
 
   // --- O‘chirish ---
-  const handleDelete = async (id) => {
+  const deleteNote = async (id) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/delete_note/${id}`, {
         method: "DELETE",
@@ -80,7 +120,7 @@ export default function Notes() {
       fetchNotes();
     } catch (err) {
       console.error(err);
-      toast.error("O‘chirishda xatolik");
+      toast.error(`O‘chirishda xatolik: ${err.message}`);
     }
   };
 
@@ -96,7 +136,6 @@ export default function Notes() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <ToastContainer />
       <div className="flex items-center gap-2 mb-6">
         <Book size={24} color="#104292" />
         <h1 className="text-2xl font-bold">Qaydlar</h1>
@@ -172,7 +211,7 @@ export default function Notes() {
               </button>
 
               <button
-                onClick={() => handleDelete(record.id)}
+                onClick={() => showDeleteToast(record.id)}
                 className="p-2 transition rounded-full hover:bg-red-700"
                 style={{ backgroundColor: "#ef4444" }}
               >

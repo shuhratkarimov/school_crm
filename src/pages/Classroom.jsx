@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Edit, School } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Trash2, School, Pen } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import "../index.css";
+import { toast } from "react-hot-toast";
 
 const daysInEn = {
   monday: "DUSHANBA",
@@ -62,18 +61,18 @@ const RoomManagement = () => {
         setRooms(await roomsResponse.json());
       } else {
         setRooms([]);
-        setError("Xonalar hali mavjud emas");
+        toast.error("Xonalar hali mavjud emas");
       }
       if (schedulesResponse.ok) {
         setSchedules(await schedulesResponse.json());
       } else {
         setSchedules([]);
-        setError((prev) => prev || "Jadval hali mavjud emas");
+        toast.error("Jadval hali mavjud emas");
       }
     } catch (err) {
       setRooms([]);
       setSchedules([]);
-      setError("Ma'lumotlarni yuklashda xatolik yuz berdi");
+      toast.error("Ma'lumotlarni yuklashda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
@@ -97,20 +96,13 @@ const RoomManagement = () => {
       if (response.ok) {
         const newRoom = await response.json();
         setRooms([...rooms, newRoom.room]);
-        setSuccess(`${formData.name} xonasi muvaffaqiyatli qo'shildi`);
-        toast.success(`${formData.name} xonasi muvaffaqiyatli qo'shildi`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success(`${formData.name} xonasi muvaffaqiyatli qo'shildi`);
         setFormData({ name: "", capacity: "" });
       } else {
         throw new Error("Xona qo'shishda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.error("Xona qo'shishda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Xona qo'shishda xatolik: ${err.message}`);
     }
   };
 
@@ -136,20 +128,13 @@ const RoomManagement = () => {
         setRooms(
           rooms.map((room) => (room.id === editingRoom.id ? updatedRoom : room))
         );
-        setSuccess(`${editFormData.name} xonasi muvaffaqiyatli yangilandi`);
-        toast.success(`${editFormData.name} xonasi muvaffaqiyatli yangilandi`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success(`${editFormData.name} xonasi muvaffaqiyatli yangilandi`);
         setEditModal(false);
       } else {
         throw new Error("Xonani yangilashda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.error("Xonani yangilashda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Xonani yangilashda xatolik: ${err.message}`);
     }
   };
 
@@ -164,31 +149,26 @@ const RoomManagement = () => {
 
       if (response.ok) {
         setRooms(rooms.filter((r) => r.id !== id));
-        setSuccess("Xona muvaffaqiyatli o'chirildi");
-        toast.success("Xona muvaffaqiyatli o'chirildi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Xona muvaffaqiyatli o'chirildi");
         if (selectedRoom?.id === id) setSelectedRoom(null);
       } else {
         throw new Error("Xonani o'chirishda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.error("Xonani o'chirishda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Xonani o'chirishda xatolik: ${err.message}`);
     }
   };
 
   const showDeleteToast = (id) => {
     toast(
       <div>
-        <p>Ushbu xonani o'chirishga ishonchingiz komilmi?</p>
+        <p>
+          Diqqat! Ushbu xonani o'chirishga ishonchingiz komilmi?
+        </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
-              padding: "8px 16px",
+              padding: "8px 22px",
               background: "#dc3545",
               color: "white",
               border: "none",
@@ -216,14 +196,7 @@ const RoomManagement = () => {
             Bekor qilish
           </button>
         </div>
-      </div>,
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
+      </div>
     );
   };
 
@@ -262,20 +235,20 @@ const RoomManagement = () => {
   }
 
   // Fon rangiga qarab matn rangini aniqlash
-const getContrastColor = (hexColor) => {
-  if (!hexColor) return '#000000';
-  
-  // Hex rangni RGB ga o'tkazamiz
-  const r = parseInt(hexColor.substr(1, 2), 16);
-  const g = parseInt(hexColor.substr(3, 2), 16);
-  const b = parseInt(hexColor.substr(5, 2), 16);
-  
-  // YIQ formulasi orqali yorqinlikni hisoblaymiz
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-  
-  // Agar fon yorqin bo'lsa, qora rang; aks holda oq rang
-  return yiq >= 128 ? '#000000' : '#FFFFFF';
-};
+  const getContrastColor = (hexColor) => {
+    if (!hexColor) return '#000000';
+
+    // Hex rangni RGB ga o'tkazamiz
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+
+    // YIQ formulasi orqali yorqinlikni hisoblaymiz
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+
+    // Agar fon yorqin bo'lsa, qora rang; aks holda oq rang
+    return yiq >= 128 ? '#000000' : '#FFFFFF';
+  };
 
   const getColorForGroup = (groupId) => {
     const colors = [
@@ -290,7 +263,7 @@ const getContrastColor = (hexColor) => {
       '#7B68EE', // Medium Slate Blue
       '#20B2AA', // Light Sea Green
     ];
-    
+
     // Agar guruh ID si bo'lsa, unga mos rang tanlaymiz
     if (groupId) {
       const hash = groupId.toString().split('').reduce((acc, char) => {
@@ -298,7 +271,7 @@ const getContrastColor = (hexColor) => {
       }, 0);
       return colors[hash % colors.length];
     }
-    
+
     // Standart rang (agar guruh ID si bo'lmasa)
     return '#FFD700';
   };
@@ -307,38 +280,38 @@ const getContrastColor = (hexColor) => {
     const daySchedules = getRoomSchedules(selectedRoom.id).filter(
       (schedule) => schedule.day === day
     ).sort((a, b) => a.start_time.localeCompare(b.start_time));
-  
+
     const cells = [];
     let currentHour = 5; // 05:00 dan boshlaymiz
     let processedSchedules = new Set(); // Qayta ishlangan darslarni saqlash
-  
+
     while (currentHour < 21) { // 21:00 gacha
       const startHour = currentHour;
       const endHour = startHour + 1;
       const slotStart = startHour * 60;
       const slotEnd = endHour * 60;
-  
+
       // Shu vaqt oralig'ida boshlanadigan darsni topamiz
       const schedule = daySchedules.find(s => {
         if (processedSchedules.has(s.id)) return false;
-        
+
         const [startH, startM] = s.start_time.split(':').map(Number);
         const scheduleStart = startH * 60 + startM;
         return scheduleStart >= slotStart && scheduleStart < slotEnd;
       });
-  
+
       if (schedule) {
         const [startH, startM] = schedule.start_time.split(':').map(Number);
         const [endH, endM] = schedule.end_time.split(':').map(Number);
         const scheduleStart = startH * 60 + startM;
         const scheduleEnd = endH * 60 + endM;
-        
+
         // Dars davomiyligi (soatlarda)
         const durationHours = Math.ceil((scheduleEnd - scheduleStart) / 60);
-        
+
         const groupColor = getColorForGroup(schedule.group?.id);
         const textColor = getContrastColor(groupColor);
-  
+
         cells.push(
           <td
             key={`${day}-${startHour}-${schedule.id}`}
@@ -361,21 +334,21 @@ const getContrastColor = (hexColor) => {
             }}>
               <p><strong>Guruh:</strong> {schedule.group?.group_subject || 'Noma\'lum'}</p>
               <p><strong>O'qituvchi:</strong> {
-                schedule.teacher ? 
-                `${schedule.teacher.first_name} ${schedule.teacher.last_name}` : 
-                'Noma\'lum'
+                schedule.teacher ?
+                  `${schedule.teacher.first_name} ${schedule.teacher.last_name}` :
+                  'Noma\'lum'
               }</p>
               <p><strong>Vaqti:</strong> {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}</p>
             </div>
           </td>
         );
-  
+
         processedSchedules.add(schedule.id);
         currentHour += durationHours - 1; // Keyingi ishlov berilmagan soatga o'tamiz
       } else {
         // Bo'sh yacheyka
         cells.push(
-          <td 
+          <td
             key={`empty-${day}-${startHour}`}
             style={{
               border: '1px solid #ddd',
@@ -385,21 +358,19 @@ const getContrastColor = (hexColor) => {
           ></td>
         );
       }
-  
+
       currentHour++;
     }
-  
+
     return cells;
   };
 
   return (
     <div>
-      <div className="flex items-center gap-2">
-        <School size={24} color="#104292"/>
+      <div className="flex items-center gap-2 ml-6">
+        <School size={24} color="#104292" />
         <h1 className="text-2xl font-bold">Xonalar va darslar jadvali</h1>
       </div>
-      <ToastContainer />
-
       {/* Xona qo‘shish formasi */}
       <div className="card">
         <h3 style={{ marginBottom: "20px", fontWeight: "bold" }}>Yangi xona qo'shish</h3>
@@ -484,7 +455,7 @@ const getContrastColor = (hexColor) => {
                   </p>
                   <p style={{ marginBottom: "10px" }}>
                     <strong>Asosan bo'sh:</strong>{" "}
-                    {room?.busiestFreePeriod || "Belgilanmagan"}
+                    {room?.busiestFreePeriod || "Kun bo'yi"}
                   </p>
                   <p style={{ marginBottom: "30px" }}>
                     <strong>Bandlik foizi: </strong>
@@ -495,27 +466,27 @@ const getContrastColor = (hexColor) => {
                   <div
                     style={{
                       display: "flex",
-                      gap: "8px",
+                      gap: "4px",
                       justifyContent: "flex-end",
                     }}
                   >
                     <button
-                      className="btn btn-secondary"
+                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(room);
                       }}
-                      style={{ padding: "4px 8px" }}
+                      title="Tahrirlash"
                     >
-                      <Edit size={16} />
+                      <Pen size={16} />
                     </button>
                     <button
-                      className="btn btn-danger"
+                      className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition"
                       onClick={(e) => {
                         e.stopPropagation();
                         showDeleteToast(room.id);
                       }}
-                      style={{ padding: "4px 8px" }}
+                      title="O'chirish"
                     >
                       <Trash2 size={16} />
                     </button>

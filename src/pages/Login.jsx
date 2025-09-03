@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, AnimatePresence } from "framer-motion";
+import LoginLoading from "../components/LoginLoading";
+import { Eye, EyeOff } from "lucide-react";
 
 function Login({ setIsAuthenticated }) {
   const [email, setEmail] = useState("");
@@ -12,11 +14,13 @@ function Login({ setIsAuthenticated }) {
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("savedEmail");
     if (savedEmail) setEmail(savedEmail);
   }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -116,7 +120,7 @@ function Login({ setIsAuthenticated }) {
 
         {/* Title */}
         <h1 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-2">
-          "Intellectual Progress Star" 
+          "Intellectual Progress Star"
         </h1>
         <p className="text-center text-gray-600 text-sm sm:text-base mb-6">
           <span className="text-blue-600 font-semibold">CRM</span> tizimiga kirish
@@ -142,15 +146,24 @@ function Login({ setIsAuthenticated }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Parol
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
-              placeholder="Parolni kiriting"
-              autoComplete="current-password"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                placeholder="Parolni kiriting"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <motion.button
@@ -161,15 +174,7 @@ function Login({ setIsAuthenticated }) {
             whileTap={{ scale: 0.96 }}
           >
             {loading ? (
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"/>
-                <path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" className="opacity-75"/>
-              </svg>
+              <LoginLoading />
             ) : (
               "Kirish"
             )}

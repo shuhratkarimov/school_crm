@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, BookOpen, CreditCard, ClipboardCheck, MessageSquare, GraduationCap, School, DollarSign, NotebookPen, Calculator, Trophy } from "lucide-react";
+import { Home, Users, BookOpen, CreditCard, ClipboardCheck, MessageSquare, GraduationCap, School, DollarSign, NotebookPen, Trophy, TestTubeDiagonal } from "lucide-react";
 
 function Sidebar() {
   const location = useLocation();
@@ -27,12 +27,13 @@ function Sidebar() {
     // { path: "/groups", label: "Guruhlar", icon: BookOpen },
     { path: "/payments", label: "To'lovlar", icon: CreditCard },
     { path: "/attendance", label: "Guruhlar", icon: ClipboardCheck },
-    { path: "/requests", label: "Murojaatlar", icon: MessageSquare },
     { path: "/teachers", label: "Ustozlar", icon: GraduationCap },
     { path: "/rooms", label: "Sinfxonalar", icon: School },
+    { path: "/test-results", label: "Test natijalari", icon: TestTubeDiagonal },
+    { path: "/requests", label: "Murojaatlar", icon: MessageSquare },
     { path: "/expenses", label: "Xarajatlar", icon: DollarSign },
     { path: "/notes", label: "Qaydlar", icon: NotebookPen },
-    { path: "/calculator", label: "Kalkulyator", icon: Calculator },
+    // { path: "/calculator", label: "Kalkulyator", icon: Calculator },
     { path: "/achievements", label: "Yutuqlar", icon: Trophy },
   ];
 

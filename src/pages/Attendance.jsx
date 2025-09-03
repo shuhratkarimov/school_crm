@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Pen, BookOpen, Plus, X, Search, Check, Calendar, Clock } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Trash2, Pen, Plus, X, Check, Calendar, Clock, Search, AlertCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
 import CalendarEl from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import LottieLoading from "../components/Loading";
@@ -34,6 +33,7 @@ export default function Attendance() {
     date: "",
     time: "",
   });
+  const [classDay, setClassDay] = useState(null);
   const [errors, setErrors] = useState({
     groups: "",
     teachers: "",
@@ -84,10 +84,7 @@ export default function Attendance() {
 
   const extendAttendanceTime = async () => {
     if (!selectedGroupForExtension || !extensionData.date || !extensionData.time) {
-      toast.warning("Iltimos, sana va vaqtni kiriting", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Iltimos, sana va vaqtni kiriting");
       return;
     }
 
@@ -104,10 +101,7 @@ export default function Attendance() {
       });
 
       if (response.ok) {
-        toast.success("Davomat vaqti muvaffaqiyatli uzaytirildi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Davomat vaqti muvaffaqiyatli uzaytirildi");
         setExtendModal(false);
         setExtensionData({ date: "", time: "" });
       } else if (response.status === 400) {
@@ -115,10 +109,7 @@ export default function Attendance() {
         throw new Error(errorData.message || "Vaqt uzaytirishda xatolik");
       }
     } catch (err) {
-      toast.error(`${err.message || "Vaqt uzaytirishda xatolik"}`, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`${err.message || "Vaqt uzaytirishda xatolik"}`);
     }
   };
 
@@ -238,10 +229,7 @@ export default function Attendance() {
       } else {
         setGroups([]);
         setErrors((prev) => ({ ...prev, groups: "Guruhlar mavjud emas" }));
-        toast.info("Guruhlar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("Guruhlar mavjud emas");
       }
 
       if (teachersResponse.ok) {
@@ -249,10 +237,7 @@ export default function Attendance() {
       } else {
         setTeachers([]);
         setErrors((prev) => ({ ...prev, teachers: "O'qituvchilar mavjud emas" }));
-        toast.info("O'qituvchilar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("O'qituvchilar mavjud emas");
       }
 
       if (studentsResponse.ok) {
@@ -260,10 +245,7 @@ export default function Attendance() {
       } else {
         setStudents([]);
         setErrors((prev) => ({ ...prev, students: "O'quvchilar mavjud emas" }));
-        toast.info("O'quvchilar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("O'quvchilar mavjud emas");
       }
 
       if (paymentsResponse.ok) {
@@ -271,10 +253,7 @@ export default function Attendance() {
       } else {
         setPayments([]);
         setErrors((prev) => ({ ...prev, payments: "To'lovlar mavjud emas" }));
-        toast.info("To'lovlar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("To'lovlar mavjud emas");
       }
 
       if (roomsResponse.ok) {
@@ -282,10 +261,7 @@ export default function Attendance() {
       } else {
         setRooms([]);
         setErrors((prev) => ({ ...prev, rooms: "Xonalar mavjud emas" }));
-        toast.info("Xonalar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("Xonalar mavjud emas");
       }
     } catch (err) {
       setGroups([]);
@@ -300,10 +276,7 @@ export default function Attendance() {
         payments: "To'lovlar mavjud emas",
         rooms: "Xonalar mavjud emas",
       });
-      toast.warning("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
@@ -341,26 +314,17 @@ export default function Attendance() {
     e.preventDefault();
 
     if (formData.days.length === 0) {
-      toast.warning("Kamida bitta dars kuni tanlanishi kerak", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Kamida bitta dars kuni tanlanishi kerak");
       return;
     }
 
     if (formData.start_time >= formData.end_time) {
-      toast.warning("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak");
       return;
     }
 
     if (!formData.teacher_id || !formData.room_id) {
-      toast.warning("O‘qituvchi va xona tanlanishi kerak", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("O‘qituvchi va xona tanlanishi kerak");
       return;
     }
 
@@ -373,12 +337,8 @@ export default function Attendance() {
     );
 
     if (hasConflict) {
-      toast.warning(
+      toast.error(
         "Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.",
-        {
-          position: "top-right",
-          autoClose: 5000,
-        }
       );
       return;
     }
@@ -404,10 +364,7 @@ export default function Attendance() {
         const newGroup = await response.json();
         setGroups([...groups, newGroup.group]);
         setSuccess(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
-        toast.success(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
         setFormData({
           group_subject: "",
           teacher_id: "",
@@ -421,20 +378,14 @@ export default function Attendance() {
         fetchGroups(); // Refresh groups with status
       } else {
         if (response.status === 400) {
-          toast.warning("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.", {
-            position: "top-right",
-            autoClose: 5000,
-          });
+          toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.");
           return;
         }
         const errorData = await response.json();
         throw new Error(errorData.error || "Guruh qo'shishda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.error(err.message || "Guruh qo'shishda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(err.message || "Guruh qo'shishda xatolik: API mavjud emas");
     }
   };
 
@@ -443,18 +394,12 @@ export default function Attendance() {
     e.preventDefault();
 
     if (editFormData.days.length === 0) {
-      toast.error("Kamida bitta dars kuni tanlanishi kerak", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Kamida bitta dars kuni tanlanishi kerak");
       return;
     }
 
     if (editFormData.start_time >= editFormData.end_time) {
-      toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak");
       return;
     }
 
@@ -468,13 +413,7 @@ export default function Attendance() {
     );
 
     if (hasConflict) {
-      toast.warning(
-        "Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.",
-        {
-          position: "top-right",
-          autoClose: 5000,
-        }
-      );
+      toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.");
       return;
     }
 
@@ -506,10 +445,7 @@ export default function Attendance() {
         setGroups(
           groups.map((group) => (group.id === editingGroup.id ? updatedGroup : group))
         );
-        toast.success(`${editFormData.group_subject} guruhi muvaffaqiyatli yangilandi`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success(`${editFormData.group_subject} guruhi muvaffaqiyatli yangilandi`);
         setSuccess(`${editFormData.group_subject} guruhi muvaffaqiyatli yangilandi`);
         setEditModal(false);
         fetchGroups(); // Refresh groups with status
@@ -519,19 +455,13 @@ export default function Attendance() {
         }
       } else {
         if (response.status === 400) {
-          toast.warning("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.", {
-            position: "top-right",
-            autoClose: 5000,
-          });
+          toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.");
           return;
         }
         throw new Error("Guruhni yangilashda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.warning("Guruhni yangilashda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Xatolik yuz berdi: ${err.message}`);
     }
   };
 
@@ -547,10 +477,7 @@ export default function Attendance() {
 
       if (response.ok) {
         setGroups(groups.filter((g) => g.id !== id));
-        toast.success("Guruh muvaffaqiyatli o'chirildi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Guruh muvaffaqiyatli o'chirildi");
         setSelectedGroup(null);
         setGroupStudents([]); // Clear group students
         fetchGroups(); // Refresh
@@ -558,22 +485,20 @@ export default function Attendance() {
         throw new Error("Guruhni o'chirishda xatolik yuz berdi");
       }
     } catch (err) {
-      toast.warning("Guruhni o'chirishda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Xatolik yuz berdi: ${err.message}`);
     }
   };
 
-  // O‘chirish tasdiqlash toast
   const showDeleteToast = (id) => {
     toast(
       <div>
-        <p>Ushbu guruhni o'chirishga ishonchingiz komilmi?</p>
+        <p>
+          Diqqat! Ushbu guruhga tegishli barcha ma'lumotlar o'chiriladi!
+        </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
-              padding: "8px 16px",
+              padding: "8px 22px",
               background: "#dc3545",
               color: "white",
               border: "none",
@@ -601,14 +526,7 @@ export default function Attendance() {
             Bekor qilish
           </button>
         </div>
-      </div>,
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
+      </div>
     );
   };
 
@@ -736,7 +654,7 @@ export default function Attendance() {
 
       setGroups(groupsWithStatus);
     } catch {
-      toast.error("Guruhlarni yuklashda xatolik", { position: "top-right", autoClose: 3000 });
+      toast.error("Guruhlarni yuklashda xatolik");
     } finally {
       setLoading(false);
     }
@@ -762,7 +680,7 @@ export default function Attendance() {
       });
       setAttendance(initialAttendance);
     } catch {
-      toast.error("O'quvchilarni yuklashda xatolik", { position: "top-right", autoClose: 3000 });
+      toast.error("O'quvchilarni yuklashda xatolik");
     } finally {
       setLoading(false);
     }
@@ -772,12 +690,25 @@ export default function Attendance() {
   const fetchAttendance = async (groupId, date) => {
     try {
       setLoading(true);
-      const res = await fetch(
+
+      if (!isClassOnDate(groups.find(group => group.id === groupId), date)) {
+        toast.error("Bugun dars yo‘q");
+        return;
+      }
+
+      let res; // oldindan e’lon qilamiz
+
+      res = await fetch(
         `${import.meta.env.VITE_API_URL}/get_attendance_by_date/${groupId}?date=${formatDate(date)}`
       );
 
       if (res.status === 404) {
-        toast.info(`${formatDateWithDaysStart(date)} yilda davomat qilinmagan!`, { position: "top-right", autoClose: 3000 });
+        toast.custom((t) => (
+          <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded-lg">
+            <AlertCircle className="w-5 h-5" />
+            <span>{formatDateWithDaysStart(date)} yilda davomat qilinmagan!</span>
+          </div>
+        ), { duration: 1500 });
         setAttendance({});
         return;
       }
@@ -799,8 +730,9 @@ export default function Attendance() {
 
       setAttendance(attendanceMap);
       setAttendanceTime(data.created_at);
+
     } catch (error) {
-      toast.error(error.message || "Davomatni yuklashda xatolik", { position: "top-right", autoClose: 3000 });
+      toast.error(error.message || "Davomatni yuklashda xatolik");
     } finally {
       setLoading(false);
     }
@@ -817,7 +749,7 @@ export default function Attendance() {
       const data = await res.json();
       setTeacher(data);
     } catch {
-      toast.error("Ustozni yuklashda xatolik", { position: "top-right", autoClose: 3000 });
+      toast.error("Ustozni yuklashda xatolik");
     } finally {
       setLoading(false);
     }
@@ -918,7 +850,6 @@ export default function Attendance() {
 
   return (
     <div className="min-h-screen">
-      <ToastContainer position="top-right" autoClose={3000} />
       <div className="mb-8 flex items-center justify-between">
         <h1 className="flex items-center gap-3 text-3xl font-bold text-gray-800">
           <Calendar className="text-blue-600" size={28} /> Guruhlar va davomat tizimi
@@ -1064,7 +995,7 @@ export default function Attendance() {
 
         {/* Selected Group Details */}
         <motion.div
-          className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6"
+          className="lg:col-span-2   bg-white rounded-2xl shadow-lg p-6"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
@@ -1356,8 +1287,8 @@ export default function Attendance() {
                       <label
                         key={day}
                         className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.days.includes(day)
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-300 hover:border-gray-400'
                           }`}
                       >
                         <input
@@ -1367,8 +1298,8 @@ export default function Attendance() {
                           className="hidden"
                         />
                         <div className={`w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.days.includes(day)
-                            ? 'border-blue-500 bg-blue-500 text-white'
-                            : 'border-gray-400'
+                          ? 'border-blue-500 bg-blue-500 text-white'
+                          : 'border-gray-400'
                           }`}>
                           {formData.days.includes(day) && <Check size={14} />}
                         </div>
@@ -1483,7 +1414,7 @@ export default function Attendance() {
               </div>
 
               {/* Mavjud uzaytirish ma'lumotlari */}
-              {extensionInfo && extensionInfo.extended_until && (
+              {extensionInfo && extensionInfo.extended_until && extensionInfo.extended_until > new Date().toISOString() && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                   <div className="flex items-center gap-2 text-blue-700">
                     <Check size={16} />

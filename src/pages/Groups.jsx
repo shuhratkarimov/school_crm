@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Trash2, Pen, BookOpen, Plus, X, Search } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import LottieLoading from "../components/Loading";
+import { toast } from "react-hot-toast";
 import "../index.css";
 
 function Groups() {

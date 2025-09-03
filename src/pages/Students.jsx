@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Trash2, Pen, Users, X, Search, Plus } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
 import { DatePicker } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
+import { toast } from "react-hot-toast";
 import uz from "date-fns/locale/uz";
 registerLocale("uz", uz);
 const monthsInUzbek = {
@@ -20,7 +19,7 @@ const monthsInUzbek = {
   7: "Iyul",
   8: "Avgust",
   9: "Sentyabr",
-  10: "Oktabr",
+  10: "Oktyabr",
   11: "Noyabr",
   12: "Dekabr",
 };
@@ -59,6 +58,7 @@ function Students() {
     group_ids: [],
     parents_phone_number: "",
     came_in_school: "",
+    
   });
 
   const [editModal, setEditModal] = useState(false);
@@ -90,10 +90,8 @@ function Students() {
     return new Date().getFullYear();
   };
 
-  const getPaymentRatio = (student) => {
-    const totalGroups = student.studentGroups?.filter(
-      (sg) => sg.month === monthFilter && sg.year === yearFilter
-    ).length || 0;
+  const getPaymentRatio = (student) => {   
+    const totalGroups = student.all_groups || 0
     const paidGroups = student.studentGroups?.filter(
       (sg) => sg.month === monthFilter && sg.year === yearFilter && sg.paid
     ).length || 0;
@@ -119,7 +117,7 @@ function Students() {
       setStudents(data);
     } catch (err) {
       setError("O'quvchilarni olishda xatolik yuz berdi!");
-      toast.error("O'quvchilarni olishda xatolik yuz berdi!", { position: "top-right", autoClose: 3000 });
+      toast.error("O'quvchilarni olishda xatolik yuz berdi!");
     } finally {
       setLoading(false);
     }
@@ -133,7 +131,7 @@ function Students() {
       setGroups(data);
     } catch (err) {
       setError("Guruhlar ma'lumotlarini olishda muammo yuzaga keldi!");
-      toast.error(`Guruhlar ma'lumotlarini olishda xatolik yuz berdi: ${err.message}`, { position: "top-right", autoClose: 3000 });
+      toast.error("Guruhlar ma'lumotlarini olishda xatolik yuz berdi!");
     }
   };
 
@@ -145,7 +143,7 @@ function Students() {
       setTeachers(data);
     } catch (err) {
       setError("Ustozlar ma'lumotlarini olishda muammo yuzaga keldi!");
-      toast.error("Ustozlar ma'lumotlarini olishda xatolik yuz berdi: hali mavjud emas", { position: "top-right", autoClose: 3000 });
+      toast.error("Ustozlar ma'lumotlarini olishda xatolik yuz berdi!");
     }
   };
 
@@ -163,7 +161,7 @@ function Students() {
 
     if (formData.group_ids.length === 0) {
       setError("Iltimos, kamida bitta guruhni tanlang!");
-      toast.error("Iltimos, kamida bitta guruhni tanlang!", { position: "top-right", autoClose: 3000 });
+      toast.error("Iltimos, kamida bitta guruhni tanlang!");
       return;
     }
 
@@ -186,7 +184,7 @@ function Students() {
       await fetchGroups();
       await fetchTeachers();
       setSuccess("Yangi o'quvchi muvaffaqiyatli qo'shildi!");
-      toast.success("Yangi o'quvchi muvaffaqiyatli qo'shildi!", { position: "top-right", autoClose: 3000 });
+      toast.success("Yangi o'quvchi muvaffaqiyatli qo'shildi!");
       setFormData({
         first_name: "",
         last_name: "",
@@ -200,7 +198,7 @@ function Students() {
       });
       setAddModal(false);
     } catch (err) {
-      toast.error("O'quvchini qo'shishda muammo yuzaga keldi. Iltimos, barcha maydonlar kiritilganligiga e'tibor bering!", { position: "top-right", autoClose: 3000 });
+      toast.error("O'quvchini qo'shishda muammo yuzaga keldi. Iltimos, barcha maydonlar kiritilganligiga e'tibor bering!");
       setError("O'quvchini qo'shishda muammo yuzaga keldi. Iltimos, barcha maydonlar kiritilganligiga e'tibor bering!");
       console.error(err);
     }
@@ -212,11 +210,11 @@ function Students() {
       if (!response.ok) throw new Error("O'quvchini o'chirishda muammo yuzaga keldi!");
       await fetchStudents();
       setSuccess("O'quvchi muvaffaqiyatli o'chirib tashlandi!");
-      toast.success("O'quvchi muvaffaqiyatli o'chirib tashlandi!", { position: "top-right", autoClose: 3000 });
+      toast.success("O'quvchi muvaffaqiyatli o'chirib tashlandi!");
       setSelectedStudent(null);
     } catch (err) {
       setError("O'quvchini o'chirishda muammo yuzaga keldi. Iltimos, birozdan so'ng qayta urinib ko'ring!");
-      toast.error("O'quvchini o'chirishda muammo yuzaga keldi. Iltimos, birozdan so'ng qayta urinib ko'ring!", { position: "top-right", autoClose: 3000 });
+      toast.error("O'quvchini o'chirishda muammo yuzaga keldi. Iltimos, birozdan so'ng qayta urinib ko'ring!");
       console.error(err);
     }
   };
@@ -226,12 +224,11 @@ function Students() {
       <div>
         <p>
           Diqqat! Ushbu o'quvchiga tegishli barcha ma'lumotlar o'chiriladi!
-          O'chirishga ishonchingiz komilmi?
         </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
-              padding: "15px 22px",
+              padding: "8px 22px",
               background: "#dc3545",
               color: "white",
               border: "none",
@@ -259,14 +256,7 @@ function Students() {
             Bekor qilish
           </button>
         </div>
-      </div>,
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
+      </div>
     );
   };
 
@@ -277,7 +267,7 @@ function Students() {
 
     if (editFormData.group_ids.length === 0) {
       setError("Iltimos, kamida bitta guruhni tanlang!");
-      toast.error("Iltimos, kamida bitta guruhni tanlang!", { position: "top-right", autoClose: 3000 });
+      toast.error("Iltimos, kamida bitta guruhni tanlang!");
       return;
     }
 
@@ -300,12 +290,12 @@ function Students() {
       await fetchGroups();
       await fetchTeachers();
       setSuccess("Student successfully updated");
-      toast.success("O'quvchi ma'lumotlari muvaffaqiyatli yangilandi!", { position: "top-right", autoClose: 3000 });
+      toast.success("O'quvchi ma'lumotlari muvaffaqiyatli yangilandi!");
       setEditModal(false);
       setSelectedStudent(null);
     } catch (err) {
       setError("Failed to update student. Please check the form data.");
-      toast.error("O'quvchi ma'lumotlarini yangilashda xatolik yuz berdi! Iltimos, barcha maydonlar to'ldirilganligini tekshiring!", { position: "top-right", autoClose: 3000 });
+      toast.error("O'quvchi ma'lumotlarini yangilashda xatolik yuz berdi! Iltimos, barcha maydonlar to'ldirilganligini tekshiring!");
       console.error(err);
     }
   };
@@ -398,7 +388,6 @@ function Students() {
 
   return (
     <div>
-      <ToastContainer />
       <div className="flex justify-between gap-2 pl-6 pr-6">
         <div className="flex items-center gap-2">
           <Users size={24} color="#104292" />
@@ -1070,13 +1059,10 @@ function Students() {
                         sg => sg.month === monthFilter && sg.year === yearFilter && sg.paid
                       ).length || 0;
 
-                      let statusClass = "bg-red-100 text-red-800";
-                      if (paidGroups === totalGroups) statusClass = "bg-green-100 text-green-800";
-                      else if (paidGroups > 0) statusClass = "bg-yellow-100 text-yellow-800";
-
                       return (
-                        <span className={`inline-block py-1 px-3 rounded-full text-sm font-medium ${statusClass}`}>
-                          {paidGroups === totalGroups ? "Toʻliq toʻlangan" :
+                        <span className={paidGroups === totalGroups && paidGroups > 0 ? "bg-green-100 text-green-800" :
+                          paidGroups > 0 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
+                          {paidGroups === totalGroups && paidGroups > 0 ? "Toʻliq toʻlangan" :
                             paidGroups > 0 ? "Qisman toʻlangan" : "Toʻlanmagan"}
                         </span>
                       );

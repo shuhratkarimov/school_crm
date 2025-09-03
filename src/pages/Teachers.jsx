@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Trash2, GraduationCap, Plus, Pen, X, Euro } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import LottieLoading from "../components/Loading";
+import { toast } from "react-hot-toast";
 
 function Teachers() {
   const [teachers, setTeachers] = useState([]);
@@ -50,13 +49,14 @@ function Teachers() {
       );
       if (res.ok) {
         const data = await res.json();
-        console.log(data);
+        toast.success("To‘lovlarni olish muvaffaqiyatli amalga oshirildi");
         setTeacherPayments(data);
       } else {
+        toast.error(`To‘lovlarni olishda xatolik: ${res.status}`);
         setTeacherPayments([]);
       }
     } catch (err) {
-      console.error("To‘lovlarni olishda xatolik:", err);
+      toast.error("To‘lovlarni olishda xatolik");
       setTeacherPayments([]);
     }
   };
@@ -104,7 +104,8 @@ function Teachers() {
         const balanceData = await response.json();
         return balanceData.balance;
       } else {
-        throw new Error("Balansni olishda xatolik");
+        toast.error(`Balansni olishda xatolik: ${response.status}`);
+        return 0;
       }
     } catch (err) {
       toast.error("Balansni olishda xatolik", {
@@ -143,10 +144,7 @@ function Teachers() {
       } else {
         setGroups([]);
         setGroupsError("Guruhlar hali mavjud emas");
-        toast.error("Guruhlar yuklanmadi: Hali mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error(`Guruhlar yuklanmadi: ${groupsResponse.status}`);
       }
 
       if (teachersResponse.ok) {
@@ -166,10 +164,7 @@ function Teachers() {
       } else {
         setTeachers([]);
         setTeachersError("Ustozlar hali mavjud emas");
-        toast.error("Ustozlar yuklanmadi: Hali mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error(`Ustozlar yuklanmadi: ${teachersResponse.status}`);
       }
 
       if (studentsResponse.ok) {
@@ -177,10 +172,7 @@ function Teachers() {
         setStudents(studentsData);
       } else {
         setStudents([]);
-        toast.error("O'quvchilar yuklanmadi: Hali mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error(`O'quvchilar yuklanmadi: ${studentsResponse.status}`);
       }
     } catch (err) {
       setGroups([]);
@@ -188,10 +180,7 @@ function Teachers() {
       setStudents([]);
       setGroupsError("Guruhlar hali mavjud emas");
       setTeachersError("Ustozlar hali mavjud emas");
-      toast.error("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Ma'lumotlarni yuklashda umumiy xatolik yuz berdi: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -245,18 +234,12 @@ function Teachers() {
         });
         setIsAddModalOpen(false);
         fetchData(); // Refresh data after add
-        toast.success("Yangi ustoz muvaffaqiyatli qo'shildi!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Yangi ustoz muvaffaqiyatli qo'shildi!");
       } else {
-        throw new Error("Ustoz qo'shishda xatolik");
+        toast.error(`Ustoz qo'shishda xatolik: ${response.status}`);
       }
     } catch (err) {
-      toast.error("Ustoz qo'shishda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Ustoz qo'shishda xatolik: ${err.message}`);
     }
   };
 
@@ -291,22 +274,15 @@ function Teachers() {
       );
 
       if (!response.ok) {
-        toast.error("Xatolik yuz berdi");
-        throw new Error("Xatolik yuz berdi");
+        toast.error(`Xatolik yuz berdi: ${response.status}`);
       }
       else {
         fetchData();
-        toast.success("O‘qituvchi ma’lumotlari yangilandi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("O‘qituvchi ma’lumotlari yangilandi");
       }
       setIsEditModalOpen(false);
     } catch (error) {
-      toast.error("Yangilashda muammo yuz berdi", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Yangilashda muammo yuz berdi: ${error.message}`);
       console.error(error);
     }
   };
@@ -321,28 +297,19 @@ function Teachers() {
       );
 
       if (response.ok) {
-        toast.success("Ustoz muvaffaqiyatli o'chirildi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Ustoz muvaffaqiyatli o'chirildi");
         setTeachers(teachers.filter((t) => t.id !== id));
         setTeacherBalances((prev) => {
           const newBalances = { ...prev };
           delete newBalances[id];
           return newBalances;
         });
-        toast.success("Ustoz muvaffaqiyatli o'chirildi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Ustoz muvaffaqiyatli o'chirildi");
       } else {
-        throw new Error("Ustoz o'chirishda xatolik");
+        toast.error(`Ustoz o'chirishda xatolik: ${response.status}`);
       }
     } catch (err) {
-      toast.error("Ustoz o'chirishda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Ustoz o'chirishda xatolik: ${err.message}`);
     }
   };
 
@@ -359,24 +326,13 @@ function Teachers() {
         toast.error(
           `Kiritilgan summa ustoz balansidan katta!\nBalans: ${currentBalance.toLocaleString(
             "uz-UZ"
-          )} so'm`,
-          {
-            position: "top-right",
-            autoClose: 3000,
-          }
+          )} so'm`
         );
         return;
       }
       else if (Number(paymentFormData.payment_amount) < 1000) {
         toast.error(
-          `Kamida 1000 so'm kiritish shart!
-Balans: ${currentBalance.toLocaleString(
-            "uz-UZ"
-          )} so'm`,
-          {
-            position: "top-right",
-            autoClose: 3000,
-          }
+          `Kamida 1000 so'm kiritish shart!`
         );
         return;
       }
@@ -406,10 +362,7 @@ Balans: ${currentBalance.toLocaleString(
           ...prev,
           [paymentFormData.teacher_id]: updatedBalance,
         }));
-        toast.success("To'lov muvaffaqiyatli qo'shildi!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("To'lov muvaffaqiyatli qo'shildi!");
         setIsPaymentModalOpen(false);
         setPaymentFormData({
           teacher_id: "",
@@ -418,13 +371,10 @@ Balans: ${currentBalance.toLocaleString(
           payment_amount: "",
         });
       } else {
-        throw new Error("To'lov qo'shishda xatolik");
+        toast.error(`To'lov qo'shishda xatolik: ${response.status}`);
       }
     } catch (err) {
-      toast.error("To'lov qo'shishda xatolik: " + err.message, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`To'lov qo'shishda xatolik: ${err.message}`);
     }
   };
 
@@ -438,7 +388,7 @@ Balans: ${currentBalance.toLocaleString(
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
-              padding: "15px 22px",
+              padding: "8px 22px",
               background: "#dc3545",
               color: "white",
               border: "none",
@@ -466,14 +416,7 @@ Balans: ${currentBalance.toLocaleString(
             Bekor qilish
           </button>
         </div>
-      </div>,
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
+      </div>
     );
   };
 
@@ -535,7 +478,6 @@ Balans: ${currentBalance.toLocaleString(
 
   return (
     <div>
-      <ToastContainer />
       <div className="flex justify-between items-center gap-2 pl-6 pr-6 mb-6">
         <div className="flex items-center gap-2">
           <GraduationCap size={24} color="#104292" />

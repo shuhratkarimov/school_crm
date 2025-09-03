@@ -12,7 +12,7 @@ import Expenses from "./pages/Expenses";
 import Notes from "./pages/Notes";
 import Calculator from "./pages/Calculator";
 import Achievements from "./pages/Achievements";
-
+import { Toaster, toast } from 'react-hot-toast';
 // Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
@@ -28,6 +28,8 @@ const TeacherDashboard = lazy(() => import("./pages/TeacherDashboard"));
 const TeacherAttendance = lazy(() => import("./pages/TeacherAttendance"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const PaymentReports = lazy(() => import("./components/PaymentReports"));
+const AdminTestResults = lazy(() => import("./pages/AdminTestResults"));
+const TeacherTestResults = lazy(() => import("./pages/TeacherTestResults"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -80,6 +82,54 @@ function App() {
 
   return (
     <Router>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          // Default
+          duration: 3000,
+          style: {
+            background: "#fff",
+            color: "#333",
+            fontSize: "14px",
+            borderRadius: "12px",
+            padding: "12px 16px",
+          },
+          // Success
+          success: {
+            duration: 2500, // agar boshqa vaqt bersang ham bo‘ladi
+            style: {
+              background: "#e6ffed",
+              color: "#047857",
+              border: "1px solid #34d399",
+            },
+            iconTheme: {
+              primary: "#10b981",
+              secondary: "#fff",
+            },
+          },
+          // Error
+          error: {
+            duration: 4000,
+            style: {
+              background: "#fee2e2",
+              color: "#b91c1c",
+              border: "1px solid #f87171",
+            },
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#fff",
+            },
+          },
+          // Loading
+          loading: {
+            style: {
+              background: "#fef3c7",
+              color: "#92400e",
+              border: "1px solid #fbbf24",
+            },
+          },
+        }}
+      />
       <Suspense fallback={<LottieLoading />}>
         <ErrorBoundary>
           <Routes>
@@ -119,7 +169,7 @@ function App() {
               }
             />
 
-            <Route
+            {/* <Route
               path="/calculator"
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
@@ -132,11 +182,36 @@ function App() {
                   </div>
                 </PrivateRoute>
               }
+            /> */}
+
+            <Route
+              path="/teacher/test-results"
+              element={
+                <PrivateRoute isAuthenticated={teacherAuthenticated}>
+                  <TeacherTestResults />
+                </PrivateRoute>
+              }
             />
+
+            <Route
+              path="/test-results"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <AdminTestResults />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+
             <Route
               path="/teacher/payments"
               element={
-                <PrivateRoute isAuthenticated={isAuthenticated}>
+                <PrivateRoute isAuthenticated={teacherAuthenticated}>
                   <PaymentReports />
                 </PrivateRoute>
               }

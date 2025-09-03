@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Trash2, Pen, Trophy, Plus, X, Award, Calendar, User, Search } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 import LottieLoading from "../components/Loading";
 
 function Achievements() {
@@ -31,14 +30,14 @@ function Achievements() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/get_achievements`);
       if (!response.ok) throw new Error("Yutuqlar ma'lumotlarini olishda xatolik!");
       if (response.status === 200) {
+        console.log(response);
         let data = await response.json();
-        console.log(data);
         data = data.length ? data : [];
         setAchievements(data);
         setFilteredAchievements(data);
       }
     } catch (err) {
-      toast.error(`${err.message || "Yutuqlar ma'lumotlarini olishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
+      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuqlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
     } finally {
       setLoading(false);
     }
@@ -49,15 +48,15 @@ function Achievements() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/get_students`);
       let data = await response.json();
       if (!response.ok) {
+        toast.error(`Xatolik yuz berdi: ${err.message || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`);
         throw new Error("O'quvchilar ma'lumotlarini olishda xatolik!");
-        toast.error(`${err.message || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
       }
       if (response.status === 200) {
         data = data.length ? data : [];
         setStudents(data);
       }
     } catch (err) {
-      toast.error(`${err.message || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
+      toast.error(`Xatolik yuz berdi: ${err.message || "O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!"}`);
     }
   };
 
@@ -66,15 +65,15 @@ function Achievements() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/get_teachers`);
       let data = await response.json();
       if (!response.ok) {
+        toast.error(`Xatolik yuz berdi: ${err.message || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
         throw new Error("Ustozlar ma'lumotlarini olishda xatolik!");
-        toast.error(`${err.message || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
       }
       if (response.status === 200) {
         data = data.length ? data : [];
         setTeachers(data);
       }
     } catch (err) {
-      toast.error(`${err.message || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
+      toast.error(`Xatolik yuz berdi: ${err.message || "Ustozlar ma'lumotlarini olishda xatolik yuz berdi!"}`);
     }
   };
 
@@ -128,8 +127,8 @@ function Achievements() {
         }),
       });
       if (!response.ok) {
+        toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq qo'shishda xatolik yuz berdi!"}`);
         throw new Error("Yutuq qo'shishda xatolik!");
-        toast.error(`${err.message || "Yutuq qo'shishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
       }
       await fetchAchievements();
       setAddModal(false);
@@ -139,45 +138,95 @@ function Achievements() {
         description: "",
         date: "",
       });
-      toast.success("Yutuq muvaffaqiyatli qo'shildi!", { position: "top-right", autoClose: 3000 });
+      toast.success("Yutuq muvaffaqiyatli qo'shildi!");
     } catch (err) {
-      toast.error(`${err.message || "Yutuq qo'shishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
+      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq qo'shishda xatolik yuz berdi!"}`);
     }
+  };
+
+  const showDeleteToast = (id) => {
+    toast(
+      <div>
+        <p>
+          Diqqat! Ushbu yutuqqa tegishli barcha ma'lumotlar o'chiriladi!
+        </p>
+        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+          <button
+            style={{
+              padding: "8px 22px",
+              background: "#dc3545",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              deleteAchievement(id);
+              toast.dismiss();
+            }}
+          >
+            O'chirish
+          </button>
+          <button
+            style={{
+              padding: "8px 16px",
+              background: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => toast.dismiss()}
+          >
+            Bekor qilish
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const updateAchievement = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/update_achievement/${selectedAchievement.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok){
-        const response = await response.json();
-        throw new Error(response.error || "Yutuq yangilashda xatolik!");
-        toast.error(`${response.error || "Yutuq yangilashda xatolik!"}`, { position: "top-right", autoClose: 3000 });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/update_achievement/${selectedAchievement.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            entity_id: formData.entity_id,
+            type: selectedType,
+            achievement_title: formData.achievement_title,
+            description: formData.description,
+            date: formData.date,
+          }),          
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(`Xatolik yuz berdi: ${errorData.error || "Yutuq yangilashda xatolik!"}`);
+        throw new Error(errorData.error || "Yutuq yangilashda xatolik!");
       }
+  
       await fetchAchievements();
       setEditModal(false);
-      toast.success("Yutuq muvaffaqiyatli yangilandi!", { position: "top-right", autoClose: 3000 });
+      toast.success("Yutuq muvaffaqiyatli yangilandi!");
     } catch (err) {
-      toast.error(`${err.message || "Yutuq yangilashda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
+      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq yangilashda xatolik yuz berdi!"}`);
     }
   };
 
-  const deleteAchievement = async (id) => {
-    if (!window.confirm("Haqiqatan ham bu yutuqni o'chirmoqchimisiz?")) return;
-    
+  const deleteAchievement = async (id) => {    
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_achievement/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Yutuq o'chirishda xatolik!");
       await fetchAchievements();
-      toast.success("Yutuq muvaffaqiyatli o'chirildi!", { position: "top-right", autoClose: 3000 });
+      toast.success("Yutuq muvaffaqiyatli o'chirildi!");
     } catch (err) {
-      toast.error(`${err.message || "Yutuq o'chirishda xatolik yuz berdi!"}`, { position: "top-right", autoClose: 3000 });
+      toast.error(`Xatolik yuz berdi: ${err.message || "Yutuq o'chirishda xatolik yuz berdi!"}`);
     }
   };
 
@@ -200,18 +249,15 @@ function Achievements() {
   if (loading) return <LottieLoading />;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen dark:bg-gray-900">
-      <ToastContainer />
-      
+    <div className="bg-gray-50 min-h-screen dark:bg-gray-900">
       {/* Sarlavha va qo'shish tugmasi */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 rounded-full dark:bg-blue-900/30">
-            <Trophy size={28} className="text-blue-600 dark:text-blue-400" />
+          <div>
+            <Trophy size={24} className="text-[#104292]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Yutuqlar</h1>
-            <p className="text-gray-500 dark:text-gray-400">O'quvchilar va ustozlarning yutuqlari ro'yxati</p>
+            <h1 className="text-2xl font-bold text-gray-800">Yutuqlar</h1>
           </div>
         </div>
         
@@ -298,13 +344,12 @@ function Achievements() {
                         onClick={() => {
                           setSelectedAchievement(ach);
                           setFormData({
-                            entity_id: ach.entity_id,
+                            entity_id: ach.achiever_id,
                             achievement_title: ach.achievement_title,
                             description: ach.description,
                             date: ach.date.split('T')[0],
                             achiever_type: ach.achiever_type,
-                            achiever_id: ach.achiever_id,
-                          });
+                          });                          
                           setEditModal(true);
                         }}
                         className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors dark:text-blue-400 dark:hover:bg-blue-900/30"
@@ -313,7 +358,7 @@ function Achievements() {
                         <Pen size={16} />
                       </button>
                       <button
-                        onClick={() => deleteAchievement(ach.id)}
+                        onClick={() => showDeleteToast(ach.id)}
                         className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors dark:text-red-400 dark:hover:bg-red-900/30"
                         title="O'chirish"
                       >

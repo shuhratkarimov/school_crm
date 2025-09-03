@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, BookOpen, Plus, Pen } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Trash2, BookOpen, Plus, Pen, X, Check, Calendar, CreditCard, Users, User, MessageSquare, DollarSign, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
 import "../../styles/styles.css";
 import LottieLoading from "../components/Loading";
 
@@ -29,8 +28,11 @@ function Payments() {
     received: "",
     for_which_month: "",
     comment: "",
+    shouldBeConsideredAsPaid: false,
   });
   const [addModal, setAddModal] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
 
   const [formData, setFormData] = useState({
     for_which_group: "", // "group_id" o'rniga "for_which_group"
@@ -40,6 +42,7 @@ function Payments() {
     received: "",
     for_which_month: "",
     comment: "",
+    shouldBeConsideredAsPaid: false,
   });
 
   const allMonths = [
@@ -74,11 +77,39 @@ function Payments() {
   }, [currentMonth]);
 
   const handleChange = (value) => {
-    setFormData({ ...formData, for_which_month: value });
+    setFormData(prev => {
+      // Yangi oy uchun to'lov miqdorini qayta hisoblaymiz
+      const selectedGroup = groups.find(group => group.id === prev.for_which_group);
+      const calculatedAmount = calculatePaymentAmount(
+        selectedGroup,
+        value,
+        prev.came_in_school
+      );
+
+      return {
+        ...prev,
+        for_which_month: value,
+        payment_amount: calculatedAmount || prev.payment_amount
+      };
+    });
   };
 
   const handleEditChange = (value) => {
-    setEditFormData({ ...editFormData, for_which_month: value });
+    setEditFormData(prev => {
+      // Yangi oy uchun to'lov miqdorini qayta hisoblaymiz
+      const selectedGroup = groups.find(group => group.id === prev.for_which_group);
+      const calculatedAmount = calculatePaymentAmount(
+        selectedGroup,
+        value,
+        prev.came_in_school
+      );
+
+      return {
+        ...prev,
+        for_which_month: value,
+        payment_amount: calculatedAmount || prev.payment_amount
+      };
+    });
   };
 
   const fetchData = async () => {
@@ -110,10 +141,7 @@ function Payments() {
         setGroups(groupsWithAmount);
       } else {
         setGroups([]);
-        toast.info("To'lovlar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("To'lovlar mavjud emas");
       }
 
       if (studentsResponse.ok) {
@@ -121,10 +149,7 @@ function Payments() {
         setStudents(studentsData);
       } else {
         setStudents([]);
-        toast.info("O'quvchilar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("O'quvchilar mavjud emas");
       }
 
       if (paymentsResponse.ok) {
@@ -133,19 +158,13 @@ function Payments() {
         setPayments(paymentsData);
       } else {
         setPayments([]);
-        toast.info("To'lovlar mavjud emas", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error("To'lovlar mavjud emas");
       }
     } catch (err) {
       setGroups([]);
       setStudents([]);
       setPayments([]);
-      toast.warning("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
@@ -168,6 +187,7 @@ function Payments() {
             received: formData.received,
             for_which_month: formData.for_which_month,
             comment: formData.comment,
+            shouldBeConsideredAsPaid: formData.shouldBeConsideredAsPaid,
           }),
         }
       );
@@ -187,29 +207,17 @@ function Payments() {
         setSearchTerm("");
         setShowDropdown(false);
         setAddModal(false);
-        toast.success("To'lov muvaffaqiyatli qo'shildi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("To'lov muvaffaqiyatli qo'shildi");
       }
       else if (response.status === 400) {
         const errorData = await response.json();
-        toast.warning(`${errorData.message}`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error(`${errorData.message}`);
       } else {
         const errorData = await response.json();
-        toast.warning(`${errorData.message}`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error(`${errorData.message}`);
       }
     } catch (err) {
-      toast.error(`${err.message}`, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`${err.message}`);
     }
   };
 
@@ -229,6 +237,7 @@ function Payments() {
             received: editFormData.received,
             for_which_month: editFormData.for_which_month,
             comment: editFormData.comment,
+            shouldBeConsideredAsPaid: editFormData.shouldBeConsideredAsPaid,
           }),
         }
       );
@@ -249,23 +258,14 @@ function Payments() {
             p.id === editFormData.id ? paymentWithStudent : p
           )
         );
-        toast.success(`To'lov muvaffaqiyatli yangilandi`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success(`To'lov muvaffaqiyatli yangilandi`);
         setIsEditModalOpen(false);
       } else {
         const errorData = await response.json();
-        toast.warning(`${errorData.message}`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error(`${errorData.message}`);
       }
     } catch (err) {
-      toast.warning(`${err.message}`, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`${err.message}`);
     }
   };
 
@@ -280,20 +280,17 @@ function Payments() {
 
       if (response.ok) {
         setPayments(payments.filter((p) => p.id !== id));
-        toast.success(`To'lov muvaffaqiyatli o'chirildi`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success(`To'lov muvaffaqiyatli o'chirildi`);
       }
     } catch (err) {
-      toast.warning(`${err.message}`, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`${err.message}`);
     }
   };
 
   const openEditModal = (payment) => {
+    // Student ma'lumotlarini topamiz
+    const student = students.find(s => s.id === payment.pupil_id);
+
     setEditFormData({
       id: payment.id,
       pupil_id: payment.pupil_id,
@@ -302,6 +299,9 @@ function Payments() {
       received: payment.received,
       for_which_month: payment.for_which_month,
       comment: payment.comment,
+      came_in_school: student?.came_in_school || "",
+      for_which_group: payment.for_which_group,
+      shouldBeConsideredAsPaid: payment.shouldBeConsideredAsPaid,
     });
     setIsEditModalOpen(true);
   };
@@ -312,10 +312,19 @@ function Payments() {
       .includes(studentSearch.toLowerCase())
   );
 
+  const openDetailModal = (payment) => {
+    setSelectedPayment(payment);
+    setIsDetailModalOpen(true);
+  };
+
   const handleStudentSelect = (student) => {
-    setFormData({ ...formData, pupil_id: student.id, group_id: "" });
+    setFormData({ ...formData, pupil_id: student.id, group_id: "", came_in_school: student.came_in_school });
     setStudentSearch(`${student.first_name} ${student.last_name}`);
     setShowDropdown(false);
+    setFormData((prev) => ({
+      ...prev,
+      shouldBeConsideredAsPaid: false,
+    }));
   };
 
   const getStudentGroups = (studentId) => {
@@ -345,18 +354,12 @@ function Payments() {
       );
 
       if (response.ok) {
-        toast.success("Xabar muvaffaqiyatli jo'natildi", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Xabar muvaffaqiyatli jo'natildi");
       } else {
         throw new Error("Xabarni jo'natishda xatolik");
       }
     } catch (err) {
-      toast.error("Xabarni jo'natishda xatolik: API mavjud emas", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(`Xabarni jo'natishda xatolik: ${err.message}`);
     }
   };
 
@@ -373,21 +376,28 @@ function Payments() {
       const studentGroups = getStudentGroups(formData.pupil_id);
       const selectedGroup = groups.find(
         (group) => group.id === formData.for_which_group
-      ); // "group_id" o'rniga "for_which_group"
+      );
+
       if (selectedGroup && studentGroups.includes(selectedGroup.id)) {
+        const calculatedAmount = calculatePaymentAmount(
+          selectedGroup,
+          formData.for_which_month,
+          formData.came_in_school
+        );
+
         setFormData((prev) => ({
           ...prev,
-          payment_amount: selectedGroup.payment_amount.toString(),
+          payment_amount: calculatedAmount,
         }));
       } else {
         setFormData((prev) => ({
           ...prev,
           payment_amount: "",
           for_which_group: "",
-        })); // "group_id" o'rniga "for_which_group"
+        }));
       }
     }
-  }, [formData.pupil_id, formData.for_which_group, groups]); // "group_id" o'rniga "for_which_group"
+  }, [formData.pupil_id, formData.for_which_group, formData.for_which_month, groups, formData.shouldBeConsideredAsPaid]);
 
   useEffect(() => {
     fetchData();
@@ -420,6 +430,46 @@ function Payments() {
     }
   }, [success, groupsError, studentsError, paymentsError]);
 
+  const calculatePaymentAmount = (group, month, cameInSchool) => {
+    if (!group || !month || !cameInSchool) return group?.payment_amount || "";
+
+    const monthlyFee = Number(group.payment_amount);
+    if (!monthlyFee) return "";
+
+    // Joriy yil va oy
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // Tanlangan oyning indeksi
+    const monthIndex = allMonths.findIndex(m => m === month);
+    if (monthIndex === -1) return monthlyFee;
+
+    // Tanlangan oyning birinchi va oxirgi kuni
+    const selectedMonthFirstDay = new Date(currentYear, monthIndex, 1);
+    const selectedMonthLastDay = new Date(currentYear, monthIndex + 1, 0);
+
+    // O'quvchining kelgan sanasi
+    const cameDate = new Date(cameInSchool);
+
+    // Agar o'quvchi tanlangan oydan keyin kelgan bo'lsa
+    if (cameDate > selectedMonthLastDay) return "0";
+
+    // Agar o'quvchi tanlangan oydan oldin kelgan bo'lsa
+    if (cameDate <= selectedMonthFirstDay) return monthlyFee.toString();
+
+    // O'quvchi oyning o'rtasida kelgan bo'lsa
+    const daysInMonth = selectedMonthLastDay.getDate();
+    const daysToPay = daysInMonth - cameDate.getDate() + 1;
+
+    // Kunlik to'lov miqdori
+    const dailyFee = monthlyFee / daysInMonth;
+
+    // To'lov miqdori
+    const calculatedAmount = Math.round(dailyFee * daysToPay);
+
+    return calculatedAmount.toString();
+  };
+
   if (loading) {
     return <LottieLoading />;
   }
@@ -429,12 +479,11 @@ function Payments() {
       <div>
         <p>
           Diqqat! Ushbu to'lovga tegishli barcha ma'lumotlar o'chiriladi!
-          O'chirishga ishonchingiz komilmi?
         </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
-              padding: "2px 22px",
+              padding: "8px 22px",
               background: "#dc3545",
               color: "white",
               border: "none",
@@ -450,7 +499,7 @@ function Payments() {
           </button>
           <button
             style={{
-              padding: "2px 22px",
+              padding: "8px 16px",
               background: "#6c757d",
               color: "white",
               border: "none",
@@ -462,20 +511,12 @@ function Payments() {
             Bekor qilish
           </button>
         </div>
-      </div>,
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
+      </div>
     );
   };
 
   return (
     <div>
-      <ToastContainer />
       <div className="flex justify-between items-center gap-2 pl-6 pr-6 mb-6">
         <div className="flex items-center gap-2">
           <BookOpen size={24} color="#104292" />
@@ -490,158 +531,195 @@ function Payments() {
           To'lov qo'shish
         </button>
       </div>
+
       {isEditModalOpen && (
-        <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-          onClick={() => setIsEditModalOpen(false)}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "8px",
-              width: "90%",
-              maxWidth: "600px",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header bg-[#104292] p-2 text-white rounded-[10px]">
-              <h3 className="text-center text-lg font-bold">To'lovni tahrirlash</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-2xl flex justify-between items-center shadow">
+              <h3 className="text-lg font-semibold">To'lovni tahrirlash</h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-white hover:bg-blue-800 p-1 rounded-full transition-colors"
+              >
+                <X size={22} />
+              </button>
             </div>
-            <form onSubmit={updatePayment}>
-              <div className="form-grid" style={{ display: "grid", gap: "16px" }}>
-                <div className="form-group">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    To'lov miqdori
-                  </label>
+
+            {/* Form */}
+            <form onSubmit={updatePayment} className="p-6 space-y-5">
+
+              {/* To'lov miqdori */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To'lov miqdori *</label>
+                <div className="relative">
                   <input
                     type="number"
-                    className="input"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={editFormData.payment_amount}
-                    onChange={(e) =>
-                      setEditFormData({
-                        ...editFormData,
-                        payment_amount: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setEditFormData({ ...editFormData, payment_amount: e.target.value })}
                     placeholder="350000"
                     min="0"
                     required
                   />
-                </div>
-                <div className="form-group">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    To'lov turi
-                  </label>
-                  <select
-                    className="select"
-                    value={editFormData.payment_type}
-                    onChange={(e) =>
-                      setEditFormData({
-                        ...editFormData,
-                        payment_type: e.target.value,
-                      })
-                    }
-                    required
-                  >
-                    <option value="">Tanlang</option>
-                    <option value="Naqd">Naqd</option>
-                    <option value="Plastik karta orqali">Karta</option>
-                    <option value="Bank o'tkazmasi">Bank o'tkazmasi</option>
-                  </select>
-                </div>
-                <div className="form-group full-width">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    Qaysi oy uchun to'lov
-                  </label>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center" }}>
-                    {radioMonths.map((month) => (
-                      <label
-                        key={month}
-                        style={{ display: "flex", alignItems: "center", marginRight: "15px", whiteSpace: "nowrap" }}
-                      >
-                        <input
-                          type="radio"
-                          style={{ scale: "1.5", marginRight: "5px", cursor: "pointer" }}
-                          name="edit_month"
-                          value={month}
-                          checked={editFormData.for_which_month === month}
-                          onChange={() => handleEditChange(month)}
-                        />
-                        {month}
-                      </label>
-                    ))}
-                    <select
-                      className="select"
-                      value={radioMonths.includes(editFormData.for_which_month) ? "" : editFormData.for_which_month}
-                      onChange={(e) => handleEditChange(e.target.value)}
-                    >
-                      <option value="">Boshqa oy tanlang</option>
-                      {selectMonths.map((month) => (
-                        <option key={month} value={month}>
-                          {month}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="form-group full-width">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    Qabul qilgan mas'ul F.I.Sh.
-                  </label>
-                  <input
-                    className="input"
-                    value={editFormData.received}
-                    placeholder="Kim to'lovni qabul qilganligini kiriting..."
-                    onChange={(e) =>
-                      setEditFormData({
-                        ...editFormData,
-                        received: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-group full-width">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    Izoh (ixtiyoriy)
-                  </label>
-                  <input
-                    className="input"
-                    value={editFormData.comment}
-                    placeholder="Izohni kiriting..."
-                    onChange={(e) =>
-                      setEditFormData({
-                        ...editFormData,
-                        comment: e.target.value,
-                      })
-                    }
-                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">so'm</span>
                 </div>
               </div>
-              <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
+
+              {/* To'lov turi */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To'lov turi *</label>
+                <div className="relative">
+                  <select
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    value={editFormData.payment_type}
+                    onChange={(e) => setEditFormData({ ...editFormData, payment_type: e.target.value })}
+                    required
+                  >
+                    <option value="">To'lov turini tanlang</option>
+                    <option value="Naqd">Naqd</option>
+                    <option value="Plastik karta orqali">Karta orqali</option>
+                    <option value="Bank o'tkazmasi">Bank o'tkazmasi</option>
+                  </select>
+                  <ChevronDown size={20} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Qaysi oy uchun */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Qaysi oy uchun to'lov *</label>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  {radioMonths.map((month) => (
+                    <label key={month} className="flex items-center p-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="radio"
+                        className="text-blue-600 focus:ring-blue-500 h-4 w-4"
+                        name="edit_month"
+                        value={month}
+                        checked={editFormData.for_which_month === month}
+                        onChange={() => handleEditChange(month)}
+                      />
+                      <span className="ml-2 text-sm">{month}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="relative">
+                  <select
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    value={radioMonths.includes(editFormData.for_which_month) ? "" : editFormData.for_which_month}
+                    onChange={(e) => handleEditChange(e.target.value)}
+                  >
+                    <option value="">Boshqa oylar</option>
+                    {selectMonths.map((month) => (
+                      <option key={month} value={month}>{month}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={20} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Guruh */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Guruh *</label>
+                <div className="relative">
+                  <select
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    value={editFormData.for_which_group}
+                    onChange={(e) => {
+                      const groupId = e.target.value;
+                      const selectedGroup = groups.find(g => g.id === groupId);
+                      const calculatedAmount = calculatePaymentAmount(
+                        selectedGroup,
+                        editFormData.for_which_month,
+                        editFormData.came_in_school
+                      );
+
+                      setEditFormData(prev => ({
+                        ...prev,
+                        for_which_group: groupId,
+                        payment_amount: calculatedAmount || prev.payment_amount
+                      }));
+                    }}
+                    required
+                  >
+                    <option value="">Guruhni tanlang</option>
+                    {editFormData.pupil_id &&
+                      getStudentGroups(editFormData.pupil_id).map((groupId) => {
+                        const group = groups.find((g) => g.id === groupId);
+                        return (
+                          group && (
+                            <option key={group.id} value={group.id}>
+                              {group.group_subject}
+                            </option>
+                          )
+                        );
+                      })}
+                  </select>
+                  <ChevronDown size={20} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Qabul qilgan mas'ul */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Qabul qilgan mas'ul *</label>
+                <input
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={editFormData.received}
+                  placeholder="F.I.Sh. kiriting..."
+                  onChange={(e) => setEditFormData({ ...editFormData, received: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Izoh */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Izoh (ixtiyoriy)</label>
+                <textarea
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                  value={editFormData.comment}
+                  placeholder="Izohni kiriting..."
+                  onChange={(e) => setEditFormData({ ...editFormData, comment: e.target.value })}
+                />
+              </div>
+
+              {/* To'liq to'lov toggle */}
+              <div className="flex items-center justify-start p-3 bg-gray-50 rounded-lg shadow-sm">
+                <span className="text-gray-700 font-medium">O'quvchi imtiyozli to'lov qilmoqda <br /> va to'lovni to'liq amalga oshirdi deb hisoblash</span>
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  onClick={() =>
+                    setEditFormData(prev => ({
+                      ...prev,
+                      shouldBeConsideredAsPaid: !prev.shouldBeConsideredAsPaid,
+                    }))
+                  }
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${editFormData.shouldBeConsideredAsPaid ? "bg-blue-600" : "bg-gray-300"
+                    }`}
+                >
+                  <div
+                    className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${editFormData.shouldBeConsideredAsPaid ? "translate-x-5" : ""
+                      }`}
+                  />
+                </button>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                   onClick={() => setIsEditModalOpen(false)}
                 >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                >
+                  <Check size={18} className="mr-1" />
                   Yangilash
                 </button>
               </div>
@@ -650,47 +728,159 @@ function Payments() {
         </div>
       )}
 
+      {isDetailModalOpen && selectedPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-xl flex justify-between items-center">
+              <h3 className="text-xl font-semibold">To'lov tafsilotlari</h3>
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="text-white hover:bg-blue-800 p-1 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="flex items-center">
+                <div className="bg-blue-100 p-3 rounded-full">
+                  <User size={20} className="text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-gray-500">O'quvchi</p>
+                  <p className="font-medium">
+                    {`${selectedPayment.student?.first_name || ""} ${selectedPayment.student?.last_name || ""}`.trim() || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="bg-green-100 p-3 rounded-full">
+                  <DollarSign size={20} className="text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-gray-500">To'lov miqdori</p>
+                  <p className="font-medium">
+                    {selectedPayment.payment_amount
+                      ? Number(selectedPayment.payment_amount).toLocaleString("uz-UZ") + " so'm"
+                      : "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="bg-purple-100 p-3 rounded-full">
+                  <CreditCard size={20} className="text-purple-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-gray-500">To'lov turi</p>
+                  <p className="font-medium">{selectedPayment.payment_type || "N/A"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="bg-amber-100 p-3 rounded-full">
+                  <User size={20} className="text-amber-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-gray-500">Qabul qilgan mas'ul</p>
+                  <p className="font-medium">{selectedPayment.received || "N/A"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="bg-rose-100 p-3 rounded-full">
+                  <Calendar size={20} className="text-rose-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-gray-500">Qaysi oy uchun</p>
+                  <p className="font-medium">{selectedPayment.for_which_month || "N/A"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="bg-indigo-100 p-3 rounded-full">
+                  <Users size={20} className="text-indigo-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-gray-500">Guruh</p>
+                  <p className="font-medium">
+                    {groups.find(g => g.id === selectedPayment.for_which_group)?.group_subject || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="bg-gray-100 p-3 rounded-full">
+                  <Calendar size={20} className="text-gray-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-gray-500">Sana</p>
+                  <p className="font-medium">
+                    {selectedPayment.created_at
+                      ? new Date(selectedPayment.created_at).toLocaleDateString("ru-RU")
+                      : "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              {selectedPayment.comment && (
+                <div className="flex items-start">
+                  <div className="bg-blue-100 p-3 rounded-full mt-1">
+                    <MessageSquare size={20} className="text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm text-gray-500">Izoh</p>
+                    <p className="font-medium">{selectedPayment.comment}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end p-5 border-t border-gray-200">
+              <button
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setIsDetailModalOpen(false)}
+              >
+                Yopish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {addModal && (
         <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={() => setAddModal(false)}
         >
           <div
-            className="modal-content"
-            style={{
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "8px",
-              width: "90%",
-              maxWidth: "600px",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            }}
+            className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header bg-[#104292] p-2 text-white rounded-[10px]">
-              <h3 className="text-center text-lg font-bold">Yangi to'lov qo'shish</h3>
+            {/* Modal header */}
+            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Yangi to'lov qo'shish</h3>
+              <button
+                onClick={() => setAddModal(false)}
+                className="text-white text-2xl leading-none hover:opacity-80"
+              >
+                ×
+              </button>
             </div>
-            <form onSubmit={addPayment}>
-              <div className="form-grid" style={{ display: "grid", gap: "16px" }}>
-                <div className="form-group" style={{ position: "relative" }}>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    O'quvchi
+
+            {/* Modal body */}
+            <div className="p-6 max-h-[75vh] overflow-y-auto">
+              <form id="add-payment-form" onSubmit={addPayment} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                {/* O'quvchi inputi */}
+                <div className="relative">
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    O'quvchi *
                   </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={studentSearch}
                     onChange={(e) => setStudentSearch(e.target.value)}
                     onFocus={() => setShowDropdown(true)}
@@ -698,61 +888,34 @@ function Payments() {
                     placeholder="O'quvchi ismini kiriting..."
                     disabled={students.length === 0}
                   />
-                  {showDropdown && filteredStudents.length > 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
-                        background: "#fff",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                        maxHeight: "150px",
-                        overflowY: "auto",
-                        zIndex: 10,
-                      }}
-                    >
-                      {filteredStudents.map((student) => (
-                        <div
-                          key={student.id}
-                          style={{
-                            padding: "8px",
-                            cursor: "pointer",
-                            background: "#f9f9f9",
-                            borderBottom: "1px solid #eee",
-                          }}
-                          onClick={() => handleStudentSelect(student)}
-                        >
-                          {`${student.first_name} ${student.last_name}`}
+                  {showDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-md max-h-56 overflow-y-auto z-10">
+                      {filteredStudents.length > 0 ? (
+                        filteredStudents.map((student) => (
+                          <div
+                            key={student.id}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                            onMouseDown={() => handleStudentSelect(student)}
+                          >
+                            {`${student.first_name} ${student.last_name}`}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-gray-500">
+                          O'quvchi topilmadi
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  {showDropdown && filteredStudents.length === 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
-                        background: "#fff",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                        padding: "8px",
-                        color: "#666",
-                      }}
-                    >
-                      O'quvchi topilmadi
+                      )}
                     </div>
                   )}
                 </div>
-                <div className="form-group">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    Guruh
+
+                {/* Guruh selector */}
+                <div>
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    Guruh *
                   </label>
                   <select
-                    className="select"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.for_which_group}
                     onChange={(e) =>
                       setFormData({ ...formData, for_which_group: e.target.value })
@@ -760,7 +923,7 @@ function Payments() {
                     required
                     disabled={!formData.pupil_id || getStudentGroups(formData.pupil_id).length === 0}
                   >
-                    <option value="">Tanlang</option>
+                    <option value="">Guruhni tanlang</option>
                     {formData.pupil_id &&
                       getStudentGroups(formData.pupil_id).map((groupId) => {
                         const group = groups.find((g) => g.id === groupId);
@@ -773,128 +936,173 @@ function Payments() {
                         );
                       })}
                   </select>
-                  {formData.pupil_id && getStudentGroups(formData.pupil_id).length === 0 && (
-                    <p style={{ color: "red", fontSize: "0.9rem", marginTop: "5px" }}>
-                      Ushbu o‘quvchiga hech qanday guruh bog‘lanmagan!
-                    </p>
-                  )}
+                  {formData.pupil_id &&
+                    getStudentGroups(formData.pupil_id).length === 0 && (
+                      <p className="text-red-500 text-sm mt-1">
+                        Ushbu o'quvchiga hech qanday guruh bog'lanmagan!
+                      </p>
+                    )}
                 </div>
-                <div className="form-group">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    To'lov miqdori
+
+                {/* To'lov miqdori */}
+                <div>
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    To'lov miqdori *
                   </label>
-                  <input
-                    type="number"
-                    className="input"
-                    value={formData.payment_amount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, payment_amount: e.target.value })
-                    }
-                    onFocus={(e) => {
-                      const selectedGroup = groups.find((g) => g.id === formData.for_which_group);
-                      if (e.target.value === selectedGroup?.payment_amount.toString()) {
-                        e.target.value = "";
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.payment_amount}
+                      onChange={(e) =>
+                        setFormData({ ...formData, payment_amount: e.target.value })
                       }
-                    }}
-                    placeholder="350000"
-                    min="0"
-                    required
-                  />
+                      placeholder="0"
+                      min="0"
+                      required
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      so'm
+                    </span>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    To'lov turi
+
+                {/* To'lov turi */}
+                <div>
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    To'lov turi *
                   </label>
                   <select
-                    className="select"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.payment_type}
                     onChange={(e) =>
                       setFormData({ ...formData, payment_type: e.target.value })
                     }
                     required
                   >
-                    <option value="">Tanlang</option>
+                    <option value="">To'lov turini tanlang</option>
                     <option value="Naqd">Naqd</option>
-                    <option value="Plastik karta orqali">Karta</option>
+                    <option value="Plastik karta orqali">Karta orqali</option>
                     <option value="Bank o'tkazmasi">Bank o'tkazmasi</option>
                   </select>
                 </div>
-                <div className="form-group">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    Qabul qilgan mas'ul F.I.Sh.
+
+                {/* Qabul qilgan shaxs */}
+                <div>
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    Qabul qilgan mas'ul *
                   </label>
                   <input
-                    className="input"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.received}
-                    placeholder="Kim to'lovni qabul qilganligini kiriting..."
+                    placeholder="F.I.Sh. kiriting..."
                     onChange={(e) =>
                       setFormData({ ...formData, received: e.target.value })
                     }
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    Izoh (ixtiyoriy)
+
+                {/* Oy uchun to'lov */}
+                <div className="sm:col-span-2">
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    Qaysi oy uchun *
                   </label>
-                  <input
-                    className="input"
-                    value={formData.comment}
-                    placeholder="Izohni kiriting..."
-                    onChange={(e) =>
-                      setFormData({ ...formData, comment: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="form-group full-width">
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                    Qaysi oy uchun to'lov
-                  </label>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center" }}>
+                  <div className="flex flex-wrap gap-3 mb-3">
                     {radioMonths.map((month) => (
                       <label
                         key={month}
-                        style={{ display: "flex", alignItems: "center", marginRight: "15px", whiteSpace: "nowrap" }}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
                       >
                         <input
                           type="radio"
-                          style={{ scale: "1.5", marginRight: "5px", cursor: "pointer" }}
+                          className="text-blue-600 focus:ring-blue-500 h-4 w-4"
                           name="month"
                           value={month}
                           checked={formData.for_which_month === month}
                           onChange={() => handleChange(month)}
                         />
-                        {month}
+                        <span className="ml-2 text-sm">{month}</span>
                       </label>
                     ))}
-                    <select
-                      className="select"
-                      value={radioMonths.includes(formData.for_which_month) ? "" : formData.for_which_month}
-                      onChange={(e) => handleChange(e.target.value)}
-                    >
-                      <option value="">Boshqa oy tanlang</option>
-                      {selectMonths.map((month) => (
-                        <option key={month} value={month}>
-                          {month}
-                        </option>
-                      ))}
-                    </select>
                   </div>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={
+                      radioMonths.includes(formData.for_which_month)
+                        ? ""
+                        : formData.for_which_month
+                    }
+                    onChange={(e) => handleChange(e.target.value)}
+                  >
+                    <option value="">Boshqa oylar</option>
+                    {selectMonths.map((month) => (
+                      <option key={month} value={month}>
+                        {month}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-              <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setAddModal(false)}
-                >
-                  Bekor qilish
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Saqlash
-                </button>
-              </div>
-            </form>
+
+                {/* Izoh */}
+                <div className="sm:col-span-2">
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    Izoh (ixtiyoriy)
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                    value={formData.comment}
+                    placeholder="Qo'shimcha izoh..."
+                    onChange={(e) =>
+                      setFormData({ ...formData, comment: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Switch toggle */}
+                <div className="flex items-center justify-start gap-5 sm:col-span-2 p-3 bg-gray-50 rounded-lg shadow-sm">
+                  <span className="text-gray-700 font-medium">
+                    O'quvchi imtiyozli to'lov qilmoqda va to'lovni to'liq amalga oshirdi deb hisoblash
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        shouldBeConsideredAsPaid: !prev.shouldBeConsideredAsPaid,
+                      }))
+                    }
+                    className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${formData.shouldBeConsideredAsPaid
+                        ? "bg-blue-600"
+                        : "bg-gray-300"
+                      }`}
+                  >
+                    <div
+                      className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${formData.shouldBeConsideredAsPaid ? "translate-x-5" : ""
+                        }`}
+                    />
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setAddModal(false)}
+                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                form="add-payment-form"
+                className="px-5 py-2.5 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:opacity-90 transition"
+              >
+                To'lovni qo'shish
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -943,10 +1151,8 @@ function Payments() {
           <thead>
             <tr>
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>#</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Ism</th>
+              <th colSpan={3} style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Ism</th>
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Summa</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>To'lov turi</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Qabul qilgan mas'ul</th>
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Qaysi oy uchun</th>
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Qaysi guruh uchun</th>
               <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Sana</th>
@@ -956,10 +1162,7 @@ function Payments() {
           <tbody>
             {filteredPayments.length === 0 ? (
               <tr>
-                <td
-                  colSpan="9"
-                  style={{ textAlign: "center", padding: "10px" }}
-                >
+                <td colSpan="7" style={{ textAlign: "center", padding: "10px" }}>
                   {searchTerm || monthFilter !== "all"
                     ? "Qidiruv bo'yicha natija topilmadi"
                     : paymentsError || "Hozircha to'lovlar yo'q"}
@@ -972,9 +1175,15 @@ function Payments() {
                 );
                 const groupName = group ? group.group_subject : "N/A";
                 return (
-                  <tr key={payment.id}>
+                  <tr
+                    key={payment.id}
+                    onClick={() => openDetailModal(payment)}
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}
+                  >
                     <td style={{ textAlign: "center" }}>{index + 1}</td>
-                    <td style={{ textAlign: "center" }}>
+                    <td colSpan={3} style={{ textAlign: "center" }}>
                       {`${payment.student?.first_name || ""} ${payment.student?.last_name || ""
                         }`.trim() || "N/A"}
                     </td>
@@ -985,44 +1194,39 @@ function Payments() {
                         ) + " so'm"
                         : "N/A"}
                     </td>
-                    <td style={{ textAlign: "center" }}>{payment.payment_type || "N/A"}</td>
-                    <td style={{ textAlign: "center" }}>{payment.received || "N/A"}</td>
                     <td style={{ textAlign: "center" }}>{payment.for_which_month || "N/A"}</td>
-                    <td style={{ textAlign: "center" }}>{groupName}</td> {/* Yangi qo'shilgan qism */}
+                    <td style={{ textAlign: "center" }}>{groupName}</td>
                     <td style={{ textAlign: "center" }}>
                       {payment.created_at
                         ? new Date(payment.created_at).toLocaleDateString("ru-RU")
                         : "N/A"}
                     </td>
-                    <td style={{ textAlign: "center" }}>              <button
-                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(payment);
-                      }}
-                      title="Tahrirlash"
-                    >
-                      <Pen size={16} />
-                    </button>
+                    <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(payment);
+                        }}
+                        title="Tahrirlash"
+                      >
+                        <Pen size={16} />
+                      </button>
                       <button
                         className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition ml-2"
                         onClick={(e) => {
-                          e.stopPropagation();    
+                          e.stopPropagation();
                           showDeleteToast(payment.id);
                         }}
                         title="O'chirish"
                       >
                         <Trash2 size={16} />
-                      </button></td>
+                      </button>
+                    </td>
                   </tr>
                 );
               })
             )}
-            <tr>
-              <td colSpan="9" style={{ textAlign: "center", fontWeight: "bold", color: "red" }}>
-                Ushbu oy uchun to'lov amalga oshirmagan o'quvchilar
-              </td>
-            </tr>
             {/* Display overdue students without payments */}
             {students
               .filter((student) => isOverdue(student.id))

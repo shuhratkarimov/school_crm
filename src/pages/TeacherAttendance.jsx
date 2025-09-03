@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 import LottieLoading from "../components/Loading";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, CheckCircle2, XCircle, Save, Clock, Book, Users, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Calendar, CheckCircle2, XCircle, Save, Clock, Book, Users, ChevronDown, ChevronUp, AlertCircle, Diff, LogOut, BookOpen, FileText, CreditCard } from "lucide-react";
+import TeacherSidebar from "../components/TeacherSidebar";
+import { useNavigate } from "react-router-dom";
 
 function TeacherAttendance() {
+  const navigate = useNavigate();
   const { groupId } = useParams();
   const [group, setGroup] = useState({});
   const [loading, setLoading] = useState(true);
@@ -22,6 +23,7 @@ function TeacherAttendance() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [expandedStudent, setExpandedStudent] = useState(null);
+  const [activeMenu, setActiveMenu] = useState("attendance");
 
   const monthsInUzbek = {
     0: "yanvar",
@@ -95,7 +97,7 @@ function TeacherAttendance() {
       setGroup(data.group);
     } catch (err) {
       console.error("Error fetching group:", err);
-      toast.error("Guruh olinmadi", { position: "top-right", autoClose: 2000 });
+      toast.error("Guruh olinmadi");
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ function TeacherAttendance() {
       setStudents(filteredStudents);
     } catch (err) {
       console.error("Error fetching students:", err);
-      toast.error("O'quvchilar olinmadi", { position: "top-right", autoClose: 2000 });
+      toast.error("O'quvchilar olinmadi");
     } finally {
       setLoading(false);
     }
@@ -124,7 +126,12 @@ function TeacherAttendance() {
       setLoading(true);
       const date = selectedDate.toISOString().slice(0, 10);
       if (date > new Date().toISOString().slice(0, 10)) {
-        toast.error("Ushbu sana hali mavjud emas!", { position: "top-right", autoClose: 2000 });
+        toast.custom((t) => (
+          <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded-lg">
+            <AlertCircle className="w-5 h-5" />
+            <span>Ushbu sanada davomat qilinmagan!</span>
+          </div>
+        ), { duration: 1500 });
         setHistory(null);
         return;
       }
@@ -136,22 +143,27 @@ function TeacherAttendance() {
 
       if (data.records && Array.isArray(data.records) && data.records.length > 0) {
         setHistory(data.records);
-        toast.success("Davomat muvaffaqiyatli yuklandi", { position: "top-right", autoClose: 2000 });
+        toast.success("Davomat muvaffaqiyatli yuklandi");
         return;
       }
 
       const dayOfWeek = selectedDate.getDay();
       if (!classDays.includes(dayOfWeek)) {
-        toast.error("Bu kuni dars mavjud emas!", { position: "top-right", autoClose: 2000 });
+        toast.error("Bu kuni dars mavjud emas!");
         setHistory(null);
         return;
       }
 
       setHistory(null);
-      toast.info("Ushbu sana uchun davomat qilinmagan!", { position: "top-right", autoClose: 2000 });
+      toast.custom((t) => (
+        <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded-lg">
+          <AlertCircle className="w-5 h-5" />
+          <span>Ushbu sanada davomat qilinmagan!</span>
+        </div>
+      ), { duration: 1500 });
     } catch (err) {
       console.error("Error fetching attendance:", err);
-      toast.error("Davomatni yuklashda xatolik", { position: "top-right", autoClose: 2000 });
+      toast.error("Davomatni yuklashda xatolik");
       setHistory(null);
     } finally {
       setLoading(false);
@@ -186,8 +198,8 @@ function TeacherAttendance() {
 
   const toggleAttendance = (student_id) => {
     setAttendance((prev) => {
-      const current = prev[student_id] || { present: true, reason: null, note: "" };
-      
+      const current = prev[student_id] || { present: null, reason: null, note: null };
+
       // Agar yo'q qilinsa, sababni avtomatik ravishda "sababsiz" qilib qo'yamiz
       if (current.present) {
         return {
@@ -212,7 +224,7 @@ function TeacherAttendance() {
         };
       }
     });
-    
+
     // Agar yo'q qilinsa, qatorni kengaytiramiz
     if (attendance[student_id]?.present) {
       setExpandedStudent(student_id);
@@ -225,13 +237,23 @@ function TeacherAttendance() {
     try {
       const date = selectedDate.toISOString().slice(0, 10);
       if (date > new Date().toISOString().slice(0, 10)) {
-        toast.error("Ushbu sana hali mavjud emas!", { position: "top-right", autoClose: 2000 });
+        toast.custom((t) => (
+          <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded-lg">
+            <AlertCircle className="w-5 h-5" />
+            <span>Ushbu sanada davomat qilinmagan!</span>
+          </div>
+        ), { duration: 1500 });
         return;
       }
 
       const dayOfWeek = selectedDate.getDay();
       if (!classDays.includes(dayOfWeek)) {
-        toast.error("Bu kunda dars mavjud emas!", { position: "top-right", autoClose: 2000 });
+        toast.custom((t) => (
+          <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded-lg">
+            <AlertCircle className="w-5 h-5" />
+            <span>Ushbu kuni dars mavjud emas!</span>
+          </div>
+        ), { duration: 1500 });
         return;
       }
 
@@ -240,7 +262,12 @@ function TeacherAttendance() {
       );
       const checkData = await checkRes.json();
       if (checkData.records && Array.isArray(checkData.records) && checkData.records.length > 0) {
-        toast.error("Ushbu sana uchun davomat allaqachon mavjud!", { position: "top-right", autoClose: 2000 });
+        toast.custom((t) => (
+          <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded-lg">
+            <AlertCircle className="w-5 h-5" />
+            <span>Ushbu sanada davomat qilinmagan!</span>
+          </div>
+        ), { duration: 1500 });
         return;
       }
 
@@ -254,7 +281,7 @@ function TeacherAttendance() {
         }));
 
       if (records.length === 0) {
-        toast.error("Davomat uchun hech qanday yozuv topilmadi!", { position: "top-right", autoClose: 2000 });
+        toast.error("Davomatni saqlash uchun o'quvchilarni bor/yo'q qilib belgilang!");
         return;
       }
 
@@ -268,16 +295,16 @@ function TeacherAttendance() {
       );
       const data = await res.json();
       if (res.ok) {
-        toast.success("Davomat saqlandi!", { position: "top-right", autoClose: 2000 });
+        toast.success("Davomat saqlandi!");
         setAttendance({});
         setExpandedStudent(null);
         checkClassDateAndFetchAttendance();
       } else {
-        toast.error(data.message || "Xatolik yuz berdi", { position: "top-right", autoClose: 2000 });
+        toast.error(data.message || "Xatolik yuz berdi");
       }
     } catch (err) {
       console.error("Error saving attendance:", err);
-      toast.error("Serverga ulanishda xatolik", { position: "top-right", autoClose: 2000 });
+      toast.error(`Serverga ulanishda xatolik: ${err}`);
     }
   };
 
@@ -314,24 +341,15 @@ function TeacherAttendance() {
 
       const data = await res.json();
       if (res.ok) {
-        toast.success("Davomat yangilandi!", {
-          position: "top-right",
-          autoClose: 2000,
-        });
+        toast.success("Davomat yangilandi!");
         setExpandedStudent(null);
         checkClassDateAndFetchAttendance();
       } else {
-        toast.error(data.message || "Xatolik yuz berdi", {
-          position: "top-right",
-          autoClose: 2000,
-        });
+        toast.error(data.message || "Xatolik yuz berdi");
       }
     } catch (err) {
       console.error("Error updating attendance:", err);
-      toast.error("Serverga ulanishda xatolik", {
-        position: "top-right",
-        autoClose: 2000,
-      });
+      toast.error(`Serverga ulanishda xatolik: ${err}`);
     }
   };
 
@@ -390,16 +408,20 @@ function TeacherAttendance() {
             color: #722ed1;
           }
         `}</style>
-      <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
-        <ToastContainer />
+      <div className="flex min-h-screen">
+        {/* Sidebar chapda */}
+        <TeacherSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
-        {/* Sarlavha qismi */}
-        <div className="mb-6 bg-white rounded-xl shadow-sm p-4">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Davomatni boshqarish</h1>
-          <p className="text-gray-600">Guruh davomatini kiritish va monitoring qilish</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Content o‘ngda */}
+        <div className="flex-1 p-4 sm:p-6 bg-gray-50">
+          {/* Header */}
+          <div className="flex justify-center items-center mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md p-2 rounded-xl">
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center">
+              Davomatni boshqarish
+              <Diff size={24} className="ml-2" />
+            </h1>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Asosiy ma'lumotlar paneli */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
@@ -434,7 +456,7 @@ function TeacherAttendance() {
                   <p className="text-sm text-gray-500">O'quvchilar soni</p>
                   <p className="text-lg font-medium text-gray-800 flex items-center gap-1">
                     <Users className="w-4 h-4 text-blue-600" />
-                    {students.length} ta
+                    {students.length} nafar
                   </p>
                 </div>
               </div>
@@ -476,8 +498,8 @@ function TeacherAttendance() {
                 <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-600" />
                   O'quvchilar ro'yxati
-                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                    {students.length} ta
+                  <span className="bg-blue-100 text-blue-800 text-s font-semibold px-2.5 py-0.5 rounded-full">
+                    {students.length} nafar
                   </span>
                 </h2>
 
@@ -534,7 +556,7 @@ function TeacherAttendance() {
                     {filteredStudents().length > 0 ? (
                       filteredStudents().map((item, idx) => {
                         const student_id = history ? item.student_id : item.id;
-                        const studentData = attendance[student_id] || { present: true, reason: null, note: "" };
+                        const studentData = attendance[student_id] || { present: null, reason: null, note: null };
                         const isExpanded = expandedStudent === student_id;
 
                         return (
@@ -556,15 +578,15 @@ function TeacherAttendance() {
                                 <div className="flex justify-center gap-1">
                                   <button
                                     onClick={() => toggleAttendance(student_id)}
-                                    className={`p-1 ${studentData.present ? "text-green-600" : "text-gray-400"} hover:scale-110 transition`}
+                                    className={`p-1 ${studentData.present ? "text-green-600 bg-green-100 rounded-full" : "text-gray-400"} hover:scale-110 transition`}
                                   >
-                                    <CheckCircle2 className="w-6 h-6" />
+                                    <CheckCircle2 className="w-8 h-8" />
                                   </button>
                                   <button
                                     onClick={() => toggleAttendance(student_id)}
-                                    className={`p-1 ${studentData.present === false ? "text-red-600" : "text-gray-400"} hover:scale-110 transition`}
+                                    className={`p-1 ${studentData.present === false ? "text-red-600 bg-red-100 rounded-full" : "text-gray-400"} hover:scale-110 transition`}
                                   >
-                                    <XCircle className="w-6 h-6" />
+                                    <XCircle className="w-8 h-8" />
                                   </button>
                                 </div>
                               </td>
@@ -642,7 +664,7 @@ function TeacherAttendance() {
                                 )}
                               </td>
                             </tr>
-                            
+
                             {/* Kengaytirilgan qator - sabab va izoh uchun */}
                             {isExpanded && (
                               <tr className="bg-blue-50">
@@ -669,7 +691,7 @@ function TeacherAttendance() {
                                         <option value="excused">Sababli</option>
                                       </select>
                                     </div>
-                                    
+
                                     {studentData.reason === "excused" && (
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -692,7 +714,7 @@ function TeacherAttendance() {
                                         />
                                       </div>
                                     )}
-                                    
+
                                     <div className="md:col-span-2 flex justify-end">
                                       <button
                                         onClick={() => setExpandedStudent(null)}
@@ -743,7 +765,7 @@ function TeacherAttendance() {
                 </div>
               )}
             </div>
-            
+
             {/* Yo'riqnoma */}
             {!history && (
               <div className="mt-4 bg-blue-50 rounded-xl p-4">
@@ -752,16 +774,54 @@ function TeacherAttendance() {
                   <div>
                     <p className="font-medium text-blue-800 mb-1">Yo'riqnoma</p>
                     <p className="text-sm text-blue-700">
-                      O'quvchini yo'q deb belgilaganingizda, avtomatik ravishda "Sababsiz" tanlanadi. 
+                      O'quvchini yo'q deb belgilaganingizda, avtomatik ravishda "Sababsiz" tanlanadi.
                       Agar sababli bo'lsa, "Sababli" ni tanlang va sababini yozing.
+                    </p>
+                    <p className="text-sm text-blue-700 mt-2">
+                      Agar bugun dars yo'q bo'lsa, saqlash tugmasi chiqmaydi.
                     </p>
                   </div>
                 </div>
               </div>
             )}
           </div>
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3 z-40">
+            <div className="flex justify-around items-center">
+              {[
+                { id: "dashboard", label: "Bosh sahifa", icon: BookOpen, path: "/teacher/dashboard" },
+                { id: "test-results", label: "Test natijalari", icon: FileText, path: "/teacher/test-results" },
+                { id: "payments", label: "To'lovlar", icon: CreditCard, path: "/teacher/payments" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveMenu(item.id);
+                    navigate(item.path);
+                  }}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${activeMenu === item.id
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
+                    : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
+                    }`}
+                >
+                  <item.icon size={20} />
+                  <span className="text-xs">{item.label}</span>
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  toast("Chiqish amalga oshirilmoqda...");
+                  setTimeout(() => navigate("/teacher/login"), 2000);
+                }}
+                className="flex flex-col items-center gap-1 p-2 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition"
+              >
+                <LogOut size={20} />
+                <span className="text-xs">Chiqish</span>
+              </button>
+            </div>
+          </nav>
         </div>
       </div>
+    </div>
     </>
   );
 }

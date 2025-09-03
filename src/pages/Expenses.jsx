@@ -3,8 +3,7 @@
 import { DollarSign, Pencil, Trash } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO, isWithinInterval } from "date-fns";
 import { useState, useEffect } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ExpensesChart from "../components/ExpensesChart";
@@ -28,7 +27,7 @@ export default function Expenses() {
       setExpenses(data);
     } catch (err) {
       console.error(err);
-      toast.error("Xarajatlarni olishda xatolik yuz berdi");
+      toast.error(`Xarajatlarni olishda xatolik yuz berdi: ${err.message}`);
     }
   };
 
@@ -50,7 +49,7 @@ export default function Expenses() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
           });
-      if (!res.ok) toast.error("Xarajat qo‘shishda xatolik yuz berdi");
+      if (!res.ok) toast.error(`Xarajat qo‘shishda xatolik yuz berdi: ${res.statusText}`);
       const saved = await res.json();
       toast.success(editingId ? "Xarajat tahrirlandi" : "Xarajat qo‘shildi");
       setNewExpense({ title: "", amount: "", date: "" });
@@ -58,19 +57,19 @@ export default function Expenses() {
       fetchExpenses(); // Backenddan qayta olish
     } catch (err) {
       console.error(err);
-      toast.error("Xatolik yuz berdi");
+      toast.error(`Xatolik yuz berdi: ${err.message}`);
     }
   };
 
   const deleteExpense = async (id) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/delete_expense/${id}`, { method: "DELETE" });
-      if (!res.ok) toast.error("Xarajat o‘chirishda xatolik yuz berdi");
+      if (!res.ok) toast.error(`Xarajat o‘chirishda xatolik yuz berdi: ${res.statusText}`);
       toast.success("Xarajat o‘chirildi");
       fetchExpenses();
     } catch (err) {
       console.error(err);
-      toast.error("O‘chirishda xatolik");
+      toast.error(`O‘chirishda xatolik: ${err.message}`);
     }
   };
 
@@ -99,11 +98,13 @@ export default function Expenses() {
   const showDeleteToast = (id) => {
     toast(
       <div>
-        <p>Ushbu xarajat yozuvini o'chirishga ishonchingiz komilmi?</p>
+        <p>
+          Diqqat! Ushbu xarajatga doir barcha ma'lumotlar o'chiriladi!
+        </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
-              padding: "8px 16px",
+              padding: "8px 22px",
               background: "#dc3545",
               color: "white",
               border: "none",
@@ -131,20 +132,12 @@ export default function Expenses() {
             Bekor qilish
           </button>
         </div>
-      </div>,
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
+      </div>
     );
   };
 
   return (
     <>
-      <ToastContainer />
       <div className="bg-gray-50 min-h-screen">
         <div className="flex items-center gap-2 mb-6">
           <DollarSign size={24} color="#104292" />

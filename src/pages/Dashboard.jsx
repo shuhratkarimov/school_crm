@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import LottieLoading from "../components/Loading";
-import { GraduationCap, Users, BookOpen, Wallet } from "lucide-react";
-import "react-toastify/dist/ReactToastify.css";
+import { GraduationCap, Users, BookOpen, Wallet, TrendingUp } from "lucide-react";
 import "../../styles/styles.css";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -181,10 +180,13 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">
+      <div className="flex items-center gap-2">
+        <TrendingUp size={24} color="#104292" />
+        <h1 className="text-2xl font-bold text-gray-800">
         {today.getDate().toString().padStart(2, "0")}-{monthsInUzbek[today.getMonth() + 1]}{" "}
         {today.getFullYear()}-yil holatiga raqamli statistika:
       </h1>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-2">
@@ -390,7 +392,7 @@ function Dashboard() {
                           </span>
                         ))}
                       </td>
-                      <td className="px-4 py-2 text-center">{formatDate(student.created_at)}</td>
+                      <td className="px-4 py-2 text-center">{formatDate(student.came_in_school)}</td>
                     </tr>
                   ))
                 ) : (
