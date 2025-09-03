@@ -21,7 +21,7 @@ jobs:
       - name: Clean up disk space before build
         run: |
           docker system prune -af || true
-          sudo rm -rf ~/.npm/_cacache || true
+          rm -rf ~/.npm/_cacache || true
 
       - name: Create .env file from GitHub Secrets
         run: |
@@ -35,9 +35,10 @@ jobs:
 
       - name: Copy build files to Nginx root
         run: |
-          sudo rm -rf /usr/share/nginx/html/*
-          sudo cp -r /home/shuhrat/actions-runner/_work/school_crm/school_crm/dist/* /usr/share/nginx/html/
-          sudo chown -R www-data:www-data /usr/share/nginx/html
+          rm -rf /usr/share/nginx/html/*
+          cp -r dist/* /usr/share/nginx/html/
+          chown -R www-data:www-data /usr/share/nginx/html
+          chmod -R 755 /usr/share/nginx/html
           sudo systemctl reload nginx
 
       - name: Build frontend Docker image
