@@ -53,6 +53,11 @@ Payment.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    shouldBeConsideredAsPaid: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     comment: {
       type: DataTypes.STRING,
       allowNull: true,

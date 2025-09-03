@@ -6,4 +6,5 @@ export interface ICreatePaymentDto {
   for_which_month: string;
   for_which_group: string;
   comment?: string;
+  shouldBeConsideredAsPaid?: boolean;
 }

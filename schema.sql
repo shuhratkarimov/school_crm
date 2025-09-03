@@ -91,7 +91,8 @@ CREATE TABLE IF NOT EXISTS payments (
     for_which_group VARCHAR NOT NULL,
     comment VARCHAR DEFAULT '',
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    shouldBeConsideredAsPaid BOOLEAN NOT NULL DEFAULT FALSE,
 );
 
 CREATE TABLE IF NOT EXISTS appeals (
@@ -189,3 +190,28 @@ CREATE TABLE attendance_extensions (
     CONSTRAINT attendance_extensions_group_extended_until_unique UNIQUE (group_id, extended_until)
 );
 
+CREATE TABLE tests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL,
+    teacher_id UUID NOT NULL,
+    test_number INTEGER NOT NULL,
+    test_type VARCHAR(255) NOT NULL,
+    total_students INTEGER DEFAULT 0,
+    attended_students INTEGER DEFAULT 0,
+    average_score FLOAT DEFAULT 0.0,
+    date TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE test_results (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    test_id UUID NOT NULL,
+    student_id UUID NOT NULL,
+    score FLOAT NOT NULL,
+    attended BOOLEAN DEFAULT false,
+    FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE
+);

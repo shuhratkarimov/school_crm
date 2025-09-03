@@ -112,14 +112,15 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
 
     // Har bir student uchun total_groups va paid_groups ni hisoblash
     const studentsWithGroups = students.map(student => {
+      const allGroups = student.dataValues.groups.length;
       const studentGroups = student.dataValues.studentGroups.filter((sg: any) => sg.month === month && sg.year === year);
       const totalGroups = studentGroups.length;
       const paidGroups = studentGroups.filter((sg: any) => sg.paid).length;
-
       return {
         ...student.dataValues,
         total_groups: totalGroups, // Dinamik hisoblanadi
         paid_groups: paidGroups,  // Dinamik hisoblanadi
+        all_groups: allGroups,
       };
     });
 

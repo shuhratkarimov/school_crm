@@ -12,6 +12,8 @@ import Schedule from "./schedule_model";
 import Room from "./room_model";
 import StudentGroup from "./student_groups_model";
 import Achievement from "./achievement_model";
+import Test from "./test_model";
+import TestResult from "./test_result_model";
 
 // 1. Teacher ↔ Group
 Teacher.hasMany(Group, {
@@ -230,6 +232,15 @@ StudentGroup.belongsTo(Group, {
   onUpdate: "CASCADE",
 });
 
+Group.hasMany(Test, { foreignKey: "group_id", as: "tests" });
+Test.belongsTo(Group, { foreignKey: "group_id", as: "group" });
+
+Test.hasMany(TestResult, { foreignKey: "test_id", as: "results", onDelete: "CASCADE" });
+TestResult.belongsTo(Test, { foreignKey: "test_id", as: "test" });
+
+Student.hasMany(TestResult, { foreignKey: "student_id", as: "test_results" });
+TestResult.belongsTo(Student, { foreignKey: "student_id", as: "student" });
+
 export {
   Teacher,
   Group,
@@ -245,4 +256,6 @@ export {
   Room,
   Schedule,
   StudentGroup,
+  Test,
+  TestResult,
 };

@@ -76,6 +76,7 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
       for_which_month,
       for_which_group,
       comment,
+      shouldBeConsideredAsPaid,
     } = req.body as ICreatePaymentDto;
 
     payment_amount = Number(payment_amount.toFixed(2));
@@ -122,6 +123,9 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
     if (payment_amount === Number(foundGroup.dataValues.monthly_fee)) {
       await studentGroup.update({ paid: true });
     }
+    if (shouldBeConsideredAsPaid) {
+      await studentGroup.update({ paid: shouldBeConsideredAsPaid });
+    }
 
     const paymentAmount = foundGroup.dataValues.monthly_fee;
 
@@ -152,6 +156,7 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
       for_which_month: month,
       for_which_group,
       comment,
+      shouldBeConsideredAsPaid,
     });
 
     // Update payment status in StudentGroup if payment matches monthly fee
@@ -167,10 +172,6 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
           },
         }
       );
-
-      await student.update({
-        paid_groups: student.dataValues.paid_groups + 1,
-      });
     }
 
     // Update teacher balance
@@ -187,7 +188,7 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
 
 async function updatePayment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
-    const { payment_amount, payment_type, received, for_which_month, comment } = req.body as IUpdatePaymentDto;
+    const { payment_amount, payment_type, received, for_which_month, comment, shouldBeConsideredAsPaid } = req.body as IUpdatePaymentDto;
     const payment = await Payment.findByPk(req.params.id as string);
     if (!payment) {
       return next(BaseError.BadRequest(404, i18next.t("payment_notFound")));
@@ -198,21 +199,41 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
       return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
     }
     let studentGroup = await StudentGroup.findOne({
-      where: { student_id: payment.dataValues.pupil_id, group_id: payment.dataValues.for_which_group, month: payment.dataValues.for_which_month, year: payment.dataValues.for_which_year },
+      where: { student_id: payment.dataValues.pupil_id, group_id: payment.dataValues.for_which_group, month: payment.dataValues.for_which_month },
     });
     if (!studentGroup) {
       studentGroup = await StudentGroup.create({
         student_id: payment.dataValues.pupil_id,
         group_id: payment.dataValues.for_which_group,
         month: payment.dataValues.for_which_month,
-        year: payment.dataValues.for_which_year,
+        year: payment.dataValues.year,
         paid: false,
+        shouldBeConsideredAsPaid: shouldBeConsideredAsPaid || false,
       });
+    }
+
+    if (for_which_month) {
+      const foundPayment = await Payment.findOne({
+        where: {
+          pupil_id: payment.dataValues.pupil_id,
+          for_which_group: payment.dataValues.for_which_group,
+          for_which_month
+        },
+      });
+      if (foundPayment && foundPayment.dataValues.id !== payment.dataValues.id) {
+        return next(BaseError.BadRequest(400, "To'lov mavjud! To'lovni yangilash uchun to'lovni yangilash qismiga o'ting."));
+      }
+    }
+    if (shouldBeConsideredAsPaid) {
+      await studentGroup.update({ paid: shouldBeConsideredAsPaid });
     }
     if (payment_amount && payment_amount === foundGroup.dataValues.monthly_fee) {
       await studentGroup.update({ paid: true });
     } else if (payment_amount) {
       await studentGroup.update({ paid: false });
+    }
+    if (shouldBeConsideredAsPaid) {
+      await studentGroup.update({ paid: shouldBeConsideredAsPaid });
     }
     if (payment_amount) {
       if (payment_amount > foundGroup.dataValues.monthly_fee) {
@@ -240,6 +261,7 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
       received,
       for_which_month,
       comment,
+      shouldBeConsideredAsPaid,
     });
 
     const updatedPayment = await Payment.findByPk(req.params.id as string);
@@ -289,6 +311,21 @@ async function deletePayment(req: Request, res: Response, next: NextFunction): P
     if (!payment) {
       return next(BaseError.BadRequest(404, i18next.t("payment_notFound")));
     }
+    const foundGroup = await StudentGroup.findOne({
+      where: {
+        student_id: payment.dataValues.pupil_id,
+        group_id: payment.dataValues.for_which_group,
+        month: payment.dataValues.for_which_month,
+        year: payment.dataValues.year,
+      },
+    });
+    if (!foundGroup) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
+    }
+    if (foundGroup.dataValues.paid) {
+      await foundGroup.update({ paid: false });
+    }
+    await updateTeacherBalance(foundGroup.dataValues.teacher_id, Math.round(payment.dataValues.payment_amount).toString(), false);
 
     await payment.destroy();
     res.status(200).json({ message: i18next.t("payment_deleted") });
