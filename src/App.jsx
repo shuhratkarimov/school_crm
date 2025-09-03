@@ -91,7 +91,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -403,12 +403,11 @@ function App() {
                 </PrivateRoute>
               }
             />
-
             <Route path="*" element={<LottieNotFound />} />
           </Routes>
         </ErrorBoundary>
       </Suspense>
-    </Router>
+    </>
   );
 }
 
