@@ -222,12 +222,18 @@ async function login(req: Request, res: Response, next: NextFunction) {
     const accesstoken = generateAccessToken(payload);
     const refreshtoken = generateRefreshToken(payload);
     if (foundUser.dataValues.is_verified) {
+      const isSecure = req.headers.host?.includes('https') || req.headers.host?.includes('intellectualprogress.uz');
       res.cookie("accesstoken", accesstoken, {
         httpOnly: true,
-        maxAge: 15 * 60 * 1000,
+        secure: isSecure,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 1000,
       });
+      
       res.cookie("refreshtoken", refreshtoken, {
         httpOnly: true,
+        secure: isSecure,
+        sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       res

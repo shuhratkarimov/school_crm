@@ -32,7 +32,14 @@ const app = express();
 app.use(i18nextMiddleware.handle(i18next));
 app.use(express.json());
 app.use(cookieParser());
-const allowedOrigins = ['http://admin.intellectualprogress.uz', 'http://teacher.intellectualprogress.uz', 'http://193.181.208.209:8080'];
+const allowedOrigins = [
+  'http://admin.intellectualprogress.uz',
+  'https://admin.intellectualprogress.uz',
+  'http://teacher.intellectualprogress.uz',
+  'https://teacher.intellectualprogress.uz',
+  'http://193.181.208.209:8080',
+  'http://localhost:5173',
+];
 app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -51,11 +58,11 @@ app.use(ScheduleRouter);
 app.use(NoteRouter);
 app.use(ExpenseRouter);
 app.use(AchievementsRouter);
-app.use(testRouter);  
+app.use(testRouter);
 
 // Error handling
 app.use(errorMiddleware as any);
-sequelize.sync({force: false})
+sequelize.sync({ force: false })
 
 
 // Server start
