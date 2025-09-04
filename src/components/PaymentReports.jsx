@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Search, Filter, Download, ChevronDown, ChevronUp, Home, Calendar, User, Phone, BookOpen, CreditCard, ChevronRight, BarChart3, LogOut, Coins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -407,7 +407,7 @@ function PaymentReports() {
                     </thead>
                     <tbody>
                       {filteredPayments.map((student) => (
-                        <>
+                        <Fragment key={student.id}>
                           <tr
                             key={student.id}
                             className="border-b hover:bg-gray-50 transition-colors"
@@ -516,7 +516,7 @@ function PaymentReports() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>

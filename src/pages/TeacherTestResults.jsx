@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import LottieLoading from "../components/Loading";
 import TeacherSidebar from "../components/TeacherSidebar";
-import { API_URL } from "../config";
+import API_URL from "../conf/api";
 
 const monthsInUzbek = {
   1: "Yanvar", 2: "Fevral", 3: "Mart", 4: "Aprel", 5: "May", 6: "Iyun",

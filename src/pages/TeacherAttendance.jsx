@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useParams } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import { toast } from "react-hot-toast";
@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, CheckCircle2, XCircle, Save, Clock, Book, Users, ChevronDown, ChevronUp, AlertCircle, Diff, LogOut, BookOpen, FileText, CreditCard } from "lucide-react";
 import TeacherSidebar from "../components/TeacherSidebar";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "../config";
+import API_URL from "../conf/api";
 
 function TeacherAttendance() {
   const navigate = useNavigate();
@@ -561,7 +561,7 @@ function TeacherAttendance() {
                         const isExpanded = expandedStudent === student_id;
 
                         return (
-                          <>
+                          <Fragment key={student_id}>
                             <tr key={student_id} className="hover:bg-gray-50 transition">
                               <td className="py-3 px-4">{idx + 1}</td>
 
@@ -728,7 +728,7 @@ function TeacherAttendance() {
                                 </td>
                               </tr>
                             )}
-                          </>
+                          </Fragment>
                         );
                       })
                     ) : (

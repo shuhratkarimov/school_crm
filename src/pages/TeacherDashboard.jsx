@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { Smile, Calendar, Clock, BookOpen, Users, User, LogOut, BarChart3, ChevronRight, CreditCard, FileText, CheckCircle, Sparkles, Target, TrendingUp, Bookmark } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import TeacherSidebar from "../components/TeacherSidebar";
-import { API_URL } from "../config";
+import API_URL from "../conf/api";
 
 function TeacherDashboard() {
   const [groups, setGroups] = useState([]);

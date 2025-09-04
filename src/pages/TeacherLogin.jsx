@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import LoginLoading from "../components/LoginLoading";
-import { API_URL } from "../config";
+import API_URL from "../conf/api";
 
 function TeacherLogin({ setTeacherAuthenticated }) {
   const [username, setUsername] = useState("");
