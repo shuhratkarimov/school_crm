@@ -32,7 +32,7 @@ const app = express();
 app.use(i18nextMiddleware.handle(i18next));
 app.use(express.json());
 app.use(cookieParser());
-const allowedOrigins = ['https://admin.intellectualprogress.uz', 'https://teacher.intellectualprogress.uz'];
+const allowedOrigins = ['http://admin.intellectualprogress.uz', 'http://teacher.intellectualprogress.uz', 'http://193.181.208.209:8080'];
 app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(express.urlencoded({ extended: true }));
 
