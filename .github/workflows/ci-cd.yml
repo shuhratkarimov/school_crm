@@ -31,11 +31,11 @@ jobs:
 
       - name: Copy build files to Nginx root
         run: |
-          sudo rm -rf /usr/share/nginx/html/*
-          sudo cp -r dist/* /usr/share/nginx/html/
-          sudo chown -R www-data:www-data /usr/share/nginx/html
-          sudo chmod -R 755 /usr/share/nginx/html
-          sudo systemctl reload nginx
+          rm -rf /usr/share/nginx/html/*
+          cp -r dist/* /usr/share/nginx/html/
+          chown -R www-data:www-data /usr/share/nginx/html
+          chmod -R 755 /usr/share/nginx/html
+          systemctl reload nginx
 
       - name: Build frontend Docker image
         run: docker build -t my-vite-frontend:latest .
