@@ -32,7 +32,7 @@ const app = express();
 app.use(i18nextMiddleware.handle(i18next));
 app.use(express.json());
 app.use(cookieParser());
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
+const allowedOrigins = ['https://admin.intellectualprogress.uz', 'https://teacher.intellectualprogress.uz'];
 app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(express.urlencoded({ extended: true }));
 
