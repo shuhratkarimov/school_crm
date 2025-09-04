@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Pen, Trophy, Plus, X, Award, Calendar, User, Search } from "lucide-react";
 import { toast } from "react-hot-toast";
 import LottieLoading from "../components/Loading";
-
+import API_URL from "../conf/api";
 function Achievements() {
   const [achievements, setAchievements] = useState([]);
   const [students, setStudents] = useState([]);
@@ -27,7 +27,7 @@ function Achievements() {
   const fetchAchievements = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_achievements`);
+      const response = await fetch(`${API_URL}/get_achievements`);
       if (!response.ok) throw new Error("Yutuqlar ma'lumotlarini olishda xatolik!");
       if (response.status === 200) {
         console.log(response);
@@ -45,7 +45,7 @@ function Achievements() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_students`);
+      const response = await fetch(`${API_URL}/get_students`);
       let data = await response.json();
       if (!response.ok) {
         toast.error("O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!");
@@ -62,7 +62,7 @@ function Achievements() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_teachers`);
+      const response = await fetch(`${API_URL}/get_teachers`);
       let data = await response.json();
       if (!response.ok) {
         toast.error("Ustozlar ma'lumotlarini olishda xatolik yuz berdi!");
@@ -118,7 +118,7 @@ function Achievements() {
   const addAchievement = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_achievement`, {
+      const response = await fetch(`${API_URL}/create_achievement`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -189,7 +189,7 @@ function Achievements() {
     e.preventDefault();
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/update_achievement/${selectedAchievement.id}`,
+        `${API_URL}/update_achievement/${selectedAchievement.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -218,7 +218,7 @@ function Achievements() {
 
   const deleteAchievement = async (id) => {    
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_achievement/${id}`, {
+      const response = await fetch(`${API_URL}/delete_achievement/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Yutuq o'chirishda xatolik!");

@@ -7,7 +7,7 @@ import { toast } from "react-hot-toast";
 import LottieLoading from "./Loading";
 import * as XLSX from "xlsx";
 import TeacherSidebar from "./TeacherSidebar";
-
+import API_URL from "../conf/api";
 function PaymentReports() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ function PaymentReports() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_teacher_dashboard_student_payments?month=${monthFilter}&year=${yearFilter}`,
+        `${API_URL}/get_teacher_dashboard_student_payments?month=${monthFilter}&year=${yearFilter}`,
         {
           method: "GET",
           credentials: "include",

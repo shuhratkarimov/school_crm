@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { parseISO, isWithinInterval } from "date-fns";
 import { Book, Pencil, Trash } from "lucide-react";
 import { toast } from "react-hot-toast";
+import API_URL from "../conf/api";
 
 export default function Notes() {
   const [records, setRecords] = useState([]);
@@ -18,7 +19,7 @@ export default function Notes() {
   // --- Backenddan ma’lumot olish ---
   const fetchNotes = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_notes`);
+      const res = await fetch(`${API_URL}/get_notes`);
       if (!res.ok) throw new Error("Qaydlarni olishda xatolik yuz berdi");
       const data = await res.json();
       setRecords(data);
@@ -79,16 +80,16 @@ export default function Notes() {
 
     try {
       const res = editingId
-        ? await fetch(`${import.meta.env.VITE_API_URL}/update_note/${editingId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newRecord),
-          })
-        : await fetch(`${import.meta.env.VITE_API_URL}/create_note`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newRecord),
-          });
+        ? await fetch(`${API_URL}/update_note/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newRecord),
+        })
+        : await fetch(`${API_URL}/create_note`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newRecord),
+        });
 
       if (!res.ok) throw new Error("Saqlashda xatolik");
       await res.json();
@@ -112,7 +113,7 @@ export default function Notes() {
   // --- O‘chirish ---
   const deleteNote = async (id) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/delete_note/${id}`, {
+      const res = await fetch(`${i}/delete_note/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("O‘chirishda xatolik");

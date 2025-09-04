@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import API_URL from "../conf/api";
 
 function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -65,7 +66,7 @@ function Dashboard() {
       try {
         setLoading(true);
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/get_stats`
+          `${API_URL}/get_stats`
         );
         if (response.ok) {
           const data = await response.json();
@@ -81,7 +82,7 @@ function Dashboard() {
 
     const fetchTodayAttendance = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/get_attendance_stats`);
+        const res = await fetch(`${API_URL}/get_attendance_stats`);
         const data = await res.json();
         const total = data.total;
         const present = data.present;
@@ -97,7 +98,7 @@ function Dashboard() {
 
     const fetchYearlyPayments = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/get_yearly_payments`);
+        const res = await fetch(`${API_URL}/get_yearly_payments`);
         const data = await res.json();
         setYearlyPayments(data);
       } catch (err) {
@@ -109,7 +110,7 @@ function Dashboard() {
 
     const fetchMonthlyExpenses = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/get_monthly_expenses`);
+        const res = await fetch(`${API_URL}/get_monthly_expenses`);
         if (!res.ok) throw new Error("Oylik xarajatlarni olishda xatolik yuz berdi");
         const data = await res.json();
         setMonthlyExpenses(data);

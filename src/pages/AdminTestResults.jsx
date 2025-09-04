@@ -5,6 +5,7 @@ import { Pen, Trash2, Search, FileText, X, Users, TestTubeDiagonal, Filter, Chec
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import LottieLoading from "../components/Loading";
+import API_URL from "../conf/api";
 
 const monthsInUzbek = {
   1: "Yanvar", 2: "Fevral", 3: "Mart", 4: "Aprel", 5: "May", 6: "Iyun",
@@ -66,10 +67,10 @@ function AdminTestResults() {
     setLoading(true);
     try {
       const [testsRes, groupsRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/get_all_tests?month=${monthFilter}&year=${yearFilter}`, {
+        fetch(`${API_URL}/get_all_tests?month=${monthFilter}&year=${yearFilter}`, {
           credentials: "include"
         }),
-        fetch(`${import.meta.env.VITE_API_URL}/get_groups`, {
+        fetch(`${API_URL}/get_groups`, {
           credentials: "include"
         }),
       ]);
@@ -86,7 +87,7 @@ function AdminTestResults() {
         testsData.map(async (test) => {
           if (!test.teacher_id) return test;
           try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/get_one_teacher/${test.teacher_id}`, {
+            const res = await fetch(`${API_URL}/get_one_teacher/${test.teacher_id}`, {
               credentials: "include",
             });
             if (res.ok) {
@@ -111,7 +112,7 @@ function AdminTestResults() {
 
   const fetchGroupStudents = async (groupId) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_one_group_students?group_id=${groupId}`, {
+      const res = await fetch(`${API_URL}/get_one_group_students?group_id=${groupId}`, {
         credentials: "include",
       });
       if (!res.ok) {
@@ -131,7 +132,7 @@ function AdminTestResults() {
 
   const fetchTeacher = async (teacherId) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_one_teacher/${teacherId}`, {
+      const res = await fetch(`${API_URL}/get_one_teacher/${teacherId}`, {
         credentials: "include",
       });
       if (!res.ok) {
@@ -148,7 +149,7 @@ function AdminTestResults() {
 
   const fetchTestDetails = async (testId) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_test_results/${testId}`, {
+      const res = await fetch(`${API_URL}/get_test_results/${testId}`, {
         credentials: "include",
       });
       if (!res.ok) {
@@ -204,7 +205,7 @@ function AdminTestResults() {
     };
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/create_test`, {
+      const res = await fetch(`${API_URL}/create_test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -232,7 +233,7 @@ function AdminTestResults() {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_test_results/${test.id}`, {
+      const res = await fetch(`${API_URL}/get_test_results/${test.id}`, {
         credentials: "include",
       });
       if (!res.ok) {
@@ -284,7 +285,7 @@ function AdminTestResults() {
     };
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/update_test/${editFormData.id}`, {
+      const res = await fetch(`${API_URL}/update_test/${editFormData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -311,7 +312,7 @@ function AdminTestResults() {
 
   const deleteTest = async (id) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/delete_test/${id}`, {
+      const res = await fetch(`${API_URL}/delete_test/${id}`, {
         method: "DELETE",
         credentials: "include",
       });

@@ -23,6 +23,7 @@ const monthsInUzbek = {
   11: "Noyabr",
   12: "Dekabr",
 };
+import API_URL from "../conf/api";
 
 const InfoRow = ({ label, value }) => (
   <div className="flex">
@@ -110,7 +111,7 @@ function Students() {
     try {
       setLoading(true);
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_students?month=${monthFilter}&year=${yearFilter}`
+        `${API_URL}/get_students?month=${monthFilter}&year=${yearFilter}`
       );
       if (!response.ok) throw new Error("O'quvchilarni olishda xatolik yuz berdi!");
       const data = await response.json();
@@ -125,7 +126,7 @@ function Students() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_groups`);
+      const response = await fetch(`${API_URL}/get_groups`);
       if (!response.ok) throw new Error("Guruhlar ma'lumotlarini olishda muammo yuzaga keldi!");
       const data = await response.json();
       setGroups(data);
@@ -137,7 +138,7 @@ function Students() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_teachers`);
+      const response = await fetch(`${API_URL}/get_teachers`);
       if (!response.ok) throw new Error("Ustozlar ma'lumotlarini olishda muammo yuzaga keldi!");
       const data = await response.json();
       setTeachers(data);
@@ -173,7 +174,7 @@ function Students() {
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_student`, {
+      const response = await fetch(`${API_URL}/create_student`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -206,7 +207,7 @@ function Students() {
 
   const deleteStudent = async (id) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_student/${id}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}/delete_student/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("O'quvchini o'chirishda muammo yuzaga keldi!");
       await fetchStudents();
       setSuccess("O'quvchi muvaffaqiyatli o'chirib tashlandi!");
@@ -279,7 +280,7 @@ function Students() {
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/update_student/${editingStudent.id}`, {
+      const response = await fetch(`${API_URL}/update_student/${editingStudent.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

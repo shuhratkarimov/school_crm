@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import LottieLoading from "../components/Loading";
 import { toast } from "react-hot-toast";
-
+import API_URL from "../conf/api";
 function AdminDashboard() {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -15,7 +15,7 @@ function AdminDashboard() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_attendance_stats`);
+      const res = await fetch(`${API_URL}/get_attendance_stats`);
       const data = await res.json();
       setStats(data);
     } catch (err) {

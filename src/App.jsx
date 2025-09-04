@@ -14,6 +14,7 @@ import Calculator from "./pages/Calculator";
 import Achievements from "./pages/Achievements";
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
+import API_URL from "./conf/api";
 // Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
@@ -58,7 +59,7 @@ function App() {
     // Admin auth check
     const checkAdminAuth = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/check-auth`, {
+        const response = await fetch(`${API_URL}/check-auth`, {
           method: "GET",
           credentials: "include", // cookie yuboradi
         });
@@ -71,7 +72,7 @@ function App() {
     // Teacher auth check
     const checkTeacherAuth = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/check-teacher-auth`, {
+        const response = await fetch(`${API_URL}/check-teacher-auth`, {
           method: "GET",
           credentials: "include", // cookie yuboradi
         });

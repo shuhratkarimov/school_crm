@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import API_URL from '../conf/api';
 
 ChartJS.register(
   CategoryScale,
@@ -31,7 +32,7 @@ function StudentProgressChart({ studentId }) {
 
   const fetchStudentTests = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/get_student_tests/${studentId}`);
+      const response = await fetch(`${API_URL}/get_student_tests/${studentId}`);
       const data = await response.json();
       setTestData(data);
     } catch (error) {

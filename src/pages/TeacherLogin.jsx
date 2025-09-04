@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import LoginLoading from "../components/LoginLoading";
+import { API_URL } from "../config";
 
 function TeacherLogin({ setTeacherAuthenticated }) {
   const [username, setUsername] = useState("");
@@ -19,7 +20,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/teacher_login`, {
+      const res = await fetch(`${API_URL}/teacher_login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

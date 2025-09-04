@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { Smile, Calendar, Clock, BookOpen, Users, User, LogOut, BarChart3, ChevronRight, CreditCard, FileText, CheckCircle, Sparkles, Target, TrendingUp, Bookmark } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import TeacherSidebar from "../components/TeacherSidebar";
+import { API_URL } from "../config";
 
 function TeacherDashboard() {
   const [groups, setGroups] = useState([]);
@@ -25,7 +26,7 @@ function TeacherDashboard() {
   const fetchTeacherData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_teacher_data`, {
+      const res = await fetch(`${API_URL}/get_teacher_data`, {
         method: "GET",
         credentials: "include",
       });
@@ -47,7 +48,7 @@ function TeacherDashboard() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_teacher_groups`, {
+      const res = await fetch(`${API_URL}/get_teacher_groups`, {
         method: "GET",
         credentials: "include",
       });
@@ -61,7 +62,7 @@ function TeacherDashboard() {
       let groupsWithStudents = [];
       if (data) {
         for (const group of data) {
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/get_one_group/${group.id}`);
+          const res = await fetch(`${API_URL}/get_one_group/${group.id}`);
           const groupData = await res.json();
           groupsWithStudents.push({
             ...group,

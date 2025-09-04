@@ -8,7 +8,7 @@ import "../../styles/styles.css";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-
+import API_URL from "../conf/api";
 function MonthlyExpenses() {
   const [monthlyExpenses, setMonthlyExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ function MonthlyExpenses() {
   const fetchMonthlyExpenses = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_monthly_expenses`);
+      const res = await fetch(`${API_URL}/get_monthly_expenses`);
       if (!res.ok) throw new Error("Oylik xarajatlarni olishda xatolik yuz berdi");
       const data = await res.json();
       setMonthlyExpenses(data); // [{month: '2025-01', monthName: 'Yanvar', jami: 0}, ...]

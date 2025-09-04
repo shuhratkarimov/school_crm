@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import LoginLoading from "../components/LoginLoading";
 import { Eye, EyeOff } from "lucide-react";
+import API_URL from "../conf/api";
 
 function Login({ setIsAuthenticated }) {
   const [email, setEmail] = useState("");
@@ -26,7 +27,7 @@ function Login({ setIsAuthenticated }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

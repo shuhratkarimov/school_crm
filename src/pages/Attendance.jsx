@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { registerLocale } from "react-datepicker";
 import uz from "date-fns/locale/uz";
 import "../index.css";
+import API_URL from "../conf/api";
 
 registerLocale("uz", uz);
 
@@ -91,7 +92,7 @@ export default function Attendance() {
     const extendedUntil = `${extensionData.date}T${extensionData.time}:00`;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/extend-attendance-time`, {
+      const response = await fetch(`${API_URL}/extend-attendance-time`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,7 +117,7 @@ export default function Attendance() {
   const fetchExtensionInfo = async (groupId) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_extend_attendance_time/${groupId}`
+        `${API_URL}/get_extend_attendance_time/${groupId}`
       );
 
       if (response.ok) {
@@ -211,11 +212,11 @@ export default function Attendance() {
         paymentsResponse,
         roomsResponse,
       ] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_payments`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_rooms`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_groups`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_teachers`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_students`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_payments`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_rooms`).catch(() => ({ ok: false })),
       ]);
 
       if (groupsResponse.ok) {
@@ -354,7 +355,7 @@ export default function Attendance() {
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_group`, {
+      const response = await fetch(`${API_URL}/create_group`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(groupData),
@@ -419,7 +420,7 @@ export default function Attendance() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/update_group/${editingGroup.id}`,
+        `${API_URL}/update_group/${editingGroup.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -469,7 +470,7 @@ export default function Attendance() {
   const deleteGroup = async (id) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/delete_group/${id}`,
+        `${API_URL}/delete_group/${id}`,
         {
           method: "DELETE",
         }
@@ -623,7 +624,7 @@ export default function Attendance() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_groups`);
+      const res = await fetch(`${API_URL}/get_groups`);
       if (!res.ok) throw new Error("Guruhlarni yuklashda xatolik");
       const data = await res.json();
 
@@ -634,7 +635,7 @@ export default function Attendance() {
 
         try {
           const resAtt = await fetch(
-            `${import.meta.env.VITE_API_URL}/get_attendance_by_date/${group.id}?date=${dateStr}`
+            `${API_URL}/get_attendance_by_date/${group.id}?date=${dateStr}`
           );
           if (resAtt.status === 404) {
             status = "no_attendance";
@@ -665,7 +666,7 @@ export default function Attendance() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_one_group_students?group_id=${groupId}`
+        `${API_URL}/get_one_group_students?group_id=${groupId}`
       );
       if (!res.ok) throw new Error("O'quvchilarni yuklashda xatolik");
       const data = await res.json();
@@ -699,7 +700,7 @@ export default function Attendance() {
       let res; // oldindan e’lon qilamiz
 
       res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_attendance_by_date/${groupId}?date=${formatDate(date)}`
+        `${API_URL}/get_attendance_by_date/${groupId}?date=${formatDate(date)}`
       );
 
       if (res.status === 404) {
@@ -743,7 +744,7 @@ export default function Attendance() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_one_teacher/${teacher_id}`
+        `${API_URL}/get_one_teacher/${teacher_id}`
       );
       if (!res.ok) throw new Error("Ustozni yuklashda xatolik");
       const data = await res.json();

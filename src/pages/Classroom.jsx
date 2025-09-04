@@ -5,6 +5,7 @@ import { Trash2, School, Pen } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import "../index.css";
 import { toast } from "react-hot-toast";
+import API_URL from "../conf/api";
 
 const daysInEn = {
   monday: "DUSHANBA",
@@ -49,10 +50,10 @@ const RoomManagement = () => {
       setError("");
 
       const [roomsResponse, schedulesResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/get_rooms`).catch(() => ({
+        fetch(`${API_URL}/get_rooms`).catch(() => ({
           ok: false,
         })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_schedules`).catch(() => ({
+        fetch(`${API_URL}/get_schedules`).catch(() => ({
           ok: false,
         })),
       ]);
@@ -82,7 +83,7 @@ const RoomManagement = () => {
     e.preventDefault();
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/create_room`,
+        `${API_URL}/create_room`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -110,7 +111,7 @@ const RoomManagement = () => {
     e.preventDefault();
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/update_room/${editingRoom.id}`,
+        `${API_URL}/update_room/${editingRoom.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -141,7 +142,7 @@ const RoomManagement = () => {
   const deleteRoom = async (id) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/delete_room/${id}`,
+        `${API_URL}/delete_room/${id}`,
         {
           method: "DELETE",
         }

@@ -5,6 +5,7 @@ import { LogOut, Settings, X, KeyRound, User, Mail, Eye, EyeOff, Edit, Save } fr
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import API_URL from "../conf/api";
 
 function Header({ setIsAuthenticated }) {
   const { t, i18n } = useTranslation();
@@ -30,7 +31,7 @@ function Header({ setIsAuthenticated }) {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
+      const response = await fetch(`${API_URL}/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -53,7 +54,7 @@ function Header({ setIsAuthenticated }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/get-profile`, {
+        const response = await fetch(`${API_URL}/get-profile`, {
           method: "GET",
           credentials: "include",
         });
@@ -78,7 +79,7 @@ function Header({ setIsAuthenticated }) {
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/change-password`, {
+      const response = await fetch(`${API_URL}/change-password`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -110,7 +111,7 @@ function Header({ setIsAuthenticated }) {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/update-profile`, {
+      const response = await fetch(`${API_URL}/update-profile`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

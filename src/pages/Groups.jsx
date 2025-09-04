@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Pen, BookOpen, Plus, X, Search } from "lucide-react";
 import { toast } from "react-hot-toast";
 import "../index.css";
+import { API_URL } from "../config";
 
 function Groups() {
   const [groups, setGroups] = useState([]);
@@ -101,11 +102,11 @@ function Groups() {
         paymentsResponse,
         roomsResponse,
       ] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_payments`).catch(() => ({ ok: false })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_rooms`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_groups`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_teachers`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_students`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_payments`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_rooms`).catch(() => ({ ok: false })),
       ]);
 
       if (groupsResponse.ok) {
@@ -276,7 +277,7 @@ function Groups() {
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create_group`, {
+      const response = await fetch(`${API_URL}/create_group`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(groupData),
@@ -361,7 +362,7 @@ function Groups() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/update_group/${editingGroup.id}`,
+        `${API_URL}/update_group/${editingGroup.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -415,7 +416,7 @@ function Groups() {
   const deleteGroup = async (id) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/delete_group/${id}`,
+        `${API_URL}/delete_group/${id}`,
         {
           method: "DELETE",
         }

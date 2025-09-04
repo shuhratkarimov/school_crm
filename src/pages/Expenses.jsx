@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ExpensesChart from "../components/ExpensesChart";
+import API_URL from "../conf/api";
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
@@ -21,7 +22,7 @@ export default function Expenses() {
   // --- Backend bilan ishlash ---
   const fetchExpenses = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_expenses`);
+      const res = await fetch(`${API_URL}/get_expenses`);
       if (!res.ok) throw new Error("Xarajatlarni olishda xatolik yuz berdi");
       const data = await res.json();
       setExpenses(data);
@@ -39,12 +40,12 @@ export default function Expenses() {
     if (!newExpense.title || !newExpense.amount || !newExpense.date) return;
     try {
       const res = editingId
-        ? await fetch(`${import.meta.env.VITE_API_URL}/update_expense/${editingId}`, {
+        ? await fetch(`${API_URL}/update_expense/${editingId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
           })
-        : await fetch(`${import.meta.env.VITE_API_URL}/create_expense`, {
+        : await fetch(`${API_URL}/create_expense`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
@@ -63,7 +64,7 @@ export default function Expenses() {
 
   const deleteExpense = async (id) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/delete_expense/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/delete_expense/${id}`, { method: "DELETE" });
       if (!res.ok) toast.error(`Xarajat o‘chirishda xatolik yuz berdi: ${res.statusText}`);
       toast.success("Xarajat o‘chirildi");
       fetchExpenses();

@@ -5,6 +5,7 @@ import { Trash2, BookOpen, Plus, Pen, X, Check, Calendar, CreditCard, Users, Use
 import { toast } from "react-hot-toast";
 import "../../styles/styles.css";
 import LottieLoading from "../components/Loading";
+import API_URL from "../conf/api";
 
 function Payments() {
   const [payments, setPayments] = useState([]);
@@ -121,13 +122,13 @@ function Payments() {
 
       const [groupsResponse, studentsResponse, paymentsResponse] =
         await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({
+          fetch(`${API_URL}/get_groups`).catch(() => ({
             ok: false,
           })),
-          fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({
+          fetch(`${API_URL}/get_students`).catch(() => ({
             ok: false,
           })),
-          fetch(`${import.meta.env.VITE_API_URL}/get_payments`).catch(() => ({
+          fetch(`${API_URL}/get_payments`).catch(() => ({
             ok: false,
           })),
         ]);
@@ -154,7 +155,6 @@ function Payments() {
 
       if (paymentsResponse.ok) {
         const paymentsData = await paymentsResponse.json();
-        console.log(paymentsData)
         setPayments(paymentsData);
       } else {
         setPayments([]);
@@ -175,7 +175,7 @@ function Payments() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/create_payment`,
+        `${API_URL}/create_payment`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -226,7 +226,7 @@ function Payments() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/update_payment/${editFormData.id}`,
+        `${API_URL}/update_payment/${editFormData.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -272,7 +272,7 @@ function Payments() {
   const deletePayment = async (id) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/delete_payment/${id}`,
+        `${API_URL}/delete_payment/${id}`,
         {
           method: "DELETE",
         }
@@ -346,7 +346,7 @@ function Payments() {
   const sendNotification = async (studentId) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/payment_alert/${studentId}`,
+        `${API_URL}/payment_alert/${studentId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1073,8 +1073,8 @@ function Payments() {
                       }))
                     }
                     className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${formData.shouldBeConsideredAsPaid
-                        ? "bg-blue-600"
-                        : "bg-gray-300"
+                      ? "bg-blue-600"
+                      : "bg-gray-300"
                       }`}
                   >
                     <div

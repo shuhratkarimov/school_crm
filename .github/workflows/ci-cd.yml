@@ -23,10 +23,6 @@ jobs:
           docker system prune -af || true
           rm -rf ~/.npm/_cacache || true
 
-      - name: Create .env file from GitHub Secrets
-        run: |
-          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-
       - name: Install dependencies
         run: npm install
 

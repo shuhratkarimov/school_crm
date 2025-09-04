@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2, GraduationCap, Plus, Pen, X, Euro } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import { toast } from "react-hot-toast";
+import API_URL from "../conf/api";
 
 function Teachers() {
   const [teachers, setTeachers] = useState([]);
@@ -45,7 +46,7 @@ function Teachers() {
     setIsDetailModalOpen(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_teacher_payments/${teacher.id}`
+        `${API_URL}/get_teacher_payments/${teacher.id}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -98,7 +99,7 @@ function Teachers() {
   const fetchTeacherBalance = async (teacherId) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_teacher_balance/${teacherId}`
+        `${API_URL}/get_teacher_balance/${teacherId}`
       );
       if (response.ok) {
         const balanceData = await response.json();
@@ -127,13 +128,13 @@ function Teachers() {
         teachersResponse,
         studentsResponse,
       ] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/get_groups`).catch(() => ({
+        fetch(`${API_URL}/get_groups`).catch(() => ({
           ok: false,
         })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_teachers`).catch(() => ({
+        fetch(`${API_URL}/get_teachers`).catch(() => ({
           ok: false,
         })),
-        fetch(`${import.meta.env.VITE_API_URL}/get_students`).catch(() => ({
+        fetch(`${API_URL}/get_students`).catch(() => ({
           ok: false,
         })),
       ]);
@@ -190,7 +191,7 @@ function Teachers() {
     e.preventDefault();
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/create_teacher`,
+        `${API_URL}/create_teacher`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -247,7 +248,7 @@ function Teachers() {
     e.preventDefault();
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/update_teacher/${editFormData.id}`,
+        `${API_URL}/update_teacher/${editFormData.id}`,
         {
           method: "PUT",
           headers: {
@@ -290,7 +291,7 @@ function Teachers() {
   const deleteTeacher = async (id) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/delete_teacher/${id}`,
+        `${API_URL}/delete_teacher/${id}`,
         {
           method: "DELETE",
         }
@@ -338,7 +339,7 @@ function Teachers() {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/create_payment_teacher`,
+        `${API_URL}/create_payment_teacher`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

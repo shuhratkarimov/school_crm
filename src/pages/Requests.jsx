@@ -5,6 +5,7 @@
   import { toast } from "react-hot-toast";
   import "../../styles/styles.css";
   import LottieLoading from "../components/Loading";
+  import API_URL from "../conf/api";
 
   function Requests() {
     const [todayRequests, setTodayRequests] = useState([]);
@@ -46,7 +47,7 @@
     const fetchRequests = async () => {
       try {
         setLoading(true);
-        const todayResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_appeals`);
+        const todayResponse = await fetch(`${API_URL}/get_appeals`);
         let todayData = [];
         if (todayResponse.ok) {
           todayData = await todayResponse.json();
@@ -57,7 +58,7 @@
           throw new Error("Bugungi murojaatlarni olishda xatolik");
         }
 
-        const allResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_last_ten_day_appeals`);
+        const allResponse = await fetch(`${API_URL}/get_last_ten_day_appeals`);
         let allData = [];
         if (allResponse.ok) {
           allData = await allResponse.json();
@@ -89,7 +90,7 @@
       if (!replyMessage.trim()) return alert("Xabar bo‘sh bo‘lmasligi kerak");
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/send_telegram_message`, {
+        const response = await fetch(`${API_URL}/send_telegram_message`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -117,7 +118,7 @@
 
     const deleteRequest = async (id) => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_appeal/${id}`, {
+        const response = await fetch(`${API_URL}/delete_appeal/${id}`, {
           method: "DELETE",
         });
         if (!response.ok) throw new Error("Murojaatni o'chirishda muammo yuzaga keldi!");

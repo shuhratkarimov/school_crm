@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, CheckCircle2, XCircle, Save, Clock, Book, Users, ChevronDown, ChevronUp, AlertCircle, Diff, LogOut, BookOpen, FileText, CreditCard } from "lucide-react";
 import TeacherSidebar from "../components/TeacherSidebar";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../config";
 
 function TeacherAttendance() {
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ function TeacherAttendance() {
   const fetchGroup = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/get_one_group/${groupId}`);
+      const res = await fetch(`${API_URL}/get_one_group/${groupId}`);
       const data = await res.json();
       if (!data.group) throw new Error("Guruh topilmadi");
       setGroup(data.group);
@@ -107,7 +108,7 @@ function TeacherAttendance() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_one_group_students?group_id=${groupId}`
+        `${API_URL}/get_one_group_students?group_id=${groupId}`
       );
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("O'quvchilar ro'yxati noto'g'ri");
@@ -137,7 +138,7 @@ function TeacherAttendance() {
       }
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_attendance_by_date/${groupId}?date=${date}`
+        `${API_URL}/get_attendance_by_date/${groupId}?date=${date}`
       );
       const data = await res.json();
 
@@ -258,7 +259,7 @@ function TeacherAttendance() {
       }
 
       const checkRes = await fetch(
-        `${import.meta.env.VITE_API_URL}/get_attendance_by_date/${groupId}?date=${date}`
+        `${API_URL}/get_attendance_by_date/${groupId}?date=${date}`
       );
       const checkData = await checkRes.json();
       if (checkData.records && Array.isArray(checkData.records) && checkData.records.length > 0) {
@@ -286,7 +287,7 @@ function TeacherAttendance() {
       }
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/make_attendance/${groupId}`,
+        `${API_URL}/make_attendance/${groupId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -331,7 +332,7 @@ function TeacherAttendance() {
       }));
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/update_attendance/${groupId}?date=${date}`,
+        `${API_URL}/update_attendance/${groupId}?date=${date}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
