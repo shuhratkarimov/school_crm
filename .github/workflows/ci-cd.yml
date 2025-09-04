@@ -34,7 +34,6 @@ jobs:
           rm -rf /usr/share/nginx/html/*
           cp -r dist/* /usr/share/nginx/html/
           chmod -R 775 /usr/share/nginx/html
-          systemctl reload nginx
 
       - name: Build frontend Docker image
         run: docker build -t my-vite-frontend:latest .
@@ -65,3 +64,4 @@ jobs:
             docker-compose rm -f frontend || true
             docker-compose up -d --force-recreate frontend
             docker image prune -f || true
+            sudo systemctl reload nginx
