@@ -29,11 +29,16 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Fix permissions
+        run: sudo chmod -R u+w /usr/share/nginx/html/
+
+      - name: Clean up
+        run: sudo rm -rf /usr/share/nginx/html/*
+
       - name: Copy build files to Nginx root
         run: |
-          rm -rf /usr/share/nginx/html/*
-          cp -r dist/* /usr/share/nginx/html/
-          chmod -R 775 /usr/share/nginx/html
+          sudo cp -r dist/* /usr/share/nginx/html/
+          sudo chmod -R 775 /usr/share/nginx/html
 
       - name: Build frontend Docker image
         run: docker build -t my-vite-frontend:latest .
