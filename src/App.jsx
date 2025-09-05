@@ -32,6 +32,8 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const PaymentReports = lazy(() => import("./components/PaymentReports"));
 const AdminTestResults = lazy(() => import("./pages/AdminTestResults"));
 const TeacherTestResults = lazy(() => import("./pages/TeacherTestResults"));
+const StudentRegistration = lazy(() => import("./pages/StudentRegistration"));
+const NewStudentsAdmin = lazy(() => import("./pages/NewStudentsAdmin"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -53,39 +55,52 @@ function App() {
     } else if (window.location.hostname === "teacher.intellectualprogress.uz") {
       navigate("/teacher/login");
     }
+    else if (window.location.hostname === "register.intellectualprogress.uz") {
+      navigate("/student-registration");
+    }
   }, []);
-
   useEffect(() => {
-    // Admin auth check
+    const hostname = window.location.hostname;
+  
     const checkAdminAuth = async () => {
       try {
         const response = await fetch(`${API_URL}/check-auth`, {
           method: "GET",
-          credentials: "include", // cookie yuboradi
+          credentials: "include",
         });
         setIsAuthenticated(response.ok);
       } catch {
         setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
     };
-
-    // Teacher auth check
+  
     const checkTeacherAuth = async () => {
       try {
         const response = await fetch(`${API_URL}/check-teacher-auth`, {
           method: "GET",
-          credentials: "include", // cookie yuboradi
+          credentials: "include",
         });
         setTeacherAuthenticated(response.ok);
       } catch {
         setTeacherAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
     };
-
-    Promise.all([checkAdminAuth(), checkTeacherAuth()]).finally(() =>
-      setLoading(false)
-    );
-  }, []);
+  
+    if (hostname === "admin.intellectualprogress.uz") {
+      checkAdminAuth();
+    } else if (hostname === "teacher.intellectualprogress.uz") {
+      checkTeacherAuth();
+    } else if (hostname === "register.intellectualprogress.uz") {
+      // hech narsa tekshirmaydi
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
+  }, []);  
 
   if (loading) {
     return <LottieLoading />;
@@ -402,6 +417,26 @@ function App() {
                     </div>
                   </div>
                 </PrivateRoute>
+              }
+            />
+            <Route
+              path="/new-students"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <NewStudentsAdmin />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/student-registration"
+              element={
+                <StudentRegistration />
               }
             />
             <Route path="*" element={<LottieNotFound />} />

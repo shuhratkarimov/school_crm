@@ -11,7 +11,7 @@ const getApiBaseUrl = () => {
     return "http://193.181.208.209:8080/api";
   }
   if (host === "localhost") {
-    return "http://localhost:3000/api";
+    return "http://localhost:3000";
   }
   return "";
 };
