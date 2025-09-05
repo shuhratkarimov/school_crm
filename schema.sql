@@ -214,3 +214,13 @@ CREATE TABLE test_results (
     FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE TABLE new_students (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    firstName VARCHAR(255) NOT NULL,
+    lastName VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    interviewed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);

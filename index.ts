@@ -23,6 +23,7 @@ import { NoteRouter } from './router/note.router';
 import { ExpenseRouter } from './router/expenses.router';
 import { AchievementsRouter } from './router/achievements.router';
 import { testRouter } from './router/test.router';
+import { NewStudentRouter } from './router/newStudent.router';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -59,6 +60,7 @@ app.use(NoteRouter);
 app.use(ExpenseRouter);
 app.use(AchievementsRouter);
 app.use(testRouter);
+app.use(NewStudentRouter);  
 
 // Error handling
 app.use(errorMiddleware as any);
