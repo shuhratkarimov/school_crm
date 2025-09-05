@@ -9,8 +9,8 @@ import { TypewriterText } from "../components/TypeWriter"
 
 export default function StudentRegistration() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     phone: "",
   })
   const [errors, setErrors] = useState({})
@@ -57,12 +57,12 @@ export default function StudentRegistration() {
   const validateForm = () => {
     const newErrors = {}
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "Ism kiritilishi lozim"
+    if (!formData.first_name.trim()) {
+      newErrors.first_name = "Ism kiritilishi lozim"
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Familiya kiritilishi lozim"
+    if (!formData.last_name.trim()) {
+      newErrors.last_name = "Familiya kiritilishi lozim"
     }
 
     if (!formData.phone.trim()) {
@@ -102,7 +102,7 @@ export default function StudentRegistration() {
         setIsSuccess(true)
         setTimeout(() => {
           setIsSuccess(false)
-          setFormData({ firstName: "", lastName: "", phone: "" })
+          setFormData({ first_name: "", last_name: "", phone: "" })
           toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!")
         }, 4000)
       } else {
@@ -273,22 +273,22 @@ export default function StudentRegistration() {
                       <motion.div
                         className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10"
                         animate={{
-                          color: focusedField === "firstName" ? "#4f46e5" : "#9ca3af",
-                          scale: focusedField === "firstName" ? 1.1 : 1,
+                          color: focusedField === "first_name" ? "#4f46e5" : "#9ca3af",
+                          scale: focusedField === "first_name" ? 1.1 : 1,
                         }}
                       >
                         <User size={20} />
                       </motion.div>
                       <motion.input
                         type="text"
-                        name="firstName"
-                        value={formData.firstName}
+                        name="first_name"
+                        value={formData.first_name || ""}
                         onChange={handleChange}
-                        onFocus={() => setFocusedField("firstName")}
+                        onFocus={() => setFocusedField("first_name")}
                         onBlur={() => {
                           setFocusedField("")
-                          if (!formData.firstName.trim()) {
-                            setErrors({ ...errors, firstName: "Ism kiritilishi lozim" })
+                          if (!formData.first_name.trim()) {
+                            setErrors({ ...errors, first_name: "Ism kiritilishi lozim" })
                           }
                         }}
                         placeholder="Ismingiz"
@@ -296,7 +296,7 @@ export default function StudentRegistration() {
                         whileFocus={{ scale: 1.02 }}
                       />
                       <AnimatePresence>
-                        {errors.firstName && (
+                        {errors.first_name && (
                           <motion.p
                             initial={{ opacity: 0, y: -10, x: -10 }}
                             animate={{ opacity: 1, y: 0, x: 0 }}
@@ -304,7 +304,7 @@ export default function StudentRegistration() {
                             className="text-red-500 text-sm mt-2 flex items-center gap-1"
                           >
                             <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                            {errors.firstName}
+                            {errors.first_name}
                           </motion.p>
                         )}
                       </AnimatePresence>
@@ -319,22 +319,22 @@ export default function StudentRegistration() {
                       <motion.div
                         className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10"
                         animate={{
-                          color: focusedField === "lastName" ? "#4f46e5" : "#9ca3af",
-                          scale: focusedField === "lastName" ? 1.1 : 1,
+                          color: focusedField === "last_name" ? "#4f46e5" : "#9ca3af",
+                          scale: focusedField === "last_name" ? 1.1 : 1,
                         }}
                       >
                         <User size={20} />
                       </motion.div>
                       <motion.input
                         type="text"
-                        name="lastName"
-                        value={formData.lastName}
+                        name="last_name"
+                        value={formData.last_name || ""}
                         onChange={handleChange}
-                        onFocus={() => setFocusedField("lastName")}
+                        onFocus={() => setFocusedField("last_name")}
                         onBlur={() => {
                           setFocusedField("")
-                          if (!formData.lastName.trim()) {
-                            setErrors({ ...errors, lastName: "Familiya kiritilishi lozim" })
+                          if (!formData.last_name.trim()) {
+                            setErrors({ ...errors, last_name: "Familiya kiritilishi lozim" })
                           }
                         }}
                         placeholder="Familiyangiz"
@@ -342,7 +342,7 @@ export default function StudentRegistration() {
                         whileFocus={{ scale: 1.02 }}
                       />
                       <AnimatePresence>
-                        {errors.lastName && (
+                        {errors.last_name && (
                           <motion.p
                             initial={{ opacity: 0, y: -10, x: -10 }}
                             animate={{ opacity: 1, y: 0, x: 0 }}
@@ -350,7 +350,7 @@ export default function StudentRegistration() {
                             className="text-red-500 text-sm mt-2 flex items-center gap-1"
                           >
                             <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                            {errors.lastName}
+                            {errors.last_name}
                           </motion.p>
                         )}
                       </AnimatePresence>

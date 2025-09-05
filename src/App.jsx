@@ -1,6 +1,6 @@
 "use client";
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom"; // BrowserRouter ni bu yerda ishlatmaymiz
 import { useState, useEffect, Suspense, lazy } from "react";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -12,9 +12,9 @@ import Expenses from "./pages/Expenses";
 import Notes from "./pages/Notes";
 import Calculator from "./pages/Calculator";
 import Achievements from "./pages/Achievements";
-import { Toaster, toast } from 'react-hot-toast';
-import { useNavigate } from "react-router-dom";
+import { Toaster } from 'react-hot-toast';
 import API_URL from "./conf/api";
+
 // Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
@@ -48,59 +48,51 @@ function App() {
   const [teacherAuthenticated, setTeacherAuthenticated] = useState(false); // O'qituvchi autentifikatsiyasi
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const hostname = window.location.hostname;
 
   useEffect(() => {
-    if (window.location.hostname === "admin.intellectualprogress.uz") {
-      navigate("/login");
-    } else if (window.location.hostname === "teacher.intellectualprogress.uz") {
-      navigate("/teacher/login");
-    }
-    else if (window.location.hostname === "register.intellectualprogress.uz") {
-      navigate("/student-registration");
-    }
-  }, []);
-  useEffect(() => {
-    const hostname = window.location.hostname;
-  
-    const checkAdminAuth = async () => {
-      try {
-        const response = await fetch(`${API_URL}/check-auth`, {
-          method: "GET",
-          credentials: "include",
-        });
-        setIsAuthenticated(response.ok);
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    const checkTeacherAuth = async () => {
-      try {
-        const response = await fetch(`${API_URL}/check-teacher-auth`, {
-          method: "GET",
-          credentials: "include",
-        });
-        setTeacherAuthenticated(response.ok);
-      } catch {
-        setTeacherAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
     if (hostname === "admin.intellectualprogress.uz") {
+      navigate("/login");
       checkAdminAuth();
     } else if (hostname === "teacher.intellectualprogress.uz") {
+      navigate("/teacher/login");
       checkTeacherAuth();
     } else if (hostname === "register.intellectualprogress.uz") {
-      // hech narsa tekshirmaydi
-      setLoading(false);
+      navigate("/student-registration");
+      setLoading(false); // Autentifikatsiya tekshiruvi o'tkazilmaydi
+      return; // Keyingi tekshiruvlarni to'xtatish
     } else {
       setLoading(false);
     }
-  }, []);  
+  }, [navigate]);
+
+  const checkAdminAuth = async () => {
+    try {
+      const response = await fetch(`${API_URL}/check-auth`, {
+        method: "GET",
+        credentials: "include",
+      });
+      setIsAuthenticated(response.ok);
+    } catch {
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkTeacherAuth = async () => {
+    try {
+      const response = await fetch(`${API_URL}/check-teacher-auth`, {
+        method: "GET",
+        credentials: "include",
+      });
+      setTeacherAuthenticated(response.ok);
+    } catch {
+      setTeacherAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return <LottieLoading />;
@@ -111,7 +103,6 @@ function App() {
       <Toaster
         position="top-right"
         toastOptions={{
-          // Default
           duration: 3000,
           style: {
             background: "#fff",
@@ -120,9 +111,8 @@ function App() {
             borderRadius: "12px",
             padding: "12px 16px",
           },
-          // Success
           success: {
-            duration: 2500, // agar boshqa vaqt bersang ham bo‘ladi
+            duration: 2500,
             style: {
               background: "#e6ffed",
               color: "#047857",
@@ -133,7 +123,6 @@ function App() {
               secondary: "#fff",
             },
           },
-          // Error
           error: {
             duration: 4000,
             style: {
@@ -146,7 +135,6 @@ function App() {
               secondary: "#fff",
             },
           },
-          // Loading
           loading: {
             style: {
               background: "#fef3c7",
@@ -159,6 +147,9 @@ function App() {
       <Suspense fallback={<LottieLoading />}>
         <ErrorBoundary>
           <Routes>
+            {/* Public sahifa: Autentifikatsiyasiz */}
+            <Route path="/student-registration" element={<StudentRegistration />} />
+
             {/* Admin Login */}
             <Route
               path="/login"
@@ -171,15 +162,21 @@ function App() {
               element={<TeacherLogin setTeacherAuthenticated={setTeacherAuthenticated} />}
             />
 
-            {/* Admin Dashboard va boshqa sahifalar */}
+            {/* Root yo'li: Subdomenga qarab shartli yo'naltirish */}
             <Route
               path="/"
               element={
-                <PrivateRoute isAuthenticated={isAuthenticated}>
-                  <Navigate to="/dashboard" />
-                </PrivateRoute>
+                hostname === "register.intellectualprogress.uz" ? (
+                  <Navigate to="/student-registration" />
+                ) : (
+                  <PrivateRoute isAuthenticated={isAuthenticated}>
+                    <Navigate to="/dashboard" />
+                  </PrivateRoute>
+                )
               }
             />
+
+            {/* Admin Dashboard va boshqa sahifalar */}
             <Route
               path="/dashboard"
               element={
@@ -195,27 +192,12 @@ function App() {
               }
             />
 
-            {/* <Route
-              path="/calculator"
-              element={
-                <PrivateRoute isAuthenticated={isAuthenticated}>
-                  <div className="app-layout">
-                    <Sidebar />
-                    <div className="main-content">
-                      <Header setIsAuthenticated={setIsAuthenticated} />
-                      <Calculator />
-                    </div>
-                  </div>
-                </PrivateRoute>
-              }
-            /> */}
-
             <Route
               path="/teacher/test-results"
               element={
-                <PrivateRoute isAuthenticated={teacherAuthenticated}>
+                <TeacherRoute isAuthenticated={teacherAuthenticated}>
                   <TeacherTestResults />
-                </PrivateRoute>
+                </TeacherRoute>
               }
             />
 
@@ -237,9 +219,9 @@ function App() {
             <Route
               path="/teacher/payments"
               element={
-                <PrivateRoute isAuthenticated={teacherAuthenticated}>
+                <TeacherRoute isAuthenticated={teacherAuthenticated}>
                   <PaymentReports />
-                </PrivateRoute>
+                </TeacherRoute>
               }
             />
 
@@ -257,20 +239,6 @@ function App() {
                 </PrivateRoute>
               }
             />
-            {/* <Route
-              path="/groups"
-              element={
-                <PrivateRoute isAuthenticated={isAuthenticated}>
-                  <div className="app-layout">
-                    <Sidebar />
-                    <div className="main-content">
-                      <Header setIsAuthenticated={setIsAuthenticated} />
-                      <Groups />
-                    </div>
-                  </div>
-                </PrivateRoute>
-              }
-            /> */}
             <Route
               path="/achievements"
               element={
@@ -431,12 +399,6 @@ function App() {
                     </div>
                   </div>
                 </PrivateRoute>
-              }
-            />
-            <Route
-              path="/student-registration"
-              element={
-                <StudentRegistration />
               }
             />
             <Route path="*" element={<LottieNotFound />} />

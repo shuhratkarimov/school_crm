@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Calendar, UserCheck, UserX, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Filter, Calendar, UserCheck, UserX, Edit, Trash2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import API_URL from '../conf/api';
@@ -138,11 +138,11 @@ export default function NewStudentsAdmin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">O'quvchilar Boshqaruvi</h1>
-          <p className="text-gray-600">Ro'yxatdan o'tgan barcha o'quvchilar</p>
+        <div className="mb-5 flex items-center gap-2 ">
+          <UserPlus size={28} color="#104292" />
+          <h1 className="text-2xl font-bold text-gray-800">Yangi o'quvchilar</h1>
         </div>
 
         {/* Filters */}
@@ -163,7 +163,7 @@ export default function NewStudentsAdmin() {
 
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter size={20} className="text-gray-400" />
+                <Filter size={20} className="text-blue-600" />
               </div>
               <select
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none"
