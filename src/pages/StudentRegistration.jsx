@@ -187,7 +187,7 @@ export default function StudentRegistration() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7, duration: 0.6 }}
             >
-              Kelajagingizni bugun boshlang
+              Progress bilan birga o'sing!
             </motion.p>
           </motion.div>
         </div>
