@@ -11,11 +11,11 @@ NewStudent.init(
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
-    firstName: {
+    first_name: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    lastName: {
+    last_name: {
       type: DataTypes.STRING,
       allowNull: false
     },

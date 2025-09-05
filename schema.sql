@@ -217,10 +217,10 @@ CREATE TABLE test_results (
 
 CREATE TABLE new_students (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    firstName VARCHAR(255) NOT NULL,
-    lastName VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
     interviewed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
