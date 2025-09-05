@@ -179,15 +179,6 @@ function Login({ setIsAuthenticated }) {
             )}
           </motion.button>
         </form>
-
-        <div className="text-right mt-4 w-full">
-          <span
-            onClick={() => navigate("/teacher/login")}
-            className="text-blue-600 underline cursor-pointer hover:text-blue-400"
-          >
-            Ustozlar paneliga o'tish
-          </span>
-        </div>
       </motion.div>
 
       {/* ✅ tick animatsiya keyframes */}
