@@ -41,8 +41,8 @@ export default function NewStudentsAdmin() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(student =>
-        student.firstName.toLowerCase().includes(query) ||
-        student.lastName.toLowerCase().includes(query) ||
+        student.first_name.toLowerCase().includes(query) ||
+        student.last_name.toLowerCase().includes(query) ||
         student.phone.includes(query)
       );
     }
@@ -279,7 +279,7 @@ export default function NewStudentsAdmin() {
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-semibold">{student.firstName} {student.lastName}</h3>
+                            <h3 className="font-semibold">{student.first_name} {student.last_name}</h3>
                             <p className="text-gray-600">{student.phone}</p>
                             <p className="text-sm text-gray-500">
                               {new Date(student.created_at).toLocaleDateString('ru-RU')} soat {new Date(student.created_at).toLocaleTimeString('ru-RU').slice(0, 5)}da yozilgan
@@ -340,7 +340,7 @@ export default function NewStudentsAdmin() {
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-semibold">{student.firstName} {student.lastName}</h3>
+                            <h3 className="font-semibold">{student.first_name} {student.last_name}</h3>
                             <p className="text-gray-600">{student.phone}</p>
                             <p className="text-sm text-gray-500">
                               {new Date(student.created_at).toLocaleDateString('ru-RU')} soat {new Date(student.created_at).toLocaleTimeString('ru-RU').slice(0, 5)}da yozilgan
