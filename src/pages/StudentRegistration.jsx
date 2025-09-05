@@ -187,8 +187,7 @@ export default function StudentRegistration() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7, duration: 0.6 }}
             >
-              Kelajagingizni bugun boshlang. Bizning zamonaviy ta'lim dasturlarimiz bilan o'z potensialingizni ochib
-              bering.
+              Kelajagingizni bugun boshlang
             </motion.p>
           </motion.div>
         </div>
@@ -227,7 +226,7 @@ export default function StudentRegistration() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                   >
-                    Arizangiz Qabul Qilindi!
+                    Arizangiz qabul qilindi!
                   </motion.h2>
                   <motion.p
                     className="text-slate-600 leading-relaxed"
@@ -235,8 +234,7 @@ export default function StudentRegistration() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                   >
-                    Biz sizning xabaringizni qabul qilib oldik, tez orada siz bilan bog'lanamiz va ta'lim
-                    yo'nalishlarini muhokama qilamiz.
+                    Biz sizning xabaringizni qabul qilib oldik, tez orada siz bilan bog'lanamiz va savollaringizga javob beramiz.
                   </motion.p>
                 </div>
               </motion.div>
