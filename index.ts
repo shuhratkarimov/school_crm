@@ -36,6 +36,8 @@ app.use(cookieParser());
 const allowedOrigins = [
   'http://admin.intellectualprogress.uz',
   'https://admin.intellectualprogress.uz',
+  'http://register.intellectualprogress.uz',
+  'https://register.intellectualprogress.uz',
   'http://teacher.intellectualprogress.uz',
   'https://teacher.intellectualprogress.uz',
   'http://193.181.208.209:8080',
