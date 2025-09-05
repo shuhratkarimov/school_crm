@@ -122,7 +122,7 @@ function Login({ setIsAuthenticated }) {
           "Intellectual Progress Star"
         </h1>
         <p className="text-center text-gray-600 text-sm sm:text-base mb-6">
-          <span className="text-blue-600 font-semibold">CRM</span> tizimiga kirish
+          <span className="text-blue-600 font-semibold">Admin</span> paneliga kirish
         </p>
 
         {/* Form */}

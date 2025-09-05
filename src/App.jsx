@@ -48,23 +48,30 @@ function App() {
   const [teacherAuthenticated, setTeacherAuthenticated] = useState(false); // O'qituvchi autentifikatsiyasi
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const hostname = window.location.hostname;
 
   useEffect(() => {
+    const hostname = window.location.hostname;
+
     if (hostname === "admin.intellectualprogress.uz") {
-      navigate("/login");
-      checkAdminAuth();
-    } else if (hostname === "teacher.intellectualprogress.uz") {
-      navigate("/teacher/login");
-      checkTeacherAuth();
-    } else if (hostname === "register.intellectualprogress.uz") {
-      navigate("/student-registration");
-      setLoading(false); // Autentifikatsiya tekshiruvi o'tkazilmaydi
-      return; // Keyingi tekshiruvlarni to'xtatish
-    } else {
-      setLoading(false);
+      checkAdminAuth().then((auth) => {
+        if (auth) {
+          navigate("/dashboard");
+        } else {
+          navigate("/login");
+        }
+      });
     }
-  }, [navigate]);
+
+    if (hostname === "teacher.intellectualprogress.uz") {
+      checkTeacherAuth().then((auth) => {
+        if (auth) {
+          navigate("/teacher/dashboard");
+        } else {
+          navigate("/teacher/login");
+        }
+      });
+    }
+  }, []);
 
   const checkAdminAuth = async () => {
     try {
