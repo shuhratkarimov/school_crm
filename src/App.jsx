@@ -1,6 +1,6 @@
 "use client";
 
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom"; // BrowserRouter ni bu yerda ishlatmaymiz
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, Suspense, lazy } from "react";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -18,7 +18,6 @@ import API_URL from "./conf/api";
 // Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
-// const Groups = lazy(() => import("./pages/Groups"));
 const Payments = lazy(() => import("./pages/Payments"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const Requests = lazy(() => import("./pages/Requests"));
@@ -44,34 +43,35 @@ function TeacherRoute({ children, isAuthenticated }) {
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Admin autentifikatsiyasi
-  const [teacherAuthenticated, setTeacherAuthenticated] = useState(false); // O'qituvchi autentifikatsiyasi
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [teacherAuthenticated, setTeacherAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const hostname = window.location.hostname;
 
   useEffect(() => {
-    const hostname = window.location.hostname;
-
-    if (hostname === "admin.intellectualprogress.uz") {
-      checkAdminAuth().then((auth) => {
-        if (auth) {
-          navigate("/dashboard");
-        } else {
-          navigate("/login");
+    const checkAuth = async () => {
+      if (hostname === "admin.intellectualprogress.uz") {
+        await checkAdminAuth();
+      } else if (hostname === "teacher.intellectualprogress.uz") {
+        await checkTeacherAuth();
+      } else if (hostname === "register.intellectualprogress.uz") {
+        // Faqat student-registration sahifasiga ruxsat berish
+        if (location.pathname !== "/student-registration") {
+          navigate("/student-registration");
         }
-      });
-    }
+        setLoading(false);
+        setAuthChecked(true);
+      } else {
+        setLoading(false);
+        setAuthChecked(true);
+      }
+    };
 
-    if (hostname === "teacher.intellectualprogress.uz") {
-      checkTeacherAuth().then((auth) => {
-        if (auth) {
-          navigate("/teacher/dashboard");
-        } else {
-          navigate("/teacher/login");
-        }
-      });
-    }
-  }, []);
+    checkAuth();
+  }, [hostname, location.pathname]);
 
   const checkAdminAuth = async () => {
     try {
@@ -79,11 +79,29 @@ function App() {
         method: "GET",
         credentials: "include",
       });
-      setIsAuthenticated(response.ok);
-    } catch {
+      
+      if (response.ok) {
+        setIsAuthenticated(true);
+        // Agar login sahifada bo'lsak, dashboardga yo'naltiramiz
+        if (location.pathname === "/login") {
+          navigate("/dashboard");
+        }
+      } else {
+        setIsAuthenticated(false);
+        // Agar login sahifada bo'lmasak va autentifikatsiya muvaffaqiyatsiz bo'lsa
+        if (location.pathname !== "/login") {
+          navigate("/login");
+        }
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
       setIsAuthenticated(false);
+      if (location.pathname !== "/login") {
+        navigate("/login");
+      }
     } finally {
       setLoading(false);
+      setAuthChecked(true);
     }
   };
 
@@ -93,11 +111,29 @@ function App() {
         method: "GET",
         credentials: "include",
       });
-      setTeacherAuthenticated(response.ok);
-    } catch {
+      
+      if (response.ok) {
+        setTeacherAuthenticated(true);
+        // Agar teacher login sahifada bo'lsak, dashboardga yo'naltiramiz
+        if (location.pathname === "/teacher/login") {
+          navigate("/teacher/dashboard");
+        }
+      } else {
+        setTeacherAuthenticated(false);
+        // Agar teacher login sahifada bo'lmasak va autentifikatsiya muvaffaqiyatsiz bo'lsa
+        if (location.pathname !== "/teacher/login") {
+          navigate("/teacher/login");
+        }
+      }
+    } catch (error) {
+      console.error("Teacher auth check error:", error);
       setTeacherAuthenticated(false);
+      if (location.pathname !== "/teacher/login") {
+        navigate("/teacher/login");
+      }
     } finally {
       setLoading(false);
+      setAuthChecked(true);
     }
   };
 
@@ -160,13 +196,13 @@ function App() {
             {/* Admin Login */}
             <Route
               path="/login"
-              element={<Login setIsAuthenticated={setIsAuthenticated} />}
+              element={<Login setIsAuthenticated={setIsAuthenticated} checkAuth={checkAdminAuth} />}
             />
 
             {/* Teacher Login */}
             <Route
               path="/teacher/login"
-              element={<TeacherLogin setTeacherAuthenticated={setTeacherAuthenticated} />}
+              element={<TeacherLogin setTeacherAuthenticated={setTeacherAuthenticated} checkAuth={checkTeacherAuth} />}
             />
 
             {/* Root yo'li: Subdomenga qarab shartli yo'naltirish */}
@@ -175,10 +211,16 @@ function App() {
               element={
                 hostname === "register.intellectualprogress.uz" ? (
                   <Navigate to="/student-registration" />
-                ) : (
+                ) : hostname === "admin.intellectualprogress.uz" ? (
                   <PrivateRoute isAuthenticated={isAuthenticated}>
                     <Navigate to="/dashboard" />
                   </PrivateRoute>
+                ) : hostname === "teacher.intellectualprogress.uz" ? (
+                  <TeacherRoute isAuthenticated={teacherAuthenticated}>
+                    <Navigate to="/teacher/dashboard" />
+                  </TeacherRoute>
+                ) : (
+                  <div>Noto'g'ri subdomain</div>
                 )
               }
             />
