@@ -57,7 +57,7 @@ function App() {
       } else if (hostname === "teacher.intellectualprogress.uz") {
         await checkTeacherAuth();
       } else if (hostname === "register.intellectualprogress.uz") {
-        if (!location.pathname.startsWith("/student-registration")) {
+        if (location.pathname.startsWith("/student-registration")) {
           navigate(`/student-registration${location.search}`);
         }
         setLoading(false);

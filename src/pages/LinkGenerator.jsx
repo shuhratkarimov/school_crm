@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, Copy, CheckCircle, Trash2, Pen } from 'lucide-react';
+import { Link, Copy, Trash2, Pen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import API_URL from '../conf/api';
 
@@ -9,6 +9,9 @@ export default function LinkGenerator() {
   const [links, setLinks] = useState([]);
   const [subject, setSubject] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState(null);
+  const [newSubject, setNewSubject] = useState('');
 
   useEffect(() => {
     fetchLinks();
@@ -58,20 +61,29 @@ export default function LinkGenerator() {
     }
   };
 
-  const updateLink = async (id, newSubject) => {
+  const updateLink = async (id, updatedSubject) => {
+    if (!id || !updatedSubject.trim()) {
+      toast.error("Fan nomi bo'sh bo'lishi mumkin emas!");
+      return;
+    }
     try {
       const response = await fetch(`${API_URL}/update-registration-link/${id}`, {
-        method: 'PATCH',
+        method: 'PUT', // yoki PATCH, server qaysi metodni qabul qilsa
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ subject: newSubject }),
+        body: JSON.stringify({ subject: updatedSubject.trim() }),
       });
       if (response.ok) {
         toast.success('Link yangilandi');
         fetchLinks();
+        setIsModalOpen(false);
+        setEditingLink(null);
+        setNewSubject('');
       } else {
+        const data = await response.json();
+        console.error("Server xatosi:", data);
         throw new Error('Link yangilashda xato');
       }
     } catch (error) {
@@ -135,7 +147,6 @@ export default function LinkGenerator() {
           </form>
         </div>
 
-        {/* Yaratilgan linklar ro‘yxati */}
         <div className="bg-white rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Yaratilgan linklar</h2>
           <div className="space-y-4">
@@ -158,17 +169,14 @@ export default function LinkGenerator() {
                       <p className="font-semibold">{link.subject}</p>
                       <p
                         className="text-gray-600 cursor-pointer hover:underline"
-                        onClick={() => copyToClipboard(`https://register.intellectualprogress.uz?subject=${encodeURIComponent(link.subject)}`)}
+                        onClick={() => copyToClipboard(`https://register.intellectualprogress.uz/student-registration?subject=${encodeURIComponent(link.subject)}`)}
                       >
                         https://register.intellectualprogress.uz/student-registration?subject={encodeURIComponent(link.subject)}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(link.created_at).toLocaleDateString('ru-RU')} soat {new Date(link.created_at).toLocaleTimeString('ru-RU').slice(0, 5)}da yaratilgan
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => copyToClipboard(`https://register.intellectualprogress.uz?subject=${encodeURIComponent(link.subject)}`)}
+                        onClick={() => copyToClipboard(`https://register.intellectualprogress.uz/student-registration?subject=${encodeURIComponent(link.subject)}`)}
                         className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition"
                         title="Nusxalash"
                       >
@@ -176,10 +184,9 @@ export default function LinkGenerator() {
                       </button>
                       <button
                         onClick={() => {
-                          const newSubject = prompt("Yangi fan nomini kiriting", link.subject);
-                          if (newSubject && newSubject.trim() !== "") {
-                            updateLink(link.id, newSubject);
-                          }
+                          setEditingLink(link);
+                          setNewSubject(link.subject);
+                          setIsModalOpen(true);
                         }}
                         className="p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition"
                         title="Tahrirlash"
@@ -201,6 +208,40 @@ export default function LinkGenerator() {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Fan nomini yangilash</h3>
+              <button onClick={() => setIsModalOpen(false)}>
+                <X size={20} className="text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+            <input
+              type="text"
+              value={newSubject}
+              onChange={(e) => setNewSubject(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500"
+              placeholder="Yangi fan nomi"
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={() => updateLink(editingLink.id, newSubject)}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Saqlash
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

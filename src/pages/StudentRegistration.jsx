@@ -108,7 +108,8 @@ export default function StudentRegistration() {
           toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!")
         }, 4000)
       } else {
-        throw new Error("Ro'yxatdan o'tishda xatolik")
+        const data = await response.json()
+        toast.error(data.message)
       }
     } catch (error) {
       toast.error("Xatolik yuz berdi, qayta urinib ko'ring")
