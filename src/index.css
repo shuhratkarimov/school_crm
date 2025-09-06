@@ -514,7 +514,7 @@ body.dark .sidebar-item.active {
 }
 
 .main-content {
-  margin-left: 230px;
+  margin-left: 210px;
   padding: 20px;
   transition: margin-left 0.3s ease;
 }
