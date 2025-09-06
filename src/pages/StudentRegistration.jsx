@@ -3,12 +3,12 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { User, Phone, Send, CheckCircle, Sparkles } from "lucide-react"
 import { toast } from "react-hot-toast"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useNavigate } from "react-router-dom"
 import API_URL from "../conf/api"
 import { TypewriterText } from "../components/TypeWriter"
 
 export default function StudentRegistration() {
-  const searchParams = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const subject = searchParams.get('subject') || ''
   const [formData, setFormData] = useState({
     first_name: "",
@@ -21,12 +21,13 @@ export default function StudentRegistration() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [isGlowing, setIsGlowing] = useState(false)
   const [focusedField, setFocusedField] = useState("")
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (subject) {
       setFormData(prev => ({ ...prev, subject }))
     } else {
-      setErrors(prev => ({ ...prev, subject: "Fan nomi URLda ko'rsatilishi lozim" }))
+      setErrors(prev => ({ ...prev, subject: "Fan nomi mavjud emas" }))
     }
   }, [subject])
 
@@ -191,7 +192,7 @@ export default function StudentRegistration() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7, duration: 0.6 }}
             >
-              Progress bilan birga o'sing!
+              Progress bilan birga yuqorilang!
             </motion.p>
           </motion.div>
         </div>
@@ -229,7 +230,7 @@ export default function StudentRegistration() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                   >
-                    Arizangiz qabul qilindi!
+                    Ro'yxatdan o'tdingiz!
                   </motion.h2>
                   <motion.p
                     className="text-slate-600 leading-relaxed"

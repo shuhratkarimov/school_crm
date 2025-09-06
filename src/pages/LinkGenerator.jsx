@@ -160,7 +160,7 @@ export default function LinkGenerator() {
                         className="text-gray-600 cursor-pointer hover:underline"
                         onClick={() => copyToClipboard(`https://register.intellectualprogress.uz?subject=${encodeURIComponent(link.subject)}`)}
                       >
-                        https://register.intellectualprogress.uz?subject={encodeURIComponent(link.subject)}
+                        https://register.intellectualprogress.uz/student-registration?subject={encodeURIComponent(link.subject)}
                       </p>
                       <p className="text-sm text-gray-500">
                         {new Date(link.created_at).toLocaleDateString('ru-RU')} soat {new Date(link.created_at).toLocaleTimeString('ru-RU').slice(0, 5)}da yaratilgan
