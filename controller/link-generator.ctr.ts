@@ -39,6 +39,9 @@ async function updateRegistrationLink(req: Request, res: Response, next: NextFun
     const { id } = req.params;
     const { subject } = req.body;
 
+    console.log(`id: ${id}, subject: ${subject}`);
+    
+
     if (!subject) {
       return next(BaseError.BadRequest(400, 'Fan nomi kiritilishi shart'));
     }

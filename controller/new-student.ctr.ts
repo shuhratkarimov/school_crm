@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import NewStudent from "../Models/newstudent_model";
 import { BaseError } from "../Utils/base_error";
+import { RegistrationLink } from "../Models/registration_link_model";
 
 async function getNewStudents(req: Request, res: Response, next: NextFunction) {
   try {
@@ -19,6 +20,11 @@ async function createNewStudent(req: Request, res: Response, next: NextFunction)
 
     if (!first_name || !last_name || !phone || !subject) {
       return next(BaseError.BadRequest(400, 'Barcha maydonlar kiritilishi shart'));
+    }
+
+    const linkExists = await RegistrationLink.findOne({ where: { subject } });
+    if (!linkExists) {
+      return next(BaseError.BadRequest(400, `Ushbu fan uchun ro'yxatdan o'tish linki mavjud emas: ${subject}`));
     }
 
     const student = await NewStudent.create({ first_name, last_name, phone, subject });
