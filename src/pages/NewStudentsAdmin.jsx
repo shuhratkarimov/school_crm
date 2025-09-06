@@ -1,8 +1,10 @@
+"use client"
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Calendar, UserCheck, UserX, Edit, Trash2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
+import { Search, Filter, Calendar, UserCheck, UserX, Trash2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { toast } from 'react-hot-toast';
 import API_URL from '../conf/api';
 
 export default function NewStudentsAdmin() {
@@ -27,40 +29,34 @@ export default function NewStudentsAdmin() {
         credentials: 'include',
       });
       const data = await response.json();
-      console.log(data);
       setStudents(data);
     } catch (error) {
       console.error('Error fetching students:', error);
+      toast.error('O‘quvchilarni olishda xato yuz berdi');
     }
   };
 
   const filterStudents = () => {
     let result = Array.isArray(students) ? [...students] : [];
-
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(student =>
         student.first_name.toLowerCase().includes(query) ||
         student.last_name.toLowerCase().includes(query) ||
-        student.phone.includes(query)
+        student.phone.includes(query) ||
+        student.subject.toLowerCase().includes(query)
       );
     }
-
-    // Date filter
     if (dateFilter.start && dateFilter.end) {
       result = result.filter(student => {
         const studentDate = new Date(student.created_at);
         return studentDate >= dateFilter.start && studentDate <= dateFilter.end;
       });
     }
-
-    // Status filter
     if (statusFilter !== 'all') {
       const isInterviewed = statusFilter === 'interviewed';
       result = result.filter(student => student.interviewed === isInterviewed);
     }
-
     setFilteredStudents(result);
   };
 
@@ -73,12 +69,15 @@ export default function NewStudentsAdmin() {
         },
         body: JSON.stringify({ interviewed: !currentStatus }),
       });
-
       if (response.ok) {
-        fetchStudents(); // Refresh the list
+        fetchStudents();
+        toast.success('Status yangilandi');
+      } else {
+        throw new Error('Status yangilashda xato');
       }
     } catch (error) {
       console.error('Error updating student:', error);
+      toast.error('Xato yuz berdi, qayta urinib ko‘ring');
     }
   };
 
@@ -127,24 +126,27 @@ export default function NewStudentsAdmin() {
     try {
       const response = await fetch(`${API_URL}/delete-new-student/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
-
       if (response.ok) {
-        fetchStudents(); // Refresh the list
+        fetchStudents();
+        toast.success('O‘quvchi o‘chirildi');
+      } else {
+        throw new Error('O‘quvchi o‘chirishda xato');
       }
     } catch (error) {
       console.error('Error deleting student:', error);
+      toast.error('Xato yuz berdi, qayta urinib ko‘ring');
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-5 flex items-center gap-2 ">
+        <div className="mb-5 flex items-center gap-2">
           <UserPlus size={28} color="#104292" />
           <h1 className="text-2xl font-bold text-gray-800">Yangi o'quvchilar</h1>
         </div>
-
         {/* Filters */}
         <div className="bg-white rounded-xl shadow p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -154,13 +156,12 @@ export default function NewStudentsAdmin() {
               </div>
               <input
                 type="text"
-                placeholder="Qidirish..."
+                placeholder="Ism, familiya yoki fan bo‘yicha qidirish..."
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Filter size={20} className="text-blue-600" />
@@ -186,8 +187,8 @@ export default function NewStudentsAdmin() {
                   endDate={dateFilter.end}
                   placeholderText="Dan"
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                  popperClassName="z-50" // popup ustida tursin
-                  popperPlacement="bottom-start" // pastga chiqsin
+                  popperClassName="z-50"
+                  popperPlacement="bottom-start"
                 />
               </div>
               <div className="relative">
@@ -208,7 +209,6 @@ export default function NewStudentsAdmin() {
             </div>
           </div>
         </div>
-
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-xl shadow p-6">
@@ -222,7 +222,6 @@ export default function NewStudentsAdmin() {
               </div>
             </div>
           </div>
-
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -236,7 +235,6 @@ export default function NewStudentsAdmin() {
               </div>
             </div>
           </div>
-
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -251,7 +249,6 @@ export default function NewStudentsAdmin() {
             </div>
           </div>
         </div>
-
         {/* Students List */}
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 divide-x-0 md:divide-x divide-y md:divide-y-0">
@@ -264,7 +261,6 @@ export default function NewStudentsAdmin() {
                   {filteredStudents.filter(s => !s.interviewed).length}
                 </span>
               </div>
-
               <div className="space-y-4">
                 <AnimatePresence>
                   {filteredStudents
@@ -281,6 +277,7 @@ export default function NewStudentsAdmin() {
                           <div>
                             <h3 className="font-semibold">{student.first_name} {student.last_name}</h3>
                             <p className="text-gray-600">{student.phone}</p>
+                            <p className="text-gray-600">Fan: {student.subject}</p>
                             <p className="text-sm text-gray-500">
                               {new Date(student.created_at).toLocaleDateString('ru-RU')} soat {new Date(student.created_at).toLocaleTimeString('ru-RU').slice(0, 5)}da yozilgan
                             </p>
@@ -296,7 +293,7 @@ export default function NewStudentsAdmin() {
                             <button
                               onClick={() => showDeleteToast(student.id)}
                               className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
-                              title="O'chirish"
+                              title="O‘chirish"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -306,7 +303,6 @@ export default function NewStudentsAdmin() {
                     ))
                   }
                 </AnimatePresence>
-
                 {filteredStudents.filter(student => !student.interviewed).length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <UserX size={48} className="mx-auto mb-4 text-gray-300" />
@@ -315,7 +311,6 @@ export default function NewStudentsAdmin() {
                 )}
               </div>
             </div>
-
             {/* Interviewed */}
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -325,7 +320,6 @@ export default function NewStudentsAdmin() {
                   {filteredStudents.filter(s => s.interviewed).length}
                 </span>
               </div>
-
               <div className="space-y-4">
                 <AnimatePresence>
                   {filteredStudents
@@ -342,6 +336,7 @@ export default function NewStudentsAdmin() {
                           <div>
                             <h3 className="font-semibold">{student.first_name} {student.last_name}</h3>
                             <p className="text-gray-600">{student.phone}</p>
+                            <p className="text-gray-600">Fan: {student.subject}</p>
                             <p className="text-sm text-gray-500">
                               {new Date(student.created_at).toLocaleDateString('ru-RU')} soat {new Date(student.created_at).toLocaleTimeString('ru-RU').slice(0, 5)}da yozilgan
                             </p>
@@ -355,9 +350,9 @@ export default function NewStudentsAdmin() {
                               <XCircle size={18} />
                             </button>
                             <button
-                              onClick={() => deleteStudent(student.id)}
+                              onClick={() => showDeleteToast(student.id)}
                               className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
-                              title="O'chirish"
+                              title="O‘chirish"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -367,7 +362,6 @@ export default function NewStudentsAdmin() {
                     ))
                   }
                 </AnimatePresence>
-
                 {filteredStudents.filter(student => student.interviewed).length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <UserCheck size={48} className="mx-auto mb-4 text-gray-300" />

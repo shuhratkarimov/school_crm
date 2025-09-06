@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  Link2,
 } from "lucide-react";
 import API_URL from "../conf/api";
 
@@ -147,6 +148,7 @@ function Sidebar() {
           icon: UserPlus,
           badge: notInterviewedStudents,
         },
+        { path: "/link-generator", label: "Link generator", icon: Link2 },
       ],
     },
   ];
@@ -233,7 +235,7 @@ function Sidebar() {
                         <span>{sub.label}</span>
                         {sub.badge > 0 && (
                           <span className="bg-red-500 text-white text-xs font-semibold rounded-full px-2 py-0.5 ml-0.5">
-                            {sub.badge}
+                            {sub.badge} 
                           </span>
                         )}
                         {isSubActive && (

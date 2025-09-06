@@ -1,17 +1,20 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, Phone, Send, CheckCircle, Sparkles, GraduationCap } from "lucide-react"
+import { User, Phone, Send, CheckCircle, Sparkles } from "lucide-react"
 import { toast } from "react-hot-toast"
+import { useSearchParams } from "next/navigation"
 import API_URL from "../conf/api"
 import { TypewriterText } from "../components/TypeWriter"
 
 export default function StudentRegistration() {
+  const searchParams = useSearchParams()
+  const subject = searchParams.get('subject') || ''
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     phone: "",
+    subject: "",
   })
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -20,19 +23,24 @@ export default function StudentRegistration() {
   const [focusedField, setFocusedField] = useState("")
 
   useEffect(() => {
+    if (subject) {
+      setFormData(prev => ({ ...prev, subject }))
+    } else {
+      setErrors(prev => ({ ...prev, subject: "Fan nomi URLda ko'rsatilishi lozim" }))
+    }
+  }, [subject])
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setIsGlowing((prev) => !prev)
     }, 3000)
-
     return () => clearInterval(interval)
   }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
-
     if (name === "phone") {
       const cleanedValue = value.replace(/\D/g, "")
-
       if (cleanedValue.length <= 9) {
         setFormData({
           ...formData,
@@ -45,7 +53,6 @@ export default function StudentRegistration() {
         [name]: value,
       })
     }
-
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -56,40 +63,35 @@ export default function StudentRegistration() {
 
   const validateForm = () => {
     const newErrors = {}
-
     if (!formData.first_name.trim()) {
       newErrors.first_name = "Ism kiritilishi lozim"
     }
-
     if (!formData.last_name.trim()) {
       newErrors.last_name = "Familiya kiritilishi lozim"
     }
-
     if (!formData.phone.trim()) {
       newErrors.phone = "Telefon raqam kiritilishi lozim"
     } else if (formData.phone.length !== 9) {
       newErrors.phone = "Telefon raqam 9 ta raqamdan iborat bo'lishi kerak"
     }
-
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Fan nomi belgilanishi lozim"
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (!validateForm()) {
       return
     }
-
     setIsSubmitting(true)
-
     try {
       const dataToSend = {
         ...formData,
         phone: "+998" + formData.phone,
       }
-
       const response = await fetch(`${API_URL}/register-new-student`, {
         method: "POST",
         headers: {
@@ -97,12 +99,11 @@ export default function StudentRegistration() {
         },
         body: JSON.stringify(dataToSend),
       })
-
       if (response.ok) {
         setIsSuccess(true)
         setTimeout(() => {
           setIsSuccess(false)
-          setFormData({ first_name: "", last_name: "", phone: "" })
+          setFormData({ first_name: "", last_name: "", phone: "", subject: formData.subject })
           toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!")
         }, 4000)
       } else {
@@ -113,6 +114,11 @@ export default function StudentRegistration() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const formatSubject = (subject) => {
+    if (!subject) return ""
+    return decodeURIComponent(subject)
   }
 
   return (
@@ -145,7 +151,6 @@ export default function StudentRegistration() {
           className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-purple-200/20 to-pink-200/20 rounded-full blur-xl"
         />
       </div>
-
       <div className="relative z-10 flex flex-col lg:flex-row min-h-screen">
         <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 lg:p-12 order-1 lg:order-1">
           <motion.div
@@ -178,7 +183,6 @@ export default function StudentRegistration() {
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="text-center flex flex-col items-center justify-center max-w-lg"
             >
-              {/* Typewriter effect bilan matn */}
               <TypewriterText text="Make progress with Progress!" speed={70} />
             </motion.div>
             <motion.p
@@ -191,7 +195,6 @@ export default function StudentRegistration() {
             </motion.p>
           </motion.div>
         </div>
-
         <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 order-2 lg:order-2">
           <AnimatePresence mode="wait">
             {isSuccess ? (
@@ -234,7 +237,7 @@ export default function StudentRegistration() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                   >
-                    Biz sizning xabaringizni qabul qilib oldik, tez orada siz bilan bog'lanamiz va savollaringizga javob beramiz.
+                    Biz sizning {formatSubject(subject)} faniga yuborilgan xabaringizni qabul qilib oldik, tez orada siz bilan bog'lanamiz.
                   </motion.p>
                 </div>
               </motion.div>
@@ -256,11 +259,19 @@ export default function StudentRegistration() {
                     transition={{ delay: 0.2 }}
                   >
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-indigo-800 bg-clip-text text-transparent mb-3">
-                      Ro'yxatdan o'tish
+                      {subject ? `${formatSubject(subject)} fani bo‘yicha o‘qish uchun ro‘yxatdan o‘tish` : "Ro‘yxatdan o‘tish"}
                     </h1>
-                    <p className="text-slate-600">O'quvchilar uchun onlayn ariza topshirish</p>
+                    <p className="text-slate-600">O‘quvchilar uchun onlayn ariza topshirish</p>
+                    {errors.subject && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-red-500 text-sm mt-2"
+                      >
+                        {errors.subject}
+                      </motion.p>
+                    )}
                   </motion.div>
-
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <motion.div
                       className="relative"
@@ -307,7 +318,6 @@ export default function StudentRegistration() {
                         )}
                       </AnimatePresence>
                     </motion.div>
-
                     <motion.div
                       className="relative"
                       initial={{ opacity: 0, x: -20 }}
@@ -353,7 +363,6 @@ export default function StudentRegistration() {
                         )}
                       </AnimatePresence>
                     </motion.div>
-
                     <motion.div
                       className="relative"
                       initial={{ opacity: 0, x: -20 }}
@@ -406,10 +415,9 @@ export default function StudentRegistration() {
                         )}
                       </AnimatePresence>
                     </motion.div>
-
                     <motion.button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !!errors.subject}
                       className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800 transition-all duration-300 disabled:opacity-50 relative overflow-hidden shadow-lg hover:shadow-xl"
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
@@ -446,7 +454,6 @@ export default function StudentRegistration() {
                           </motion.div>
                         )}
                       </AnimatePresence>
-
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
                         initial={{ x: "-100%" }}
@@ -455,7 +462,6 @@ export default function StudentRegistration() {
                       />
                     </motion.button>
                   </form>
-
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -463,8 +469,7 @@ export default function StudentRegistration() {
                     className="mt-6 text-center text-sm text-slate-500"
                   >
                     <p className="leading-relaxed">
-                      Ma'lumotlarni kiriting va biz siz bilan tez orada bog'lanib, eng mos ta'lim dasturini taklif
-                      qilamiz
+                      Ma'lumotlarni kiriting va biz siz bilan tez orada bog'lanib, eng mos ta'lim dasturini taklif qilamiz
                     </p>
                   </motion.div>
                 </div>

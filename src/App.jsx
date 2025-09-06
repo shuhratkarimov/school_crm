@@ -1,5 +1,4 @@
 "use client";
-
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, Suspense, lazy } from "react";
 import Sidebar from "./components/Sidebar";
@@ -15,7 +14,6 @@ import Achievements from "./pages/Achievements";
 import { Toaster } from 'react-hot-toast';
 import API_URL from "./conf/api";
 
-// Lazy-loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
 const Payments = lazy(() => import("./pages/Payments"));
@@ -33,6 +31,7 @@ const AdminTestResults = lazy(() => import("./pages/AdminTestResults"));
 const TeacherTestResults = lazy(() => import("./pages/TeacherTestResults"));
 const StudentRegistration = lazy(() => import("./pages/StudentRegistration"));
 const NewStudentsAdmin = lazy(() => import("./pages/NewStudentsAdmin"));
+const LinkGenerator = lazy(() => import("./pages/LinkGenerator"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -58,7 +57,6 @@ function App() {
       } else if (hostname === "teacher.intellectualprogress.uz") {
         await checkTeacherAuth();
       } else if (hostname === "register.intellectualprogress.uz") {
-        // Faqat student-registration sahifasiga ruxsat berish
         if (location.pathname !== "/student-registration") {
           navigate("/student-registration");
         }
@@ -69,7 +67,6 @@ function App() {
         setAuthChecked(true);
       }
     };
-
     checkAuth();
   }, [hostname, location.pathname]);
 
@@ -79,16 +76,13 @@ function App() {
         method: "GET",
         credentials: "include",
       });
-      
       if (response.ok) {
         setIsAuthenticated(true);
-        // Agar login sahifada bo'lsak, dashboardga yo'naltiramiz
         if (location.pathname === "/login") {
           navigate("/dashboard");
         }
       } else {
         setIsAuthenticated(false);
-        // Agar login sahifada bo'lmasak va autentifikatsiya muvaffaqiyatsiz bo'lsa
         if (location.pathname !== "/login") {
           navigate("/login");
         }
@@ -111,16 +105,13 @@ function App() {
         method: "GET",
         credentials: "include",
       });
-      
       if (response.ok) {
         setTeacherAuthenticated(true);
-        // Agar teacher login sahifada bo'lsak, dashboardga yo'naltiramiz
         if (location.pathname === "/teacher/login") {
           navigate("/teacher/dashboard");
         }
       } else {
         setTeacherAuthenticated(false);
-        // Agar teacher login sahifada bo'lmasak va autentifikatsiya muvaffaqiyatsiz bo'lsa
         if (location.pathname !== "/teacher/login") {
           navigate("/teacher/login");
         }
@@ -190,22 +181,15 @@ function App() {
       <Suspense fallback={<LottieLoading />}>
         <ErrorBoundary>
           <Routes>
-            {/* Public sahifa: Autentifikatsiyasiz */}
             <Route path="/student-registration" element={<StudentRegistration />} />
-
-            {/* Admin Login */}
             <Route
               path="/login"
               element={<Login setIsAuthenticated={setIsAuthenticated} checkAuth={checkAdminAuth} />}
             />
-
-            {/* Teacher Login */}
             <Route
               path="/teacher/login"
               element={<TeacherLogin setTeacherAuthenticated={setTeacherAuthenticated} checkAuth={checkTeacherAuth} />}
             />
-
-            {/* Root yo'li: Subdomenga qarab shartli yo'naltirish */}
             <Route
               path="/"
               element={
@@ -232,8 +216,6 @@ function App() {
                 )
               }
             />
-
-            {/* Admin Dashboard va boshqa sahifalar */}
             <Route
               path="/dashboard"
               element={
@@ -248,7 +230,6 @@ function App() {
                 </PrivateRoute>
               }
             />
-
             <Route
               path="/teacher/test-results"
               element={
@@ -257,7 +238,6 @@ function App() {
                 </TeacherRoute>
               }
             />
-
             <Route
               path="/test-results"
               element={
@@ -272,7 +252,6 @@ function App() {
                 </PrivateRoute>
               }
             />
-
             <Route
               path="/teacher/payments"
               element={
@@ -281,7 +260,6 @@ function App() {
                 </TeacherRoute>
               }
             />
-
             <Route
               path="/students"
               element={
@@ -394,8 +372,6 @@ function App() {
                 </PrivateRoute>
               }
             />
-
-            {/* Teacher Dashboard va Attendance */}
             <Route
               path="/teacher/dashboard"
               element={
@@ -412,8 +388,6 @@ function App() {
                 </TeacherRoute>
               }
             />
-
-            {/* Expenses */}
             <Route
               path="/expenses"
               element={
@@ -428,8 +402,6 @@ function App() {
                 </PrivateRoute>
               }
             />
-
-            {/* Notes */}
             <Route
               path="/notes"
               element={
@@ -453,6 +425,20 @@ function App() {
                     <div className="main-content">
                       <Header setIsAuthenticated={setIsAuthenticated} />
                       <NewStudentsAdmin />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/link-generator"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <LinkGenerator />
                     </div>
                   </div>
                 </PrivateRoute>
