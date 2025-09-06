@@ -326,7 +326,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-xl p-6 ml-6 border border-blue-400">
+      <div className="bg-white shadow rounded-xl p-6 border border-blue-400">
         <h3 className="font-bold text-lg mb-2 text-gray-700">
           Yillik tushumlar va xarajatlar
         </h3>

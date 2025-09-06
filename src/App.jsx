@@ -220,7 +220,15 @@ function App() {
                     <Navigate to="/teacher/dashboard" />
                   </TeacherRoute>
                 ) : (
-                  <div>Noto'g'ri subdomain</div>
+                  hostname === 'localhost' ? (
+                    <PrivateRoute isAuthenticated={isAuthenticated}>
+                      <Navigate to="/dashboard" />
+                    </PrivateRoute>
+                  ) : (
+                    <TeacherRoute isAuthenticated={teacherAuthenticated}>
+                      <Navigate to="/teacher/dashboard" />
+                    </TeacherRoute>
+                  )
                 )
               }
             />

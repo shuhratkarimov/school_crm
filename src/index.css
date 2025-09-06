@@ -514,15 +514,13 @@ body.dark .sidebar-item.active {
 }
 
 .main-content {
-  margin-left: 250px;
+  margin-left: 230px;
   padding: 20px;
   transition: margin-left 0.3s ease;
-  width: calc(100% - 250px);
 }
 
 .sidebar.collapsed + .main-content {
   margin-left: 70px;
-  width: calc(100% - 70px);
 }
 
 .app-layout {
