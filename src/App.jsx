@@ -58,7 +58,7 @@ function App() {
         await checkTeacherAuth();
       } else if (hostname === "register.intellectualprogress.uz") {
         if (location.pathname !== "/student-registration") {
-          navigate("/student-registration");
+          navigate(`/student-registration${location.search}`);
         }
         setLoading(false);
         setAuthChecked(true);
