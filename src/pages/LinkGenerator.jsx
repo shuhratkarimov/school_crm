@@ -113,6 +113,47 @@ export default function LinkGenerator() {
     }
   };
 
+  const showDeleteToast = (id) => {
+    toast(
+      <div>
+        <p>
+          Diqqat! Ushbu yangi linkga tegishli barcha ma'lumotlar o'chiriladi!
+        </p>
+        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+          <button
+            style={{
+              padding: "8px 22px",
+              background: "#dc3545",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              deleteLink(id);
+              toast.dismiss();
+            }}
+          >
+            O'chirish
+          </button>
+          <button
+            style={{
+              padding: "8px 16px",
+              background: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => toast.dismiss()}
+          >
+            Bekor qilish
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-6">
@@ -194,7 +235,7 @@ export default function LinkGenerator() {
                         <Pen size={18} />
                       </button>
                       <button
-                        onClick={() => deleteLink(link.id)}
+                        onClick={() => showDeleteToast(link.id)}
                         className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
                         title="O‘chirish"
                       >
