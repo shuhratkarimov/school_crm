@@ -23,6 +23,10 @@ NewStudent.init(
       type: DataTypes.STRING,
       allowNull: false
     },
+    subject: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     interviewed: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
@@ -36,5 +40,7 @@ NewStudent.init(
     updatedAt: 'updated_at',
   }
 );
+
+NewStudent.sync({ force: false });
 
 export default NewStudent;

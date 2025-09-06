@@ -24,6 +24,7 @@ import { ExpenseRouter } from './router/expenses.router';
 import { AchievementsRouter } from './router/achievements.router';
 import { testRouter } from './router/test.router';
 import { NewStudentRouter } from './router/newStudent.router';
+import { LinkGeneratorRouter } from './router/link-generator.router';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -63,6 +64,7 @@ app.use(ExpenseRouter);
 app.use(AchievementsRouter);
 app.use(testRouter);
 app.use(NewStudentRouter);  
+app.use(LinkGeneratorRouter)
 
 // Error handling
 app.use(errorMiddleware as any);

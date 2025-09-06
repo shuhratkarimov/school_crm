@@ -15,13 +15,13 @@ async function getNewStudents(req: Request, res: Response, next: NextFunction) {
 
 async function createNewStudent(req: Request, res: Response, next: NextFunction) {
   try {
-    const { first_name, last_name, phone } = req.body;
+    const { first_name, last_name, phone, subject } = req.body;
 
-    if (!first_name || !last_name || !phone) {
+    if (!first_name || !last_name || !phone || !subject) {
       return next(BaseError.BadRequest(400, 'Barcha maydonlar kiritilishi shart'));
     }
 
-    const student = await NewStudent.create({ first_name, last_name, phone });
+    const student = await NewStudent.create({ first_name, last_name, phone, subject });
     res.status(201).json(student);
   } catch (error) {
     next(error);
