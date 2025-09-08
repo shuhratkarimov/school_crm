@@ -325,8 +325,11 @@ async function deletePayment(req: Request, res: Response, next: NextFunction): P
     if (foundGroup.dataValues.paid) {
       await foundGroup.update({ paid: false });
     }
-    await updateTeacherBalance(foundGroup.dataValues.teacher_id, Math.round(payment.dataValues.payment_amount).toString(), false);
-
+    const groupTeacher = await Group.findByPk(foundGroup.dataValues.group_id);
+    if (!groupTeacher) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
+    }
+    await updateTeacherBalance(groupTeacher.dataValues.teacher_id, Math.round(payment.dataValues.payment_amount).toString(), false);
     await payment.destroy();
     res.status(200).json({ message: i18next.t("payment_deleted") });
   } catch (error: any) {
