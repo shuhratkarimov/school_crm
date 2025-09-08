@@ -316,7 +316,7 @@ async function deletePayment(req: Request, res: Response, next: NextFunction): P
         student_id: payment.dataValues.pupil_id,
         group_id: payment.dataValues.for_which_group,
         month: payment.dataValues.for_which_month,
-        year: payment.dataValues.year,
+        year: new Date().getFullYear(),
       },
     });
     if (!foundGroup) {
