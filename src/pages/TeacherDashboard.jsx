@@ -83,10 +83,7 @@ function TeacherDashboard() {
   };
 
   const handleLogout = () => {
-    toast("Chiqish amalga oshirilmoqda...");
-    setTimeout(() => {
-      navigate("/teacher/login");
-    }, 2000);
+    navigate("/teacher/login");
   };
 
   const daysInUzbek = {

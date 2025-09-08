@@ -30,7 +30,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
       if (data.status === "success") {
         setTeacherAuthenticated(true);
         setShowSuccess(true);
-        setTimeout(() => navigate("/teacher/dashboard"), 1000);
+        navigate("/teacher/dashboard");
       } else {
         toast.error(data.message || "Login xatolik");
       }

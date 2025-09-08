@@ -167,15 +167,15 @@ function PaymentReports() {
           student.payments.length > 0 ? "To'langan" : "To'lanmagan",
           student.payments[0]?.created_at
             ? `${new Date(student.payments[0].created_at).toLocaleDateString(
-                "uz-UZ"
-              )}, ${new Date(student.payments[0].created_at).toLocaleTimeString(
-                "uz-UZ"
-              )}`
+              "uz-UZ"
+            )}, ${new Date(student.payments[0].created_at).toLocaleTimeString(
+              "uz-UZ"
+            )}`
             : "",
           student.payments[0]?.payment_amount
             ? `${student.payments[0].payment_amount.toLocaleString(
-                "uz-UZ"
-              )} so'm`
+              "uz-UZ"
+            )} so'm`
             : "",
           debt > 0 ? `${debt.toLocaleString("uz-UZ")} so'm` : "Yo'q",
           student.payments[0]?.comment || "",
@@ -232,7 +232,7 @@ function PaymentReports() {
       {/* Main Content */}
       <div className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex justify-center items-center mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md p-2 rounded-xl">
+          <div className="flex justify-center items-center mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md p-2 rounded-xl">
             <div className="flex items-center">
               <h1 className="text-2xl md:text-3xl font-bold text-white">O'quvchilar to'lovlari</h1>
               <Coins size={24} className="ml-2" />
@@ -285,9 +285,8 @@ function PaymentReports() {
               </button>
 
               <div
-                className={`${
-                  showFilters ? "flex" : "hidden"
-                } md:flex flex-col md:flex-row gap-4 w-full md:w-auto justify-end`}
+                className={`${showFilters ? "flex" : "hidden"
+                  } md:flex flex-col md:flex-row gap-4 w-full md:w-auto justify-end`}
               >
                 <div className="flex flex-col sm:flex-row gap-2 w-full">
                   <select
@@ -438,11 +437,10 @@ function PaymentReports() {
                             </td>
                             <td className="px-4 py-3">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  student.payments.length > 0
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${student.payments.length > 0
                                     ? "bg-green-100 text-green-800"
                                     : "bg-red-100 text-red-800"
-                                }`}
+                                  }`}
                               >
                                 {student.payments.length > 0 ? "To'langan" : "To'lanmagan"}
                               </span>
@@ -498,10 +496,10 @@ function PaymentReports() {
                                               <p className="font-medium">
                                                 {p.created_at
                                                   ? `${new Date(
-                                                      p.created_at
-                                                    ).toLocaleDateString("uz-UZ")} yil, soat ${new Date(
-                                                      p.created_at
-                                                    ).toLocaleTimeString("uz-UZ")}da`
+                                                    p.created_at
+                                                  ).toLocaleDateString("uz-UZ")} yil, soat ${new Date(
+                                                    p.created_at
+                                                  ).toLocaleTimeString("uz-UZ")}da`
                                                   : "Noma'lum"}
                                               </p>
                                             </div>
@@ -541,11 +539,10 @@ function PaymentReports() {
                           </p>
                         </div>
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            student.payments.length > 0
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${student.payments.length > 0
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
-                          }`}
+                            }`}
                         >
                           {student.payments.length > 0 ? "To'langan" : "To'lanmagan"}
                         </span>
@@ -605,10 +602,10 @@ function PaymentReports() {
                                       <p className="font-medium">
                                         {p.created_at
                                           ? `${new Date(
-                                              p.created_at
-                                            ).toLocaleDateString("uz-UZ")} yil, soat ${new Date(
-                                              p.created_at
-                                            ).toLocaleTimeString("uz-UZ")}da`
+                                            p.created_at
+                                          ).toLocaleDateString("uz-UZ")} yil, soat ${new Date(
+                                            p.created_at
+                                          ).toLocaleTimeString("uz-UZ")}da`
                                           : "Noma'lum"}
                                       </p>
                                     </div>
@@ -665,8 +662,7 @@ function PaymentReports() {
           ))}
           <button
             onClick={() => {
-              toast("Chiqish amalga oshirilmoqda...");
-              setTimeout(() => navigate("/teacher/login"), 2000);
+              navigate("/teacher/login")
             }}
             className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition"
           >

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, FileText, CreditCard, LogOut, ChevronLeft, Menu } from "lucide-react";
 import { toast } from "react-hot-toast";
+import API_URL from "../conf/api";
 
 export default function TeacherSidebar({ activeMenu, setActiveMenu }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -16,17 +17,26 @@ export default function TeacherSidebar({ activeMenu, setActiveMenu }) {
   ];
 
   const handleLogout = () => {
-    toast("Chiqish amalga oshirilmoqda...");
-    setTimeout(() => {
-      navigate("/teacher/login");
-    }, 2000);
+    fetch(`${API_URL}/teacher_logout`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((res) => {
+        console.log(res);
+        
+        navigate("/teacher/login");
+        toast.success("Chiqish amalga oshirildi");
+      })
+      .catch((error) => {
+        console.error("Logout error:", error);
+        toast.error("Chiqishda xatolik yuz berdi");
+      });
   };
 
   return (
     <aside
-      className={`hidden md:block bg-white shadow-lg h-screen sticky top-0 transition-all duration-300 ${
-        isSidebarCollapsed ? "w-16" : "w-64"
-      }`}
+      className={`hidden md:block bg-white shadow-lg h-screen sticky top-0 transition-all duration-300 ${isSidebarCollapsed ? "w-16" : "w-64"
+        }`}
     >
       <div className="p-4 flex justify-between items-center">
         {!isSidebarCollapsed && (
@@ -48,11 +58,10 @@ export default function TeacherSidebar({ activeMenu, setActiveMenu }) {
                   setActiveMenu(item.id);
                   navigate(item.path);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition ${
-                  activeMenu === item.id
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition ${activeMenu === item.id
                     ? "bg-blue-600 text-white"
                     : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                }`}
+                  }`}
                 title={isSidebarCollapsed ? item.label : ""}
               >
                 <item.icon size={20} />

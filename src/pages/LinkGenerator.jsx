@@ -27,7 +27,7 @@ export default function LinkGenerator() {
       setLinks(data);
     } catch (error) {
       console.error('Error fetching links:', error);
-      toast.error('Linklarni olishda xato yuz berdi');
+      toast.error('Havolalarni olishda xato yuz berdi');
     }
   };
 
@@ -48,7 +48,7 @@ export default function LinkGenerator() {
         body: JSON.stringify({ subject }),
       });
       if (response.ok) {
-        toast.success('Link muvaffaqiyatli yaratildi!');
+        toast.success('Havola muvaffaqiyatli yaratildi!');
         setSubject('');
         fetchLinks();
       } else {
@@ -76,7 +76,7 @@ export default function LinkGenerator() {
         body: JSON.stringify({ subject: updatedSubject.trim() }),
       });
       if (response.ok) {
-        toast.success('Link yangilandi');
+        toast.success('Havola yangilandi');
         fetchLinks();
         setIsModalOpen(false);
         setEditingLink(null);
@@ -93,7 +93,7 @@ export default function LinkGenerator() {
 
   const copyToClipboard = (link) => {
     navigator.clipboard.writeText(link);
-    toast.success('Link nusxalandi!');
+    toast.success('Havola nusxalandi!');
   };
 
   const deleteLink = async (id) => {
@@ -103,10 +103,10 @@ export default function LinkGenerator() {
         credentials: 'include',
       });
       if (response.ok) {
-        toast.success('Link o‘chirildi');
+        toast.success('Havola o‘chirildi');
         fetchLinks();
       } else {
-        throw new Error('Link o‘chirishda xato');
+        throw new Error('Havola o‘chirishda xato');
       }
     } catch (error) {
       toast.error('Xato yuz berdi, qayta urinib ko‘ring');
@@ -117,7 +117,7 @@ export default function LinkGenerator() {
     toast(
       <div>
         <p>
-          Diqqat! Ushbu yangi linkga tegishli barcha ma'lumotlar o'chiriladi!
+          Diqqat! Ushbu yangi havolaga tegishli barcha ma'lumotlar o'chiriladi!
         </p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
@@ -156,10 +156,10 @@ export default function LinkGenerator() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-6">
+      <div className="mx-auto">
         <div className="mb-5 flex items-center gap-2">
           <Link size={28} color="#104292" />
-          <h1 className="text-2xl font-bold text-gray-800">Ro‘yxatdan o‘tish linklari</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Ro‘yxatdan o‘tish havolalari</h1>
         </div>
 
         {/* Link yaratish formasi */}
@@ -183,19 +183,19 @@ export default function LinkGenerator() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {isSubmitting ? 'Yuklanmoqda...' : 'Link yaratish'}
+              {isSubmitting ? 'Yuklanmoqda...' : 'Havola yaratish'}
             </motion.button>
           </form>
         </div>
 
         <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Yaratilgan linklar</h2>
+          <h2 className="text-xl font-semibold mb-4">Yaratilgan havolalar</h2>
           <div className="space-y-4">
             <AnimatePresence>
               {links.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Link size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>Hech qanday link mavjud emas</p>
+                  <p>Hech qanday havola mavjud emas</p>
                 </div>
               ) : (
                 links.map((link) => (

@@ -124,12 +124,12 @@ export default function StudentRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-tr from-orange-100 via-green-100 to-purple-100 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{
-            x: [0, 100, 0],
-            y: [0, -100, 0],
+            x: [0, 100, -100],
+            y: [0, -100, 100],
             rotate: [0, 180, 360],
           }}
           transition={{
@@ -137,12 +137,12 @@ export default function StudentRegistration() {
             repeat: Number.POSITIVE_INFINITY,
             ease: "linear",
           }}
-          className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-r from-blue-200/30 to-indigo-200/30 rounded-full blur-xl"
+          className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-green-100 to-green-100 rounded-full"
         />
         <motion.div
           animate={{
-            x: [0, -150, 0],
-            y: [0, 100, 0],
+            x: [0, -150, 150],
+            y: [0, 150, -150],
             rotate: [360, 180, 0],
           }}
           transition={{
@@ -150,21 +150,21 @@ export default function StudentRegistration() {
             repeat: Number.POSITIVE_INFINITY,
             ease: "linear",
           }}
-          className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-purple-200/20 to-pink-200/20 rounded-full blur-xl"
+          className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-green-200/20 to-pink-200/20 rounded-full blur-xl"
         />
       </div>
       <div className="relative z-10 flex flex-col lg:flex-row min-h-screen">
-        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 lg:p-12 order-1 lg:order-1">
+        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 lg:p-12 order-1 lg:order-1">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center flex flex-col items-center justify-center max-w-lg"
+            className="text-center flex flex-col items-center justify-center max-w-lg mt-4"
           >
             <motion.div
               whileHover={{ scale: 1.05, rotate: 5 }}
               transition={{ type: "spring", stiffness: 300 }}
-              className="relative h-28 w-48 mb-2"
+              className="relative h-20 w-48 mb-2 mt-2"
             >
               <img
                 src="/logo.png"
@@ -176,7 +176,7 @@ export default function StudentRegistration() {
                 transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
                 className="absolute -top-100 -right-2 text-yellow-400"
               >
-                <Sparkles size={28} />
+                <Sparkles size={20} />
               </motion.div>
             </motion.div>
             <motion.div
@@ -239,7 +239,7 @@ export default function StudentRegistration() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                   >
-                    Biz sizning {formatSubject(subject)} faniga yuborilgan xabaringizni qabul qilib oldik, tez orada siz bilan bog'lanamiz.
+                    Biz sizning {formatSubject(subject)} yo'nalishi bo'yicha o'qishga yuborilgan xabaringizni qabul qilib oldik, tez orada siz bilan bog'lanamiz.
                   </motion.p>
                 </div>
               </motion.div>
@@ -252,7 +252,7 @@ export default function StudentRegistration() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
                 className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-8 w-full max-w-md relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-indigo-50/30 rounded-3xl" />
+                <div className="absolute inset-0 bg-gradient-to-br border border-green-500 from-green-50/30 to-green-50/30 rounded-3xl" />
                 <div className="relative z-10">
                   <motion.div
                     className="text-center mb-8"
@@ -260,8 +260,8 @@ export default function StudentRegistration() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                   >
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-indigo-800 bg-clip-text text-transparent mb-3">
-                      {subject ? `${formatSubject(subject)} fani bo‘yicha o‘qish uchun ro‘yxatdan o‘tish` : "Ro‘yxatdan o‘tish"}
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-indigo-800 bg-clip-text text-transparent mb-3">
+                      {subject ? `${formatSubject(subject)} yo‘nalishi bo‘yicha o‘qish uchun ro‘yxatdan o‘tish` : "Ro‘yxatdan o‘tish"}
                     </h1>
                     <p className="text-slate-600">O‘quvchilar uchun onlayn ariza topshirish</p>
                     {errors.subject && (

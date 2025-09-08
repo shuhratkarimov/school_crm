@@ -43,7 +43,7 @@ function Login({ setIsAuthenticated }) {
       setIsAuthenticated(true);
       setShowSuccess(true);
 
-      setTimeout(() => navigate("/dashboard"), 1000);
+      navigate("/dashboard")
     } catch (err) {
       toast.error(err.message || "Kirishda xatolik yuz berdi");
     } finally {

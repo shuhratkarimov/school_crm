@@ -437,7 +437,7 @@ function TeacherTestResults() {
                             ))}
                           </tbody>
                         </table>
-                      </div>  
+                      </div>
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
@@ -861,8 +861,7 @@ function TeacherTestResults() {
           ))}
           <button
             onClick={() => {
-              toast("Chiqish amalga oshirilmoqda...");
-              setTimeout(() => navigate("/teacher/login"), 2000);
+              navigate("/teacher/login");
             }}
             className="flex flex-col items-center gap-1 p-2 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition"
           >

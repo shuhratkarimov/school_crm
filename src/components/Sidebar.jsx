@@ -17,7 +17,7 @@ import {
   ChevronRight,
   Menu,
   X,
-  Link2,
+  Link as LinkIcon,
 } from "lucide-react";
 import API_URL from "../conf/api";
 
@@ -148,7 +148,7 @@ function Sidebar() {
           icon: UserPlus,
           badge: notInterviewedStudents,
         },
-        { path: "/link-generator", label: "Link generator", icon: Link2 },
+        { path: "/link-generator", label: "Havola yaratuvchi", icon: LinkIcon },
       ],
     },
   ];
@@ -158,7 +158,7 @@ function Sidebar() {
   return (
     <div
       className={`fixed left-0 top-0 h-screen flex flex-col bg-gradient-to-b from-blue-900 to-blue-800 text-white p-4 transition-all duration-300 z-50 ${
-        isCollapsed ? "w-16" : "w-52"
+        isCollapsed ? "w-16" : "w-60"
       } ${expandedWidth ? "!w-64 shadow-xl" : ""}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

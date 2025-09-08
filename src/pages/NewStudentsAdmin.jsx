@@ -142,7 +142,7 @@ export default function NewStudentsAdmin() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         <div className="mb-5 flex items-center gap-2">
           <UserPlus size={28} color="#104292" />
           <h1 className="text-2xl font-bold text-gray-800">Yangi o'quvchilar</h1>

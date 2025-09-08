@@ -9,7 +9,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import "./i18n";
 import Expenses from "./pages/Expenses";
 import Notes from "./pages/Notes";
-import Calculator from "./pages/Calculator";
 import Achievements from "./pages/Achievements";
 import { Toaster } from 'react-hot-toast';
 import API_URL from "./conf/api";
