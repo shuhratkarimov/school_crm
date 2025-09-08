@@ -517,6 +517,9 @@ body.dark .sidebar-item.active {
   margin-left: 210px;
   padding: 20px;
   transition: margin-left 0.3s ease;
+  flex-grow: 1;          /* Sidebar yonida qolgan joyni egallaydi */
+  background: #f9fafb;   /* fon rangi */
+  min-width: 0;  
 }
 
 .sidebar.collapsed + .main-content {
@@ -525,6 +528,7 @@ body.dark .sidebar-item.active {
 
 .app-layout {
   display: flex;
+  height: 100vh;
 }
 
 .header {
