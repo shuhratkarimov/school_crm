@@ -3,7 +3,7 @@ import Teacher from "../Models/teacher_model";
 import { ICreateTeacherDto } from "../DTO/teacher/create_teacher_dto";
 import { BaseError } from "../Utils/base_error";
 import { IUpdateTeacherDto } from "../DTO/teacher/update_teacher_dto";
-import i18next from "i18next";
+import i18next, { t } from "i18next";
 import { Group, Payment, Student } from "../Models";
 import TeacherPayment from "../Models/teacher-payment.model";
 import TeacherBalance from "../Models/teacher-balance.model";
@@ -173,7 +173,7 @@ async function getTeacherData(
     }
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
-      const teacherId = decoded.id; 
+      const teacherId = decoded.id;
       const teacher = await Teacher.findByPk(teacherId);
       res.status(200).json(teacher);
     } catch (error) {
@@ -198,7 +198,7 @@ async function getTeacherGroups(
     }
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
-      const teacherId = decoded.id; 
+      const teacherId = decoded.id;
       const groups = await Group.findAll({
         where: { teacher_id: teacherId },
         attributes: ["id", "group_subject", "days", "start_time", "end_time"],
@@ -392,7 +392,7 @@ async function getTeacherDashboardStudentPayments(req: Request, res: Response, n
       const { month: monthParam, year: yearParam } = req.query;
       let month = typeof monthParam === 'string' ? parseInt(monthParam, 10) : 0;
       let year = typeof yearParam === 'string' ? parseInt(yearParam, 10) : new Date().getFullYear();
-      
+
       const teacherGroups = await Group.findAll({
         where: { teacher_id: teacherId },
         attributes: ["id"],
@@ -443,6 +443,24 @@ async function getTeacherDashboardStudentPayments(req: Request, res: Response, n
   }
 }
 
+async function teacherLogout(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.cookies.accesstoken;
+    if (!token) {
+      return next(BaseError.BadRequest(404, "Token topilmadi"));
+    }
+    try {
+      jwt.verify(token, process.env.ACCESS_SECRET_KEY as string);
+    } catch (error) {
+      return next(BaseError.BadRequest(401, "Token xato"));
+    }
+    res.clearCookie("accesstoken");
+    res.status(200).json({ message: "Tizimdan chiqdingiz!" });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export {
   getTeachers,
   getOneTeacher,
@@ -456,5 +474,6 @@ export {
   updateTeacherBalance,
   getTeacherPayments,
   getTeacherData,
-  getTeacherDashboardStudentPayments
+  getTeacherDashboardStudentPayments,
+  teacherLogout
 };
