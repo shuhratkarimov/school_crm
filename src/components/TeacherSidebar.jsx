@@ -21,9 +21,12 @@ export default function TeacherSidebar({ activeMenu, setActiveMenu }) {
       method: "POST",
       credentials: "include",
     })
-      .then((res) => {
-        console.log(res);
-        
+      .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || "Server error");
+        }
+        const data = await res.json();
         navigate("/teacher/login");
         toast.success("Chiqish amalga oshirildi");
       })
@@ -32,7 +35,7 @@ export default function TeacherSidebar({ activeMenu, setActiveMenu }) {
         toast.error("Chiqishda xatolik yuz berdi");
       });
   };
-
+  
   return (
     <aside
       className={`hidden md:block bg-white shadow-lg h-screen sticky top-0 transition-all duration-300 ${isSidebarCollapsed ? "w-16" : "w-64"
@@ -59,8 +62,8 @@ export default function TeacherSidebar({ activeMenu, setActiveMenu }) {
                   navigate(item.path);
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition ${activeMenu === item.id
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                   }`}
                 title={isSidebarCollapsed ? item.label : ""}
               >

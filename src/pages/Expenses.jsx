@@ -41,15 +41,15 @@ export default function Expenses() {
     try {
       const res = editingId
         ? await fetch(`${API_URL}/update_expense/${editingId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
-          })
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
+        })
         : await fetch(`${API_URL}/create_expense`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
-          });
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
+        });
       if (!res.ok) toast.error(`Xarajat qo‘shishda xatolik yuz berdi: ${res.statusText}`);
       const saved = await res.json();
       toast.success(editingId ? "Xarajat tahrirlandi" : "Xarajat qo‘shildi");
@@ -145,7 +145,9 @@ export default function Expenses() {
           <h1 className="text-2xl font-bold">Xarajatlar</h1>
         </div>
         <h1 className="text-[1.7rem] font-bold mb-6">Ushbu oyda jami: {total.toLocaleString()} so‘m</h1>
-        <ExpensesChart/>
+        <ExpensesChart
+          expenses={filteredExpenses}   // filtrlangan oddiy xarajatlar
+        />
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 mt-6">
           <input
             type="text"

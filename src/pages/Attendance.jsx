@@ -72,6 +72,11 @@ export default function Attendance() {
   const [teacher, setTeacher] = useState(null);
   const [attendanceTime, setAttendanceTime] = useState(null);
   const [groupStudents, setGroupStudents] = useState([]); // New state for group students
+  const [paymentSummary, setPaymentSummary] = useState(null);
+  const [attendanceSummary, setAttendanceSummary] = useState(null);
+  const [sendingSMS, setSendingSMS] = useState(false);
+  const [smsText, setSmsText] = useState("");
+  const [smsModalOpen, setSmsModalOpen] = useState(false);
 
   const daysOfWeek = [
     "DUSHANBA",
@@ -82,6 +87,97 @@ export default function Attendance() {
     "SHANBA",
     "YAKSHANBA",
   ];
+
+  const handleSendSMStoGroup = async () => {
+    if (!selectedGroup) return;
+    if (groupStudents.length === 0) {
+      toast.error("Guruhda o‘quvchi yo‘q");
+      return;
+    }
+
+    // Agar xabar matnini foydalanuvchidan olishni xohlasangiz — modal oching
+    // Hozircha oddiy misol:
+    const message = prompt("Yuboriladigan xabar matni:",
+      `Hurmatli o'quvchilar! ${selectedGroup.group_subject} darsi haqida eslatma.`
+    );
+
+    if (!message || message.trim() === "") {
+      toast.error("Xabar matni kiritilmadi");
+      return;
+    }
+
+    if (!confirm(`Haqiqatan ham ${groupStudents.length} ta o‘quvchiga SMS yubormoqchimisiz?\n\nXabar: ${message}`)) {
+      return;
+    }
+
+    setSendingSMS(true);
+    try {
+      const response = await fetch(`${API_URL}/send-group-sms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          group_id: selectedGroup.id,
+          message: message.trim(),
+          // yoki: phone_numbers: groupStudents.map(s => s.phone_number).filter(Boolean)
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "SMS yuborishda xato");
+      }
+
+      const result = await response.json();
+      toast.success(`SMS muvaffaqiyatli yuborildi (${result.sent_count || groupStudents.length} ta)`);
+
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "SMS yuborishda xatolik yuz berdi");
+    } finally {
+      setSendingSMS(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedGroup?.id) {
+      setAttendanceSummary(null);
+      return;
+    }
+
+    const fetchAttendanceStats = async () => {
+      try {
+        const res = await fetch(`${API_URL}/group-attendance-summary/${selectedGroup.id}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setAttendanceSummary(data);
+      } catch (err) {
+        console.log(err);
+        setAttendanceSummary(null);
+      }
+    };
+
+    fetchAttendanceStats();
+  }, [selectedGroup?.id]);
+
+  useEffect(() => {
+    if (!selectedGroup) {
+      setPaymentSummary(null);
+      return;
+    }
+
+    const fetchSummary = async () => {
+      try {
+        const res = await fetch(`${API_URL}/group-payment-summary/${selectedGroup.id}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setPaymentSummary(data);
+      } catch {
+        setPaymentSummary(null);
+      }
+    };
+
+    fetchSummary();
+  }, [selectedGroup?.id]);
 
   const extendAttendanceTime = async () => {
     if (!selectedGroupForExtension || !extensionData.date || !extensionData.time) {
@@ -694,6 +790,7 @@ export default function Attendance() {
 
       if (!isClassOnDate(groups.find(group => group.id === groupId), date)) {
         toast.error("Bugun dars yo‘q");
+        setAttendanceTime(null);
         return;
       }
 
@@ -758,7 +855,10 @@ export default function Attendance() {
 
   // Handle group selection
   const handleGroupSelect = async (group) => {
+    setAttendance({})
+    setAttendanceTime(null);
     setSelectedGroup(group);
+    setGroupStudents([]);
     await fetchStudents(group.id);
     await fetchAttendance(group.id, selectedDate);
     await fetchTeacher(group.teacher_id);
@@ -1005,6 +1105,18 @@ export default function Attendance() {
             <>
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">{selectedGroup.group_subject}</h2>
+                <button
+                  onClick={() => setSmsModalOpen(true)}
+                  className="ml-auto flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm"
+                  disabled={sendingSMS} // loading holatini ko‘rsatish uchun
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                    <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                  </svg>
+                  Guruhga SMS yuborish
+                  {sendingSMS && <span className="animate-pulse">...</span>}
+                </button>
                 <div className="relative">
                   <motion.button
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -1030,6 +1142,19 @@ export default function Attendance() {
 
               {/* Group Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 rounded-lg p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-blue-600">
+                    {paymentSummary?.month || "—"} oyi to‘lovlari
+                  </h3>
+                  <p className="text-lg font-bold text-gray-800">
+                    {paymentSummary
+                      ? `${paymentSummary.total_paid.toLocaleString('uz-UZ')} so'm`
+                      : "—"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    To‘lov qilgan: {paymentSummary?.paid_count || 0} / {paymentSummary?.total_students || 0}
+                  </p>
+                </div>
                 <div className="bg-blue-50 rounded-lg p-4 shadow-sm">
                   <h3 className="text-sm font-semibold text-blue-600">Sana</h3>
                   <p className="text-lg font-medium text-gray-800">{formatDateWithDaysStart(selectedDate)}</p>
@@ -1060,6 +1185,25 @@ export default function Attendance() {
                   <h3 className="text-sm font-semibold text-blue-600">Yo‘qlama vaqti</h3>
                   <p className="text-lg font-medium text-gray-800">
                     {attendanceTime ? `Bugun ${formatStartTime(attendanceTime)} da` : "Yo‘qlama qilinmagan"}
+                  </p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-blue-600">Haftalik davomat</h3>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {attendanceSummary?.week?.percent ?? "—"}%
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {attendanceSummary?.week?.present ?? 0} / {attendanceSummary?.week?.total ?? 0}
+                  </p>
+                </div>
+
+                <div className="bg-indigo-50 rounded-lg p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-indigo-600">Oylik davomat</h3>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {attendanceSummary?.month?.percent ?? "—"}%
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {attendanceSummary?.month?.present ?? 0} / {attendanceSummary?.month?.total ?? 0}
                   </p>
                 </div>
               </div>
@@ -1185,7 +1329,58 @@ export default function Attendance() {
       </div>
 
       {/* Add Modal */}
-      {/* Add Modal - Yangilangan versiya */}
+
+      {smsModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+            <div className="bg-green-600 text-white px-6 py-4 rounded-t-xl flex justify-between items-center">
+              <h3 className="text-lg font-bold">Guruhga SMS yuborish</h3>
+              <button onClick={() => setSmsModalOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <p className="text-gray-600">
+                {groupStudents.length} ta o‘quvchiga yuboriladi
+              </p>
+
+              <textarea
+                className="w-full border border-gray-300 rounded-lg p-3 min-h-[120px] focus:ring-2 focus:ring-green-500"
+                placeholder="Xabar matnini kiriting..."
+                value={smsText}
+                onChange={e => setSmsText(e.target.value)}
+                maxLength={160} // ko'p SMS operatorlarda 160 belgidan boshlanadi
+              />
+
+              <p className="text-sm text-gray-500">
+                Belgilar: {smsText.length} / 160
+              </p>
+            </div>
+
+            <div className="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end gap-3">
+              <button
+                className="px-5 py-2 border rounded-lg hover:bg-gray-100"
+                onClick={() => setSmsModalOpen(false)}
+              >
+                Bekor qilish
+              </button>
+              <button
+                className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!smsText.trim() || sendingSMS}
+                onClick={async () => {
+                  // yuqoridagi handleSendSMStoGroup logikasini shu yerga ko‘chiring
+                  // faqat message = smsText ishlatiladi
+                  // muvaffaqiyatli bo‘lsa: setSmsModalOpen(false); setSmsText("");
+                }}
+              >
+                {sendingSMS ? "Yuborilmoqda..." : "SMS yuborish"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {addModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <motion.div

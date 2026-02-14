@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Pen, Users, X, Search, Plus } from "lucide-react";
+import { Trash2, Pen, Users, X, Search, Plus, CreditCard, AlertCircle } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import { DatePicker } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -59,7 +59,7 @@ function Students() {
     group_ids: [],
     parents_phone_number: "",
     came_in_school: "",
-    
+
   });
 
   const [editModal, setEditModal] = useState(false);
@@ -76,6 +76,10 @@ function Students() {
     came_in_school: "",
     groups: [],
   });
+  const [studentPayments, setStudentPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState(null);
 
   const today = new Date().toLocaleDateString("en-CA");
   const minDate = "1990-01-01";
@@ -91,7 +95,12 @@ function Students() {
     return new Date().getFullYear();
   };
 
-  const getPaymentRatio = (student) => {   
+  const openEditPaymentModal = (payment) => {
+    setEditingPayment(payment);
+    setEditPaymentModalOpen(true);
+  };
+
+  const getPaymentRatio = (student) => {
     const totalGroups = student.all_groups || 0
     const paidGroups = student.studentGroups?.filter(
       (sg) => sg.month === monthFilter && sg.year === yearFilter && sg.paid
@@ -314,8 +323,24 @@ function Students() {
     setEditModal(true);
   };
 
-  const openDetailModal = (student) => {
+  const openDetailModal = async (student) => {
     setSelectedStudent(student);
+    setStudentPayments([]);           // tozalash
+    setLoadingPayments(true);
+
+    try {
+      const res = await fetch(`${API_URL}/get_payments_by_student/${student.id}`);
+      if (!res.ok) throw new Error("To'lovlarni yuklab bo'lmadi");
+      const data = await res.json();
+      console.log(data);
+      setStudentPayments(data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("O'quvchining to'lov tarixini yuklashda xatolik");
+      setStudentPayments([]);
+    } finally {
+      setLoadingPayments(false);
+    }
   };
 
   const filteredStudents =
@@ -994,6 +1019,207 @@ function Students() {
         </div>
       )}
 
+      {editPaymentModalOpen && editingPayment && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-xl flex justify-between items-center">
+              <h3 className="text-lg font-semibold">To'lovni tahrirlash</h3>
+              <button
+                onClick={() => setEditPaymentModalOpen(false)}
+                className="text-white hover:text-gray-200"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const res = await fetch(`${API_URL}/update_payment/${editingPayment.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      payment_amount: Number(editingPayment.payment_amount),
+                      payment_type: editingPayment.payment_type,
+                      received: editingPayment.received,
+                      for_which_month: editingPayment.for_which_month,
+                      comment: editingPayment.comment || "",
+                      shouldBeConsideredAsPaid: editingPayment.shouldBeConsideredAsPaid,
+                      // agar backendda for_which_group yoki boshqa maydonlar talab qilinsa, qo'shing:
+                      // for_which_group: editingPayment.for_which_group,
+                    }),
+                  });
+
+                  if (res.ok) {
+                    toast.success("To'lov muvaffaqiyatli yangilandi");
+
+                    // Yangi ma'lumotlarni qayta yuklash
+                    const updatedRes = await fetch(`${API_URL}/get_payments_by_student/${selectedStudent.id}`);
+                    if (updatedRes.ok) {
+                      const updatedData = await updatedRes.json();
+                      setStudentPayments(updatedData);
+                    }
+
+                    setEditPaymentModalOpen(false);
+                  } else {
+                    const err = await res.json();
+                    toast.error(err.message || "Yangilashda xatolik");
+                  }
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Server bilan bog'lanishda xatolik");
+                }
+              }}
+              className="p-6 space-y-5"
+            >
+              {/* To'lov miqdori */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  To'lov miqdori (so'm) *
+                </label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={editingPayment.payment_amount || ""}
+                  onChange={(e) =>
+                    setEditingPayment({
+                      ...editingPayment,
+                      payment_amount: e.target.value,
+                    })
+                  }
+                  min="0"
+                  required
+                />
+              </div>
+
+              {/* To'lov turi */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  To'lov turi *
+                </label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={editingPayment.payment_type || ""}
+                  onChange={(e) =>
+                    setEditingPayment({
+                      ...editingPayment,
+                      payment_type: e.target.value,
+                    })
+                  }
+                  required
+                >
+                  <option value="">Tanlang</option>
+                  <option value="Naqd">Naqd</option>
+                  <option value="Plastik karta orqali">Plastik karta orqali</option>
+                  <option value="Bank o'tkazmasi">Bank o'tkazmasi</option>
+                </select>
+              </div>
+
+              {/* Qabul qilgan mas'ul */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Qabul qilgan mas'ul *
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={editingPayment.received || ""}
+                  onChange={(e) =>
+                    setEditingPayment({
+                      ...editingPayment,
+                      received: e.target.value,
+                    })
+                  }
+                  placeholder="F.I.Sh. kiriting"
+                  required
+                />
+              </div>
+
+              {/* Qaysi oy uchun */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Qaysi oy uchun *
+                </label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={editingPayment.for_which_month || ""}
+                  onChange={(e) =>
+                    setEditingPayment({
+                      ...editingPayment,
+                      for_which_month: e.target.value,
+                    })
+                  }
+                  required
+                >
+                  <option value="">Oy tanlang</option>
+                  {["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"].map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Izoh */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Izoh</label>
+                <textarea
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[80px]"
+                  value={editingPayment.comment || ""}
+                  onChange={(e) =>
+                    setEditingPayment({
+                      ...editingPayment,
+                      comment: e.target.value,
+                    })
+                  }
+                  placeholder="Qo'shimcha ma'lumot..."
+                />
+              </div>
+
+              {/* Imtiyozli to'lov toggle */}
+              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                <span className="text-gray-700 font-medium">
+                  Imtiyozli to'lov (to'liq deb hisoblash)
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={editingPayment.shouldBeConsideredAsPaid}
+                    onChange={() =>
+                      setEditingPayment({
+                        ...editingPayment,
+                        shouldBeConsideredAsPaid: !editingPayment.shouldBeConsideredAsPaid,
+                      })
+                    }
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setEditPaymentModalOpen(false)}
+                  className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Pen size={16} />
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedStudent(null)}>
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1060,13 +1286,14 @@ function Students() {
                         sg => sg.month === monthFilter && sg.year === yearFilter && sg.paid
                       ).length || 0;
 
-                      return (
-                        <span className={paidGroups === totalGroups && paidGroups > 0 ? "bg-green-100 text-green-800" :
-                          paidGroups > 0 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
-                          {paidGroups === totalGroups && paidGroups > 0 ? "Toʻliq toʻlangan" :
-                            paidGroups > 0 ? "Qisman toʻlangan" : "Toʻlanmagan"}
-                        </span>
-                      );
+                      // return (
+                      //   console.log(totalGroups, paidGroups),
+                      //   <span className={paidGroups === totalGroups && paidGroups > 0 ? "bg-green-100 text-green-800" :
+                      //     paidGroups > 0 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
+                      //     {paidGroups === totalGroups && paidGroups > 0 ? "Toʻliq toʻlangan" :
+                      //       paidGroups > 0 ? "Qisman toʻlangan" : "Toʻlanmagan"}
+                      //   </span>
+                      // );
                     })()}
                   </div>
                 </div>
@@ -1095,6 +1322,7 @@ function Students() {
                             }`}>
                             {groupPayment?.paid ? "Toʻlangan" : "Toʻlanmagan"}
                           </span>
+                          {console.log(groupPayment)}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1113,6 +1341,93 @@ function Students() {
                     );
                   })}
                 </div>
+              </div>
+              {/* To'lovlar tarixi */}
+              <div className="mt-10">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-3">
+                  <CreditCard size={24} className="text-green-600" />
+                  To'lovlar tarixi ({studentPayments.length} ta)
+                </h3>
+
+                {loadingPayments ? (
+                  <div className="text-center py-8">
+                    <LottieLoading /> {/* yoki oddiy spinner */}
+                    <p className="mt-2 text-gray-500">To'lovlar yuklanmoqda...</p>
+                  </div>
+                ) : studentPayments.length === 0 ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                    <AlertCircle size={40} className="mx-auto text-gray-400 mb-3" />
+                    <p className="text-gray-600 font-medium">Hozircha to'lovlar mavjud emas</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {studentPayments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all bg-white"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="font-semibold text-lg text-gray-800">
+                              {Number(payment.payment_amount).toLocaleString('uz-UZ')} so‘m
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {payment.for_which_month} oyi uchun
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${payment.shouldBeConsideredAsPaid
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-green-100 text-green-800"
+                                }`}
+                            >
+                              {payment.shouldBeConsideredAsPaid ? "Imtiyozli" : "To‘liq"}
+                            </span>
+
+                            <button
+                              onClick={() => openEditPaymentModal(payment)}
+                              className="p-2 bg-blue-50 hover:bg-blue-100 rounded-full transition"
+                              title="Tahrirlash"
+                            >
+                              <Pen size={16} className="text-blue-600" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-500">Turi:</span><br />
+                            <strong>{payment.payment_type || "—"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Qabul qilgan:</span><br />
+                            <strong>{payment.received || "—"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Guruh:</span><br />
+                            <strong>{payment.group?.group_subject || "—"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Sana:</span><br />
+                            <strong>
+                              {payment.created_at
+                                ? new Date(payment.created_at).toLocaleDateString("uz-UZ")
+                                : "—"}
+                            </strong>
+                          </div>
+                          {payment.comment && (
+                            <div className="col-span-2 sm:col-span-3 mt-2 pt-2 border-t border-gray-100">
+                              <span className="text-gray-500">Izoh:</span><br />
+                              <p className="text-gray-700 mt-1">{payment.comment}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

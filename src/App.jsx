@@ -12,6 +12,7 @@ import Notes from "./pages/Notes";
 import Achievements from "./pages/Achievements";
 import { Toaster } from 'react-hot-toast';
 import API_URL from "./conf/api";
+import NewStudents from "./pages/NewStudents";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
@@ -31,6 +32,7 @@ const TeacherTestResults = lazy(() => import("./pages/TeacherTestResults"));
 const StudentRegistration = lazy(() => import("./pages/StudentRegistration"));
 const NewStudentsAdmin = lazy(() => import("./pages/NewStudentsAdmin"));
 const LinkGenerator = lazy(() => import("./pages/LinkGenerator"));
+const Groups = lazy(() => import("./pages/Groups"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -438,6 +440,19 @@ function App() {
                     <div className="main-content">
                       <Header setIsAuthenticated={setIsAuthenticated} />
                       <LinkGenerator />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+            <Route path="/reserve"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <NewStudents />
                     </div>
                   </div>
                 </PrivateRoute>

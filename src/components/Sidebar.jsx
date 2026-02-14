@@ -112,10 +112,11 @@ function Sidebar() {
         { path: "/attendance", label: "Guruhlar", icon: ClipboardCheck },
         { path: "/teachers", label: "Ustozlar", icon: GraduationCap },
         { path: "/rooms", label: "Sinfxonalar", icon: School },
+        { path: "/reserve", label: "Zaxira o'quvchilar", icon: ClipboardCheck },
       ],
     },
     {
-      label: "Moliyaviy",
+      label: "Moliya",
       icon: DollarSign,
       children: [
         { path: "/payments", label: "To‘lovlar", icon: CreditCard },
@@ -137,14 +138,14 @@ function Sidebar() {
       children: [
         {
           path: "/requests",
-          label: "Murojaatlar",
+          label: "Bot murojaatlar",
           icon: MessageSquare,
           badge: unansweredRequests,
         },
         { path: "/notes", label: "Qaydlar", icon: NotebookPen },
         {
           path: "/new-students",
-          label: "Yangi o‘quvchilar",
+          label: " Qiziqishlar",
           icon: UserPlus,
           badge: notInterviewedStudents,
         },
@@ -158,7 +159,7 @@ function Sidebar() {
   return (
     <div
       className={`fixed left-0 top-0 h-screen flex flex-col bg-gradient-to-b from-blue-900 to-blue-800 text-white p-4 transition-all duration-300 z-50 ${
-        isCollapsed ? "w-16" : "w-60"
+        isCollapsed ? "w-16" : "w-64"
       } ${expandedWidth ? "!w-64 shadow-xl" : ""}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

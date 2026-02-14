@@ -5,6 +5,7 @@ import { Trash2, Pen, BookOpen, Plus, X, Search } from "lucide-react";
 import { toast } from "react-hot-toast";
 import "../index.css";
 import { API_URL } from "../config";
+import * as XLSX from "xlsx";
 
 function Groups() {
   const [groups, setGroups] = useState([]);
@@ -44,6 +45,10 @@ function Groups() {
     monthly_fee: "",
   });
   const [addModal, setAddModal] = useState(false);
+  const [importModal, setImportModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedImportGroup, setSelectedImportGroup] = useState("");
+  const [importErrors, setImportErrors] = useState([]);
 
   const daysOfWeek = [
     "DUSHANBA",
@@ -54,6 +59,63 @@ function Groups() {
     "SHANBA",
     "YAKSHANBA",
   ];
+
+  const handleImport = async () => {
+    if (!selectedFile || !selectedImportGroup) {
+      toast.error("Fayl va guruhni tanlang!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      // Birinchi qator sarlavhalar, ikkinchisidan boshlab ma'lumotlar
+      const headers = jsonData[0].map(h => h.toLowerCase().trim()); // Katta-kichik harfni e'tiborsiz
+      const rows = jsonData.slice(1);
+
+      const studentsToImport = rows.map(row => {
+        const student = {};
+        headers.forEach((header, idx) => {
+          if (header === "ism") student.first_name = row[idx] || "";
+          if (header === "familiya") student.last_name = row[idx] || "";
+          if (header === "telefon") student.phone_number = row[idx] || "";
+          if (header === "ota/ona ismi") student.father_name = row[idx] || "";
+          if (header === "ota/ona telefoni") student.parents_phone_number = row[idx] || "";
+          if (header === "tug'ilgan sana") student.birth_date = row[idx] ? formatDate(row[idx]) : ""; // formatDate ni ishlat
+          if (header === "o'qishga kelgan sana") student.came_in_school = row[idx] ? formatDate(row[idx]) : "";
+        });
+        student.group_ids = [selectedImportGroup]; // Tanlangan guruhga biriktirish
+        return student;
+      }).filter(student => student.first_name && student.last_name && student.phone_number && student.parents_phone_number); // Majburiy maydonlarni tekshir
+
+      if (studentsToImport.length === 0) {
+        toast.error("Faylda to'g'ri ma'lumot yo'q!");
+        return;
+      }
+
+      // Backendga batch jo'natish (yangi endpoint yoki loop)
+      try {
+        const response = await fetch(`${API_URL}/import_students`, { // Yangi endpoint taklif
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ students: studentsToImport }),
+        });
+        if (!response.ok) throw new Error("Import xatosi!");
+        toast.success(`${studentsToImport.length} ta o'quvchi qo'shildi va guruhga biriktirildi!`);
+        fetchData(); // Ma'lumotlarni yangilash
+        setImportModal(false);
+      } catch (err) {
+        toast.error(err.message);
+        setImportErrors([err.message]);
+      }
+    };
+    reader.readAsArrayBuffer(selectedFile);
+  };
 
   // Checkbox’lar uchun handler
   const handleDaysChange = (day, isEdit = false) => {
@@ -595,16 +657,16 @@ function Groups() {
             Mavjud guruhlar ({filteredGroups.length} ta)
           </h3>
           <div style={{ display: "flex", gap: "10px", alignItems: "center", border: "1px solid #ccc", borderRadius: "5px", padding: "5px" }}>
-              <Search size={22} color="#104292" style={{ marginLeft: "12px" }} />
-              <input
-                type="text"
-                className="input"
-                style={{ width: "170px", border: "none", outline: "none" }}
-                placeholder="Guruhni qidirish..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <Search size={22} color="#104292" style={{ marginLeft: "12px" }} />
+            <input
+              type="text"
+              className="input"
+              style={{ width: "170px", border: "none", outline: "none" }}
+              placeholder="Guruhni qidirish..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         {filteredGroups.length === 0 ? (

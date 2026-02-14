@@ -35,6 +35,52 @@ function Dashboard() {
   const [animatedFemaleCount, setAnimatedFemaleCount] = useState(0);
   const [yearlyPayments, setYearlyPayments] = useState([]);
   const [monthlyExpenses, setMonthlyExpenses] = useState([]);
+  const [overallAttendance, setOverallAttendance] = useState(null);
+  const [animatedWeekAttendance, setAnimatedWeekAttendance] = useState(0);
+  const [animatedMonthAttendance, setAnimatedMonthAttendance] = useState(0);
+  const [monthlySalaries, setMonthlySalaries] = useState([]);
+
+  useEffect(() => {
+    const fetchOverall = async () => {
+      try {
+        const res = await fetch(`${API_URL}/overall-attendance-stats`);
+        if (res.ok) {
+          const data = await res.json();
+          setOverallAttendance(data);
+          // Animatsiya uchun foizlarni olish
+          animateValue(0, data.week.percent || 0, 1500, setAnimatedWeekAttendance);
+          animateValue(0, data.month.percent || 0, 1500, setAnimatedMonthAttendance);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchOverall();
+    fetchMonthlySalaries();
+  }, []);
+
+  const fetchMonthlySalaries = async () => {
+    try {
+      const res = await fetch(`${API_URL}/get_teacher_salaries`);
+      if (!res.ok) throw new Error("O'qituvchi to'lovlarini olishda xatolik");
+      const data = await res.json();
+      setMonthlySalaries(data.monthly_summary || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (todayAttendance?.total !== undefined) {
+      const percent = todayAttendance.total > 0
+        ? Math.round((todayAttendance.present / todayAttendance.total) * 100)
+        : 0;
+
+      // Animatsiyani SHU YERDA chaqiramiz!
+      animateValue(0, percent, 1500, setAnimatedAttendance);
+    }
+  }, [todayAttendance]);  // todayAttendance o'zgarganda ishlaydi
 
   function formatDate(dateInput, offsetDays = 0) {
     const date = new Date(dateInput);
@@ -164,16 +210,26 @@ function Dashboard() {
 
   const combinedData = Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
-    const payment = yearlyPayments.find((p) => parseInt(p.month.split("-")[1]) === month) || {
-      jami: 0,
-    };
-    const expense = monthlyExpenses.find((e) => parseInt(e.month.split("-")[1]) === month) || {
-      jami: 0,
-    };
+  
+    const payment =
+      yearlyPayments.find(
+        (p) => parseInt(p.month.split("-")[1]) === month
+      ) || { jami: 0 };
+  
+    const expense =
+      monthlyExpenses.find(
+        (e) => parseInt(e.month.split("-")[1]) === month
+      ) || { jami: 0 };
+  
+    const salary =
+      monthlySalaries.find(
+        (s) => parseInt(s.month.split("-")[1]) === month
+      ) || { total: 0 };
+  
     return {
       monthName: monthsInUzbek[month],
       income: payment.jami,
-      expense: expense.jami,
+      expense: Number(expense.jami) + Number(salary.total),
     };
   });
 
@@ -184,9 +240,9 @@ function Dashboard() {
       <div className="flex items-center gap-2">
         <TrendingUp size={24} color="#104292" />
         <h1 className="text-2xl font-bold text-gray-800">
-        {today.getDate().toString().padStart(2, "0")}-{monthsInUzbek[today.getMonth() + 1]}{" "}
-        {today.getFullYear()}-yil holatiga raqamli statistika:
-      </h1>
+          {today.getDate().toString().padStart(2, "0")}-{monthsInUzbek[today.getMonth() + 1]}{" "}
+          {today.getFullYear()}-yil holatiga raqamli statistika:
+        </h1>
       </div>
 
       {/* Stats Cards */}
@@ -321,6 +377,37 @@ function Dashboard() {
               Bugungi davomat (
               {todayAttendance?.present ? todayAttendance.present : "0"}/
               {todayAttendance?.total ? todayAttendance.total : "0"})
+            </div>
+          </div>
+        </div>
+        <div className="bg-white shadow rounded-xl p-6 flex items-center border border-purple-300">
+          <div className="w-20 h-20">
+            <CircularProgressbar
+              value={animatedWeekAttendance}
+              text={`${animatedWeekAttendance}%`}
+              styles={buildStyles({ pathColor: "#8b5cf6", textColor: "#6b21a8", trailColor: "#f3e8ff" })}
+            />
+          </div>
+          <div className="ml-4">
+            <div className="text-sm text-purple-700 font-medium">Haftalik davomat</div>
+            <div className="text-xl font-bold">
+              {overallAttendance?.week?.present || 0} / {overallAttendance?.week?.total || 0}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white shadow rounded-xl p-6 flex items-center border border-cyan-300">
+          <div className="w-20 h-20">
+            <CircularProgressbar
+              value={animatedMonthAttendance}
+              text={`${animatedMonthAttendance}%`}
+              styles={buildStyles({ pathColor: "#06b6d4", textColor: "#0e7490", trailColor: "#cffafe" })}
+            />
+          </div>
+          <div className="ml-4">
+            <div className="text-sm text-cyan-700 font-medium">Oylik davomat</div>
+            <div className="text-xl font-bold">
+              {overallAttendance?.month?.present || 0} / {overallAttendance?.month?.total || 0}
             </div>
           </div>
         </div>

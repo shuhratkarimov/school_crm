@@ -514,7 +514,7 @@ body.dark .sidebar-item.active {
 }
 
 .main-content {
-  margin-left: 240px;
+  margin-left: 250px;
   padding: 20px;
   transition: margin-left 0.3s ease;
   flex-grow: 1;          /* Sidebar yonida qolgan joyni egallaydi */
