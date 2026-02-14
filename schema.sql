@@ -233,3 +233,18 @@ CREATE TABLE registration_links (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE reserve_students (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  first_name        VARCHAR(100) NOT NULL,
+  last_name         VARCHAR(100) NOT NULL,
+  father_name       VARCHAR(150),
+  mother_name       VARCHAR(150),
+  birth_date        DATE,
+  phone_number      VARCHAR(20) UNIQUE NOT NULL,          -- +998 bilan
+  parents_phone_number VARCHAR(20) NOT NULL,
+  came_in_school    DATE,
+  created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  notes             TEXT,                                   -- qo‘shimcha izoh (masalan: qayerdan kelgan, qachon qo‘shilgan)
+  status            VARCHAR(20) DEFAULT 'new'               -- new, contacted, test_passed, rejected va h.k.
+);

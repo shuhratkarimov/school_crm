@@ -222,7 +222,7 @@ async function login(req: Request, res: Response, next: NextFunction) {
     const accesstoken = generateAccessToken(payload);
     const refreshtoken = generateRefreshToken(payload);
     if (foundUser.dataValues.is_verified) {
-      const isSecure = req.headers.host?.includes('https') || req.headers.host?.includes('intellectualprogress.uz');
+      const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
       res.cookie("accesstoken", accesstoken, {
         httpOnly: true,
         secure: isSecure,
@@ -252,8 +252,19 @@ function logout(req: Request, res: Response, next: NextFunction) {
     req.cookies.refreshtoken,
     process.env.REFRESH_SECRET_KEY as string
   );
-  res.clearCookie("accesstoken");
-  res.clearCookie("refreshtoken");
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.clearCookie("accesstoken", {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: "lax",
+    path: "/",
+  });
+  res.clearCookie("refreshtoken", {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: "lax",
+    path: "/",
+  });
   res
     .status(200)
     .json({

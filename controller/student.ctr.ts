@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { Sequelize, col, fn, Op } from "sequelize";
+import { Sequelize, col, fn, Op, literal } from "sequelize";
 import i18next from "../Utils/lang";
 import { Appeal, Notification, Payment, Student } from "../Models/index";
 import { ICreateStudentDto } from "../DTO/student/create_student_dto";
@@ -676,6 +676,189 @@ async function updateStudentPaymentStatus(
   }
 }
 
+async function getPaymentsByStudent(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+  const { student_id } = req.params;
+  // student_id mavjudligini tekshirish
+  if (!student_id || student_id === "") {
+    return res.status(400).json({
+      success: false,
+      message: "student_id to'g'ri kiritilmagan"
+    });
+  }
+
+  try {
+    const payments = await Payment.findAll({
+      where: { pupil_id: student_id },
+      order: [['created_at', 'DESC']],
+      attributes: [
+        'id',
+        'pupil_id',
+        'payment_amount',
+        'payment_type',
+        'received',
+        'for_which_month',
+        'comment',
+        'created_at',
+        'shouldBeConsideredAsPaid'   // modelda camelCase yoki snake_case bo'lsa moslashtiring
+      ],
+      include: [
+        {
+          model: Group,
+          as: 'group',                                 // associationda qanday yozilgan bo'lsa
+          attributes: ['group_subject'],
+          include: [
+            {
+              model: Teacher,
+              as: 'teacher',
+              attributes: ['first_name', 'last_name']
+            }
+          ]
+        }
+      ]
+    });
+
+    // Frontendga mos formatda qaytarish
+    const formatted = payments.map(p => ({
+      id: p.dataValues.id,
+      pupil_id: p.dataValues.pupil_id,
+      payment_amount: p.dataValues.payment_amount,
+      payment_type: p.dataValues.payment_type,
+      received: p.dataValues.received,
+      for_which_month: p.dataValues.for_which_month,
+      comment: p.dataValues.comment,
+      created_at: p.dataValues.created_at,
+      shouldBeConsideredAsPaid: p.dataValues.shouldBeConsideredAsPaid,
+      group: p.dataValues.group
+        ? {
+          group_subject: p.dataValues.group.group_subject,
+          teacher: p.dataValues.group.teacher
+            ? `${p.dataValues.group.teacher.first_name} ${p.dataValues.group.teacher.last_name}`.trim()
+            : null
+        }
+        : null
+    }));
+
+    return res.status(200).json(formatted);
+
+  } catch (error: any) {
+    console.error('getPaymentsByStudent error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Serverda xatolik yuz berdi",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+async function getGroupAttendanceSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { groupId } = req.params;
+    const now = DateTime.now().setZone("Asia/Tashkent");
+
+    // Guruh ma'lumotlari (dars kunlari)
+    const group = await Group.findByPk(groupId, { attributes: ['days'] });
+    if (!group) return res.status(404).json({ error: "Guruh topilmadi" });
+
+    const classDays = group.dataValues.days.split('-').map((d: string) => d.trim().toUpperCase());
+
+    // Haftalik statistika
+    const weekStart = now.minus({ days: 6 }).startOf('day');
+    const weekEnd = now.endOf('day');
+
+    const weekStats = await AttendanceRecord.findAll({
+      attributes: [
+        [Sequelize.fn('COUNT', Sequelize.col('AttendanceRecord.id')), 'total'],
+        [
+          Sequelize.fn('SUM', Sequelize.literal(`CASE WHEN "AttendanceRecord"."status" = 'present' THEN 1 ELSE 0 END`)),
+          'present'
+        ],
+      ],
+      include: [{
+        model: Attendance,
+        as: 'attendance',
+        where: {
+          group_id: groupId,
+          date: { [Op.between]: [weekStart.toISODate(), weekEnd.toISODate()] }
+        },
+        required: true,
+        attributes: ['id', 'date'],  // faqat kerakli ustunlarni olamiz
+      }],
+      group: ['attendance.id'],  // har bir dars (attendance) bo‘yicha guruhlash
+      raw: true,
+      nest: true,
+    });
+
+    let weekTotalClasses = weekStats.length;
+    let weekPresent = 0;
+    let weekTotalStudents = 0;
+
+    weekStats.forEach((row: any) => {
+      weekPresent += Number(row.present || 0);
+      weekTotalStudents += Number(row.total || 0);
+    });
+
+    const weekPercent = weekTotalStudents > 0 ? Math.round((weekPresent / weekTotalStudents) * 100) : 0;
+
+    // Oylik statistika
+    const monthStart = now.startOf('month');
+    const monthEnd = now.endOf('month');
+
+    const monthStats = await AttendanceRecord.findAll({
+      attributes: [
+        [Sequelize.fn('COUNT', Sequelize.col('AttendanceRecord.id')), 'total'],
+        [
+          Sequelize.fn('SUM', Sequelize.literal(`CASE WHEN "AttendanceRecord"."status" = 'present' THEN 1 ELSE 0 END`)),
+          'present'
+        ],
+      ],
+      include: [{
+        model: Attendance,
+        as: 'attendance',
+        where: {
+          group_id: groupId,
+          date: { [Op.between]: [monthStart.toISODate(), monthEnd.toISODate()] }
+        },
+        required: true,
+        attributes: ['id', 'date'],
+      }],
+      group: ['attendance.id'],
+      raw: true,
+      nest: true,
+    });
+
+    let monthTotalClasses = monthStats.length;
+    let monthPresent = 0;
+    let monthTotalStudents = 0;
+
+    monthStats.forEach((row: any) => {
+      monthPresent += Number(row.present || 0);
+      monthTotalStudents += Number(row.total || 0);
+    });
+
+    const monthPercent = monthTotalStudents > 0 ? Math.round((monthPresent / monthTotalStudents) * 100) : 0;
+
+    // Natija
+    res.json({
+      week: {
+        percent: weekPercent,
+        present: weekPresent,
+        total: weekTotalStudents,
+        classes: weekTotalClasses,
+      },
+      month: {
+        percent: monthPercent,
+        present: monthPresent,
+        total: monthTotalStudents,
+        classes: monthTotalClasses,
+      }
+    });
+
+  } catch (err) {
+    console.error("getGroupAttendanceSummary xatosi:", err);
+    next(err);
+  }
+}
+
 async function makeAttendance(req: Request, res: Response, next: NextFunction) {
   try {
     const lang = "uz";
@@ -1122,6 +1305,66 @@ async function getTodayAttendanceStats(
   }
 }
 
+async function getOverallAttendanceStats(req: Request, res: Response, next: NextFunction) {
+  try {
+    const now = DateTime.now().setZone("Asia/Tashkent");
+
+    // Hafta
+    const weekStart = now.minus({ days: 6 }).startOf('day');
+    const weekEnd = now.endOf('day');
+
+    const weekStats = await AttendanceRecord.findOne({
+      attributes: [
+        [fn('SUM', literal(`CASE WHEN status = 'present' THEN 1 ELSE 0 END`)), 'present'],
+        [fn('COUNT', col('AttendanceRecord.id')), 'total'],
+      ],
+      include: [{
+        model: Attendance,
+        as: 'attendance',
+        where: { date: { [Op.between]: [weekStart.toISODate(), weekEnd.toISODate()] } },
+        required: true,
+        attributes: [],
+      }],
+      raw: true,
+    }) as any
+
+    const weekPresent = Number(weekStats?.present || 0);
+    const weekTotal = Number(weekStats?.total || 0);
+    const weekPercent = weekTotal > 0 ? Math.round((weekPresent / weekTotal) * 100) : 0;
+
+    // Oy
+    const monthStart = now.startOf('month');
+    const monthEnd = now.endOf('month');
+
+    const monthStats = await AttendanceRecord.findOne({
+      attributes: [
+        [fn('SUM', literal(`CASE WHEN status = 'present' THEN 1 ELSE 0 END`)), 'present'],
+        [fn('COUNT', col('AttendanceRecord.id')), 'total'],
+      ],
+      include: [{
+        model: Attendance,
+        as: 'attendance',
+        where: { date: { [Op.between]: [monthStart.toISODate(), monthEnd.toISODate()] } },
+        required: true,
+        attributes: [],
+      }],
+      raw: true,
+    }) as any;
+
+    const monthPresent = Number(monthStats?.present || 0);
+    const monthTotal = Number(monthStats?.total || 0);
+    const monthPercent = monthTotal > 0 ? Math.round((monthPresent / monthTotal) * 100) : 0;
+
+    res.json({
+      week: { percent: weekPercent, present: weekPresent, total: weekTotal },
+      month: { percent: monthPercent, present: monthPresent, total: monthTotal }
+    });
+
+  } catch (err) {
+    next(err);
+  }
+}
+
 export {
   getStudents,
   getOneStudent,
@@ -1136,4 +1379,8 @@ export {
   updateAttendance,
   extendAttendanceTime,
   getExtendAttendanceTime,
+  generateStudentId,
+  getGroupAttendanceSummary,
+  getOverallAttendanceStats,
+  getPaymentsByStudent,
 };

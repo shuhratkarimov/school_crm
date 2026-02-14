@@ -14,6 +14,7 @@ import StudentGroup from "./student_groups_model";
 import Achievement from "./achievement_model";
 import Test from "./test_model";
 import TestResult from "./test_result_model";
+import TeacherPayment from "./teacher-payment.model";
 
 // 1. Teacher ↔ Group
 Teacher.hasMany(Group, {
@@ -123,6 +124,18 @@ AttendanceRecord.belongsTo(Attendance, {
   onUpdate: "CASCADE",
 });
 
+Teacher.hasMany(TeacherPayment, {
+  foreignKey: "teacher_id",
+  as: "payments",           // bu alias orqali chaqiriladi
+  onDelete: "CASCADE",
+});
+
+// Har bir payment faqat bitta teacherga tegishli
+TeacherPayment.belongsTo(Teacher, {
+  foreignKey: "teacher_id",
+  as: "teacher",            // bu alias bilan include da ishlatiladi
+});
+
 // ✅ 6.2 Student ↔ AttendanceRecord
 Student.hasMany(AttendanceRecord, {
   foreignKey: "student_id",
@@ -134,6 +147,21 @@ AttendanceRecord.belongsTo(Student, {
   foreignKey: "student_id",
   as: "student",
   onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+// Group ↔ Payment (One-to-Many)
+Group.hasMany(Payment, {
+  foreignKey: "for_which_group",
+  as: "payments",           // Group dan Paymentlarni olish uchun alias
+  onDelete: "SET NULL",     // yoki "CASCADE" – sizning logikangizga qarab
+  onUpdate: "CASCADE",
+});
+
+Payment.belongsTo(Group, {
+  foreignKey: "for_which_group",
+  as: "group",              // Payment dan Groupni olish uchun alias (include da ishlatiladi)
+  onDelete: "SET NULL",
   onUpdate: "CASCADE",
 });
 

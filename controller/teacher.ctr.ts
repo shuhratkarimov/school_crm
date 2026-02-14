@@ -10,7 +10,7 @@ import TeacherBalance from "../Models/teacher-balance.model";
 import bcryptjs from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { monthsInUzbek } from "./payments.ctr";
-import { col, fn, Op, where, literal } from "sequelize";
+import { col, fn, Op, where, literal, Sequelize } from "sequelize";
 
 async function getTeachers(
   req: Request,
@@ -246,11 +246,24 @@ async function teacherLogin(
       expiresIn: "1h",
     });
 
+    const refreshtoken = jwt.sign(payload, process.env.REFRESH_SECRET_KEY as string, {
+      expiresIn: "7d",
+    });
+
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+
     res.cookie("accesstoken", token, {
       httpOnly: true,
-      secure: false,
+      secure: isSecure,
       sameSite: "lax",
       maxAge: 60 * 60 * 1000,
+    });
+
+    res.cookie("refreshtoken", refreshtoken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({ message: "Muvaffaqiyatli kirildi", status: "success" });
@@ -278,6 +291,78 @@ async function getTeacherPayments(
     });
     res.status(200).json(payments);
   } catch (error) {
+    next(error);
+  }
+}
+
+async function getTeacherSalaries(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { month, year } = req.query;
+
+    // Agar month va year berilgan bo‘lsa, faqat shu oylikni filtrlaymiz
+    const whereCondition: any = {};
+    if (month && year) {
+      whereCondition.given_date = {
+        [Op.and]: [
+          Sequelize.where(
+            fn('DATE_PART', 'month', col('given_date')),
+            parseInt(month as string)
+          ),
+          Sequelize.where(
+            fn('DATE_PART', 'year', col('given_date')),
+            parseInt(year as string)
+          ),
+        ],
+      };
+    }
+
+    const salaries = await TeacherPayment.findAll({
+      attributes: [
+        'id',
+        'teacher_id',
+        'payment_type',
+        'given_by',
+        'payment_amount',
+        'given_date',
+        [literal(`"teacher"."first_name" || ' ' || "teacher"."last_name"`), 'teacher_name'],
+      ],
+      include: [{
+        model: Teacher,
+        as: 'teacher',
+        attributes: [], // faqat ism-familiya uchun kerak
+      }],
+      where: whereCondition,
+      order: [['given_date', 'DESC']],
+      raw: true,
+      nest: true,
+    });
+
+    // Oylik bo‘yicha guruhlash (agar kerak bo‘lsa)
+    const monthlySummary = salaries.reduce((acc: any, sal: any) => {
+      const date = new Date(sal.given_date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = { total: 0, payments: [] };
+      }
+      acc[monthKey].total += Number(sal.payment_amount);
+      acc[monthKey].payments.push(sal);
+
+      return acc;
+    }, {});
+
+    res.status(200).json({
+      all_salaries: salaries,
+      monthly_summary: Object.entries(monthlySummary).map(([month, info]: [string, any]) => ({
+        month,
+        total: info.total,
+        count: info.payments.length,
+        payments: info.payments,
+      })),
+    });
+
+  } catch (error: any) {
+    console.error("getTeacherSalaries xatosi:", error);
     next(error);
   }
 }
@@ -454,7 +539,19 @@ async function teacherLogout(req: Request, res: Response, next: NextFunction) {
     } catch (error) {
       return next(BaseError.BadRequest(401, "Token xato"));
     }
-    res.clearCookie("accesstoken");
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    res.clearCookie("accesstoken", {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      path: "/",
+    });
+    res.clearCookie("refreshtoken", {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      path: "/",
+    });
     res.status(200).json({ message: "Tizimdan chiqdingiz!" });
   } catch (error) {
     next(error);
@@ -475,5 +572,6 @@ export {
   getTeacherPayments,
   getTeacherData,
   getTeacherDashboardStudentPayments,
-  teacherLogout
+  teacherLogout,
+  getTeacherSalaries
 };

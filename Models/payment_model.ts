@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.config';
 
-class Payment extends Model {}
+class Payment extends Model { }
 Payment.init(
   {
     id: {
@@ -50,7 +50,7 @@ Payment.init(
       allowNull: false,
     },
     for_which_group: {
-      type: DataTypes.STRING,
+      type: DataTypes.UUID,
       allowNull: false,
     },
     shouldBeConsideredAsPaid: {
@@ -73,6 +73,5 @@ Payment.init(
   }
 );
 
-Payment.sync({force: false})
-
+Payment.sync({ force: false })
 export default Payment;

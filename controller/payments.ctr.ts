@@ -66,6 +66,77 @@ async function getOnePayment(req: Request, res: Response, next: NextFunction): P
   }
 }
 
+interface AggregateResult {
+  total: string | number | null;
+  count: string | number | null;
+}
+
+async function getGroupMonthlyPaymentSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { groupId } = req.params;
+    const now = new Date();
+    const year = now.getFullYear();
+    const monthNum = now.getMonth() + 1;
+    const monthName = monthsInUzbek[monthNum] || "Yanvar";
+
+    // Guruhdagi o'quvchilar
+    const students = await Student.findAll({
+      attributes: ['id'],
+      include: [{
+        model: StudentGroup,
+        as: "studentGroups",
+        where: { group_id: groupId },
+        required: true,
+        attributes: [],
+      }],
+      raw: true,
+    });
+
+    const studentIds = students.map((s: any) => s.id);
+
+    let summaryResult = {
+      month: monthName,
+      year,
+      total_paid: 0,
+      paid_count: 0,
+      total_students: studentIds.length,
+      monthly_fee: null,
+    };
+
+    if (studentIds.length === 0) {
+      return res.json({ success: true, ...summaryResult });
+    }
+
+    // Guruh ma'lumotini olish (monthly_fee uchun)
+    const group = await Group.findByPk(groupId, { attributes: ['monthly_fee'], raw: true }) as any;
+    if (group) {
+      summaryResult.monthly_fee = group.monthly_fee;
+    }
+
+    // To'lovlar summasi va soni
+    const summary = await Payment.findOne({
+      where: {
+        for_which_group: groupId,
+        for_which_month: monthName,
+        pupil_id: { [Op.in]: studentIds },
+      },
+      attributes: [
+        [Sequelize.fn('SUM', Sequelize.col('payment_amount')), 'total'],
+        [Sequelize.fn('COUNT', Sequelize.col('id')), 'count'],
+      ],
+      raw: true,
+    }) as AggregateResult | null;
+
+    summaryResult.total_paid = summary?.total ? Math.round(Number(summary.total)) : 0;
+    summaryResult.paid_count = summary?.count ? Number(summary.count) : 0;
+
+    return res.json({ success: true, ...summaryResult });
+  } catch (err) {
+    console.error("getGroupMonthlyPaymentSummary xatosi:", err);
+    next(err);
+  }
+}
+
 async function createPayment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
   try {
     let {
@@ -133,8 +204,7 @@ async function createPayment(req: Request, res: Response, next: NextFunction): P
       where: {
         pupil_id,
         for_which_group,
-        for_which_month,
-        payment_amount: paymentAmount,
+        for_which_month
       },
     })
 
@@ -193,7 +263,6 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
     if (!payment) {
       return next(BaseError.BadRequest(404, i18next.t("payment_notFound")));
     }
-
     const foundGroup = await Group.findByPk(payment.dataValues.for_which_group);
     if (!foundGroup) {
       return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
@@ -223,9 +292,6 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
       if (foundPayment && foundPayment.dataValues.id !== payment.dataValues.id) {
         return next(BaseError.BadRequest(400, "To'lov mavjud! To'lovni yangilash uchun to'lovni yangilash qismiga o'ting."));
       }
-    }
-    if (shouldBeConsideredAsPaid) {
-      await studentGroup.update({ paid: shouldBeConsideredAsPaid });
     }
     if (payment_amount && payment_amount === foundGroup.dataValues.monthly_fee) {
       await studentGroup.update({ paid: true });
@@ -465,4 +531,5 @@ export {
   getYearlyPayments,
   getStudentPayments,
   getThisMonthTotalPayments,
+  getGroupMonthlyPaymentSummary,
 };

@@ -14,6 +14,206 @@ import {
 import { Op } from "sequelize";
 import { validate as uuidValidate } from "uuid";
 import StudentGroup from "../Models/student_groups_model";
+import sequelize from '../config/database.config';
+import { ReserveStudent } from "../Models/reserve_student_model";
+import { generateStudentId } from "./student.ctr";
+
+async function approveReserveStudent(req: Request, res: Response, next: NextFunction) {
+  const { id } = req.params;
+  const { group_ids = [] } = req.body; // ixtiyoriy guruh(lar)
+
+  try {
+    const reserve = await ReserveStudent.findByPk(id);
+    if (!reserve) return next(BaseError.BadRequest(404, "Zaxiradagi o'quvchi topilmadi"));
+    const ReturnedId = await generateStudentId();
+    await sequelize.transaction(async (t) => {
+      // students ga ko'chirish
+      const newStudent = await Student.create(
+        {
+          first_name: reserve.dataValues.first_name,
+          last_name: reserve.dataValues.last_name,
+          father_name: reserve.dataValues.father_name,
+          mother_name: reserve.dataValues.mother_name,
+          birth_date: reserve.dataValues.birth_date,
+          phone_number: reserve.dataValues.phone_number,
+          parents_phone_number: reserve.dataValues.parents_phone_number,
+          came_in_school: reserve.dataValues.came_in_school,
+          studental_id: ReturnedId,
+        },
+        { transaction: t }
+      );
+
+      // agar guruh(lar) berilgan bo'lsa — biriktirish
+      if (group_ids.length > 0) {
+        const records = group_ids.map((gid: string) => ({
+          student_id: newStudent.dataValues.id,
+          group_id: gid,
+        }));
+        await StudentGroup.bulkCreate(records, { transaction: t, ignoreDuplicates: true });
+      }
+
+      // zaxiradan o'chirish
+      await reserve.destroy({ transaction: t });
+    });
+
+    res.json({ success: true, message: "O'quvchi students jadvaliga o'tkazildi va guruh(lar)ga biriktirildi" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const createReserveStudent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      first_name,
+      last_name,
+      father_name,
+      mother_name,
+      birth_date,
+      phone_number,
+      parents_phone_number,
+      came_in_school,
+      notes,
+    } = req.body;
+
+    // Majburiy maydonlarni tekshirish
+    if (!first_name?.trim() || !last_name?.trim() || !phone_number || !parents_phone_number) {
+      return next(BaseError.BadRequest(400, "Majburiy maydonlar to'ldirilmagan (ism, familiya, telefonlar)"));
+    }
+
+    const newStudent = await ReserveStudent.create({
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      father_name: father_name?.trim(),
+      mother_name: mother_name?.trim(),
+      birth_date: birth_date ? new Date(birth_date) : null,
+      phone_number,
+      parents_phone_number,
+      came_in_school: came_in_school ? new Date(came_in_school) : null,
+      notes: notes?.trim(),
+      status: "new",
+      created_at: new Date(),
+    });
+
+    res.status(201).json({
+      message: "Yangi o'quvchi zaxiraga qo'shildi",
+      student: newStudent,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const importStudents = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.body || !req.body.students) {
+      return next(BaseError.BadRequest(400, "students maydoni majburiy"));
+    }
+
+    if (!Array.isArray(req.body.students)) {
+      return next(BaseError.BadRequest(400, "students massiv bo'lishi kerak"));
+    }
+
+    const students = req.body.students;
+
+    const created = [];
+
+    await sequelize.transaction(async (t) => {
+      for (const data of students) {
+        // Telefon unique tekshirish
+        const existing = await Promise.all([
+          ReserveStudent.findOne({ where: { phone_number: data.phone_number }, transaction: t }),
+          Student.findOne({ where: { phone_number: data.phone_number }, transaction: t }),
+        ]);
+
+        const reserveStudent = await ReserveStudent.create(
+          {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            father_name: data.father_name,
+            mother_name: data.mother_name,
+            birth_date: data.birth_date ? new Date(data.birth_date) : null,
+            phone_number: data.phone_number,
+            parents_phone_number: data.parents_phone_number,
+            came_in_school: data.came_in_school ? new Date(data.came_in_school) : null,
+            status: 'new',
+          },
+          { transaction: t }
+        );
+
+        created.push(reserveStudent);
+      }
+    });
+
+    res.status(201).json({
+      message: `${created.length} ta o'quvchi zaxiraga qo'shildi`,
+      count: created.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getReserveStudents = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const students = await ReserveStudent.findAll({
+      order: [["created_at", "DESC"]],
+    });
+    res.status(200).json(students);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateReserveStudent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+
+    const student = await ReserveStudent.findByPk(id);
+    if (!student) {
+      return next(BaseError.BadRequest(404, "Zaxiradagi o'quvchi topilmadi"));
+    }
+
+    // Agar telefon o'zgartirilsa, unique tekshirish
+    if (data.phone_number && data.phone_number !== student.dataValues.phone_number) {
+      const existing = await ReserveStudent.findOne({ where: { phone_number: data.phone_number } });
+      if (existing) {
+        return next(BaseError.BadRequest(409, `Telefon allaqachon mavjud: ${data.phone_number}`));
+      }
+    }
+
+    await student.update({
+      ...data,
+      birth_date: data.birth_date ? new Date(data.birth_date) : student.dataValues.birth_date,
+      came_in_school: data.came_in_school ? new Date(data.came_in_school) : student.dataValues.came_in_school,
+    });
+
+    res.status(200).json({
+      message: "Ma'lumotlar yangilandi",
+      student,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteReserveStudent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const student = await ReserveStudent.findByPk(id);
+    if (!student) {
+      return next(BaseError.BadRequest(404, "Zaxiradagi o'quvchi topilmadi"));
+    }
+
+    await student.destroy();
+
+    res.status(200).json({ message: "O'quvchi zaxiradan o'chirildi" });
+  } catch (err) {
+    next(err);
+  }
+};
 
 async function getGroups(
   req: Request,
@@ -388,4 +588,6 @@ export {
   updateGroup,
   deleteGroup,
   getOneGroupForTeacherAttendance,
+  approveReserveStudent,
+  createReserveStudent,
 };
