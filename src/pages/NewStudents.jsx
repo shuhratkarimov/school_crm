@@ -153,10 +153,11 @@ export default function NewStudents() {
                 headers.forEach((header, idx) => {
                     const value = row[idx];
 
-                    if (header === "ism" || header.includes("first_name")) {
+                    if (["ism", "firstname", "first_name"].includes(header)) {
                         student.first_name = value ? String(value).trim() : "";
                     }
-                    if (header === "familiya" || header.includes("last_name")) {
+                    
+                    if (["familiya", "lastname", "last_name"].includes(header)) {
                         student.last_name = value ? String(value).trim() : "";
                     }
                     if (header === "ota/ona ismi" || header.includes("father_name")) {
@@ -182,11 +183,11 @@ export default function NewStudents() {
                             else student.parents_phone_number = null;
                         } else student.parents_phone_number = null;
                     }
-                    if (header === "tug'ilgan sana") {
-                        student.birth_date = value ? formatDateForExcelImport(value) : null;
+                    if (header === "tug'ilgan sana" || header.includes("birth")) {
+                        student.birth_date = value ? parseFlexibleDate(value) : null;
                     }
-                    if (header === "o'qishga kelgan sana") {
-                        student.came_in_school = value ? formatDateForExcelImport(value) : null;
+                    if (header === "o'qishga kelgan sana" || header.includes("came")) {
+                        student.came_in_school = value ? parseFlexibleDate(value) : null;
                     }
                 });
                 return student;
@@ -227,24 +228,67 @@ export default function NewStudents() {
         reader.readAsArrayBuffer(selectedFile);
     };
 
-    // Sana formatlash (sizda allaqachon bor edi)
-    function formatDateForExcelImport(value) {
+    function parseFlexibleDate(value) {
         if (!value) return null;
-        let date;
+
+        // Excel serial number bo'lsa
         if (typeof value === 'number') {
-            date = new Date((value - 25569) * 86400 * 1000);
-        } else if (typeof value === 'string') {
-            const trimmed = value.trim();
-            if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) date = new Date(trimmed);
-            else if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(trimmed)) {
-                const [d, m, y] = trimmed.split('.').map(Number);
-                date = new Date(y, m - 1, d);
-            }
-            else date = new Date(trimmed);
-        }
-        if (date && !isNaN(date.getTime())) {
+            const utcDays = Math.floor(value - 25569);
+            const date = new Date(utcDays * 86400 * 1000);
             return date.toISOString().split('T')[0];
         }
+
+        if (typeof value !== 'string') return null;
+
+        const str = value.trim().replace(/\s+/g, '');
+
+        let year, month, day;
+
+        // dd.mm.yyyy yoki dd.mm.yy
+        const dotMatch = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);
+        if (dotMatch) {
+            [day, month, year] = dotMatch.slice(1);
+            if (year.length === 2) year = '20' + year;
+        }
+
+        // dd/mm/yyyy yoki d/m/yy
+        else if (str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/)) {
+            const parts = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+            [day, month, year] = parts.slice(1);
+            if (year.length === 2) year = '20' + year;
+        }
+
+        // yyyy-mm-dd
+        else if (str.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+            [year, month, day] = str.split('-');
+        }
+
+        if (year && month && day) {
+            // Eng muhimi — UTC sana yaratish
+            const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12, 0, 0));
+
+            // Agar sana noto'g'ri bo'lsa (masalan 31-fevral), Date avto-korreksiya qiladi
+            // Lekin biz xohlamaymiz — shuning uchun tekshirib qaytaramiz
+            if (
+                date.getUTCFullYear() === Number(year) &&
+                date.getUTCMonth() === Number(month) - 1 &&
+                date.getUTCDate() === Number(day)
+            ) {
+                return date.toISOString().split('T')[0];
+            }
+        }
+
+        // Fallback — brauzer sinab ko'radi
+        const fallback = new Date(str);
+        if (!isNaN(fallback.getTime())) {
+            // fallback ham local bo'lishi mumkin, shuning uchun UTC ga o'tkazamiz
+            return new Date(Date.UTC(
+                fallback.getFullYear(),
+                fallback.getMonth(),
+                fallback.getDate()
+            )).toISOString().split('T')[0];
+        }
+
         return null;
     }
 
