@@ -150,6 +150,14 @@ async function deleteTeacher(
         BaseError.BadRequest(404, "Ustoz topilmadi")
       );
     }
+    await TeacherPayment.destroy({
+      where: { teacher_id: teacher.dataValues.id }
+    });
+
+    await TeacherBalance.destroy({
+      where: { teacher_id: teacher.dataValues.id }
+    });
+
     await teacher.destroy();
     res.status(200).json({
       message: "Ustoz o'chirildi",

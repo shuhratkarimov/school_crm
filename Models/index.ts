@@ -20,13 +20,14 @@ import TeacherPayment from "./teacher-payment.model";
 Teacher.hasMany(Group, {
   foreignKey: "teacher_id",
   as: "groups",
-  onDelete: "SET NULL",
+  onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
+
 Group.belongsTo(Teacher, {
   foreignKey: "teacher_id",
   as: "teacher",
-  onDelete: "SET NULL",
+  onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
 

@@ -38,7 +38,7 @@ Schedule.init(
         model: 'teachers',
         key: 'id',
       },
-      onDelete: 'SET NULL',
+      onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
     },
     day: {
