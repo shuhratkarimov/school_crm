@@ -971,6 +971,7 @@ function AdminTestResults() {
                           <th className="px-4 py-3 text-left text-sm font-medium text-center">Ism Familiya</th>
                           <th className="px-4 py-3 text-center text-sm font-medium text-center">Ball</th>
                           <th className="px-4 py-3 text-center text-sm font-medium text-center">Holati</th>
+                          <th className="px-4 py-2 text-left">SMS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -993,6 +994,18 @@ function AdminTestResults() {
                                   <UserX size={14} className="mr-1" />
                                 )}
                                 {result.attended ? 'Qatnashgan' : 'Qatnashmagan'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold
+      ${result.is_sent
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-600"
+                                  }
+    `}
+                              >
+                                {result.is_sent ? "Yuborilgan" : "Yuborilmagan"}
                               </span>
                             </td>
                           </tr>

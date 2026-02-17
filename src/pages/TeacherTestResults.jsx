@@ -35,7 +35,7 @@ function TeacherTestResults() {
   const [monthFilter, setMonthFilter] = useState(new Date().getMonth() + 1);
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
   const [activeMenu, setActiveMenu] = useState("test-results");
-
+  const [smsSending, setSmsSending] = useState(false);
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -119,6 +119,33 @@ function TeacherTestResults() {
       test_number: lastTestNumber + 1,
     });
     setAddModal(true);
+  };
+
+  const sendTestSMS = async () => {
+    if (!selectedTest) return;
+
+    try {
+      setSmsSending(true);
+
+      const res = await fetch(`${API_URL}/send_test_sms/${selectedTest.id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(`SMS yuborishda xatolik: ${data.message}`);
+        return;
+      }
+
+      toast.success("Ota-onalarga SMS yuborildi!");
+      setDetailModal(false);
+      await fetchTestDetails(selectedTest.id);
+    } catch (err) {
+      toast.error(`SMS yuborishda xatolik: ${err.message}`);
+    } finally {
+      setSmsSending(false);
+    }
   };
 
   const addTestResults = async (e) => {
@@ -632,6 +659,12 @@ function TeacherTestResults() {
                                   {result.attended ? 'Qatnashdi' : 'Qatnashmadi'}
                                 </span>
                               </td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${result.is_sent ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                                  }`}>
+                                  {result.is_sent ? "Yuborilgan" : "Yuborilmagan"}
+                                </span>
+                              </td>
                               <td className="p-3 font-medium">{result.attended ? result.score : '-'}</td>
                             </tr>
                           ))}
@@ -641,12 +674,40 @@ function TeacherTestResults() {
                   </div>
                 </div>
 
+                {/* Test Details Modal - footerga qo'shamiz */}
                 <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
                   <button
                     className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
                     onClick={() => setDetailModal(false)}
                   >
                     Yopish
+                  </button>
+                  <button
+                    className={`px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2 relative group
+    ${smsSending
+                        ? "bg-green-400 cursor-not-allowed text-white"
+                        : "bg-green-600 hover:bg-green-700 text-white cursor-not-allowed opacity-70"
+                      }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toast("Bu funksiya tez kunda ishga tushadi! ⏳");
+                    }}
+                    title="Tez kunda"
+                  >
+                    {smsSending ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Yuborilmoqda...
+                      </>
+                    ) : (
+                      <>
+                        Ota-onalarga SMS yuborish
+                        <span className="absolute -top-8 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          Tez kunda ⏳
+                        </span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
