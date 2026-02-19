@@ -521,6 +521,92 @@ async function getThisMonthTotalPayments() {
   }
 }
 
+async function getUnpaidPayments(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { year, month, studentId, groupId } = req.query;
+
+    // Parametrlarni tayyorlash
+    const filterYear = year ? parseInt(year as string, 10) : new Date().getFullYear();
+    let filterMonths: string[] = [];
+
+    if (month && month !== "all") {
+      // faqat bitta oy tanlangan
+      filterMonths = [month as string];
+    } else {
+      // barcha oylar (joriy yil uchun yoki tanlangan yil uchun)
+      filterMonths = Object.values(monthsInUzbek);
+    }
+
+    // where shartlari
+    const whereClause: any = {
+      year: filterYear,
+      month: { [Op.in]: filterMonths },
+      paid: false,
+    };
+
+    if (studentId) {
+      whereClause.student_id = studentId;
+    }
+    if (groupId) {
+      whereClause.group_id = groupId;
+    }
+
+    const unpaidRecords = await StudentGroup.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Student,
+          as: "student",
+          attributes: ["id", "first_name", "last_name", "phone_number"],
+        },
+        {
+          model: Group,
+          as: "group",
+          attributes: ["id", "group_subject", "monthly_fee"],
+        },
+      ],
+      order: [
+        ["student", "last_name", "ASC"],
+        ["month", "ASC"],
+      ],
+      raw: false,
+    });
+
+    // Natijani formatlash
+    const result = unpaidRecords.map((record: any) => ({
+      student: {
+        id: record.student?.id,
+        fullName: `${record.student?.first_name || ""} ${record.student?.last_name || ""}`.trim() || "Noma'lum",
+        phone: record.student?.phone_number || "-",
+      },
+      group: {
+        id: record.group?.id,
+        name: record.group?.group_subject || "—",
+        monthlyFee: record.group?.monthly_fee || 0,
+      },
+      month: record.month,
+      year: record.year,
+      status: "to'lanmagan",
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: result.length,
+      year: filterYear,
+      month: month || "all",
+      data: result,
+    });
+  } catch (err: any) {
+    console.error("getUnpaidPayments xatosi:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server xatosi yuz berdi",
+      error: err.message,
+    });
+    next(err); // agar global error handler bo'lsa
+  }
+}
+
 export {
   getPayments,
   getOnePayment,
@@ -532,4 +618,5 @@ export {
   getStudentPayments,
   getThisMonthTotalPayments,
   getGroupMonthlyPaymentSummary,
+  getUnpaidPayments,
 };

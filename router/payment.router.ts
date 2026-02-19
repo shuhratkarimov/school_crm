@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from "express"
-import { createPayment, deletePayment, getOnePayment, getPayments, getYearlyPayments, updatePayment } from "../controller/payments.ctr"
+import { createPayment, deletePayment, getOnePayment, getPayments, getUnpaidPayments, getYearlyPayments, updatePayment } from "../controller/payments.ctr"
 import { paymentAlert } from "../controller/payment-alert.ctr"
 const PaymentRouter:Router = Router()
 
@@ -10,6 +10,7 @@ PaymentRouter.put("/update_payment/:id", updatePayment as RequestHandler)
 PaymentRouter.delete("/delete_payment/:id", deletePayment as RequestHandler)
 PaymentRouter.get("/get_yearly_payments", getYearlyPayments as RequestHandler)
 PaymentRouter.post("/payment_alert/:studentId", paymentAlert as RequestHandler)
+PaymentRouter.get("/get_unpaid_payments", getUnpaidPayments as RequestHandler)
 
 
 export {

@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../config/database.config";
+import { t } from "i18next";
 
 interface TestAttributes {
   id: string;
@@ -16,7 +17,7 @@ interface TestAttributes {
 }
 
 interface TestCreationAttributes
-  extends Optional<TestAttributes, "id" | "total_students" | "attended_students" | "average_score" | "created_at" | "updated_at"> {}
+  extends Optional<TestAttributes, "id" | "total_students" | "attended_students" | "average_score" | "created_at" | "updated_at"> { }
 
 class Test extends Model<TestAttributes, TestCreationAttributes> implements TestAttributes {
   public id!: string;
@@ -58,7 +59,7 @@ Test.init(
     total_students: { type: DataTypes.INTEGER, defaultValue: 0 },
     attended_students: { type: DataTypes.INTEGER, defaultValue: 0 },
     average_score: { type: DataTypes.FLOAT, defaultValue: 0.0 },
-    date: { type: DataTypes.DATE, allowNull: false },
+    date: { type: DataTypes.DATE, allowNull: false }
   },
   {
     sequelize,

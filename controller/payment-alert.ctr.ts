@@ -15,7 +15,8 @@ export async function paymentAlert(req:Request, res:Response, next: NextFunction
     }
     const { id, first_name, last_name, phone_number } = student.dataValues;
     const defaultMessage = message ? message : `Hurmatli ${first_name} ${last_name}, to'lov muddati o'tib ketdi. Iltimos, ${new Date().toLocaleDateString('uz-UZ')} holatiga to'lovni amalga oshirishingizni so'raymiz.`
-    await sendSMS(id, phone_number, defaultMessage)
+    const sms = await sendSMS(id, phone_number, defaultMessage)
+    console.log(sms)
     res.json({ success: true, message: 'Notification sent' });
 
   } catch (error) {

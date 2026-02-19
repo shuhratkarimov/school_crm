@@ -10,9 +10,10 @@ interface TestResultAttributes {
   student_id: string;
   score: number;
   attended: boolean;
+  is_sent: boolean;
 }
 
-interface TestResultCreationAttributes extends Optional<TestResultAttributes, "id" | "attended"> {}
+interface TestResultCreationAttributes extends Optional<TestResultAttributes, "id" | "attended"> { }
 
 class TestResult extends Model<TestResultAttributes, TestResultCreationAttributes>
   implements TestResultAttributes {
@@ -21,6 +22,8 @@ class TestResult extends Model<TestResultAttributes, TestResultCreationAttribute
   public student_id!: string;
   public score!: number;
   public attended!: boolean;
+  public is_sent!: boolean;
+    student: any;
 }
 
 TestResult.init(
@@ -42,8 +45,11 @@ TestResult.init(
     },
     score: { type: DataTypes.FLOAT, allowNull: false },
     attended: { type: DataTypes.BOOLEAN, defaultValue: false },
+    is_sent: { type: DataTypes.BOOLEAN, defaultValue: false },
   },
   { sequelize, modelName: "TestResult", tableName: "test_results", timestamps: false }
 );
+
+sequelize.sync({force: false});
 
 export default TestResult;

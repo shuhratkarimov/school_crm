@@ -1,8 +1,9 @@
 import { Op } from "sequelize";
 import { BaseError } from "../Utils/base_error";
 import { Request, Response, NextFunction } from "express";
-import { Group, Student, Test, TestResult } from "../Models/index";
+import { Group, Student, StudentGroup, Test, TestResult } from "../Models/index";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { sendSMS } from "../Utils/sms-service";
 
 async function getTeacherTests(req: Request, res: Response, next: NextFunction) {
     try {
@@ -104,7 +105,7 @@ async function createTest(req: Request, res: Response, next: NextFunction) {
             total_students,
             attended_students,
             average_score,
-            date,
+            date
         });
 
         const testResults = results.map((result: any) => ({
@@ -131,7 +132,7 @@ async function updateTest(req: Request, res: Response, next: NextFunction) {
         const teacherId = decoded.id;
         const { test_id } = req.params;
 
-        const { group_id, test_number, test_type, total_students, attended_students, average_score, results, date, editTimeLimit } = req.body;
+        const { group_id, test_number, test_type, total_students, attended_students, average_score, results, date, editTimeLimit, is_sent } = req.body;
 
         const test = await Test.findByPk(test_id);
         if (!test) return next(BaseError.BadRequest(404, "Test topilmadi"));
@@ -141,7 +142,8 @@ async function updateTest(req: Request, res: Response, next: NextFunction) {
         const created = new Date(test.dataValues.created_at as Date);
         const diff = now.getTime() - created.getTime();
         if (diff > editTimeLimit * 3600 * 1000) {
-            return next(BaseError.BadRequest(403, `Testni tahrirlash uchun ${editTimeLimit} soat o'tgan`));        }
+            return next(BaseError.BadRequest(403, `Testni tahrirlash uchun ${editTimeLimit} soat o'tgan`));
+        }
 
         await test.update({
             group_id,
@@ -184,4 +186,54 @@ async function deleteTest(req: Request, res: Response, next: NextFunction) {
     }
 }
 
-export { getTeacherTests, getTestResults, createTest, updateTest, deleteTest, getAllTestsByMonthAndYear };
+async function getStudentsByTest(testId: string) {
+    const test = await Test.findByPk(testId);
+    if (!test) throw new Error("Test topilmadi");
+
+    const studentsDatas = await StudentGroup.findAll({
+        where: { group_id: test.group_id },
+    });
+
+    const studentIds = studentsDatas.map(s => s.dataValues.student_id);
+
+    return await Student.findAll({
+        where: { id: studentIds },
+        attributes: ["id", "parents_phone_number"],
+    });
+}
+
+const sendTestResultsToParents = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const { test_id } = req.params;
+        const test = await Test.findByPk(test_id);
+        if (!test) return next(BaseError.BadRequest(404, "Test topilmadi"));
+
+        const students = await getStudentsByTest(test_id);
+        if (!students?.length) return next(BaseError.BadRequest(404, "O‘quvchilar topilmadi"));
+
+        const results = await TestResult.findAll({
+            where: { test_id },
+            include: [{ model: Student, as: "student" }]
+        });
+
+        const isSmsSent = results.every(result => result.is_sent);
+        if (isSmsSent) return next(BaseError.BadRequest(400, "Ushbu test uchun SMSlar allaqachon yuborilgan"));
+        for (const result of results) {
+            const message = result.attended ? `Hurmatli ${result.student.father_name ? result.student.father_name : 'ota-ona!'}, Farzandingiz ${result.student.last_name} ${result.student.first_name} markaz tomonidan o'tkazilgan testda ${result.score} ball olganligini ma'lum qilamiz\nHurmat bilan Intellectual Progress o'quv markazi jamoasi.` : `Hurmatli ${result.student.father_name ? result.student.father_name : 'ota-ona!'}, Farzandingiz ${result.student.last_name} ${result.student.first_name} markaz tomonidan o'tkazilgan testda qatnashmaganligini ma'lum qilamiz\nHurmat bilan Intellectual Progress o'quv markazi jamoasi.`;
+            await sendSMS(
+                result.student.id,
+                result.student.parents_phone_number,
+                message
+            );
+
+            result.is_sent = true;
+            await result.save();
+        }
+
+        return res.json({ message: "SMSlar yuborildi" });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export { getTeacherTests, getTestResults, createTest, updateTest, deleteTest, getAllTestsByMonthAndYear, sendTestResultsToParents };
