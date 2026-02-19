@@ -39,7 +39,11 @@ function Payments() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [groupDiscounts, setGroupDiscounts] = useState({}); // { groupId: { percent: number, amount: number } }
   const [totalAmount, setTotalAmount] = useState(0); // Umumiy summa
-
+  const [unpaid, setUnpaid] = useState([]);
+  const [showUnpaid, setShowUnpaid] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [isLoadingUnpaid, setIsLoadingUnpaid] = useState(false);
   const [formData, setFormData] = useState({
     for_which_group: "", // "group_id" o'rniga "for_which_group"
     pupil_id: "",
@@ -51,31 +55,67 @@ function Payments() {
     shouldBeConsideredAsPaid: false,
     came_in_school: "",
   });
+  const [currentYearUnpaidCount, setCurrentYearUnpaidCount] = useState(0);
+  const [selectedPaymentYear, setSelectedPaymentYear] = useState(new Date().getFullYear().toString());
+  const [sendingNotification, setSendingNotification] = useState({});
 
-  const calculateTotalAmount = () => {
-    if (!formData.pupil_id || selectedGroups.length === 0 || !formData.for_which_month) return 0;
+  const years = Array.from({ length: 6 }, (_, i) => (new Date().getFullYear() - i).toString());
 
-    let total = 0;
-    selectedGroups.forEach(groupId => {
-      const group = groups.find(g => g.id === groupId);
-      if (group) {
-        const originalAmount = Number(calculatePaymentAmount(
-          group,
-          formData.for_which_month,
-          formData.came_in_school
-        ));
+  useEffect(() => {
+    if (!showUnpaid) {
+      setUnpaid([]);           // yopilganda tozalash
+      setIsLoadingUnpaid(false);
+      return;
+    }
 
-        // Agar guruh uchun chegirma belgilangan bo'lsa
-        if (groupDiscounts[groupId] && groupDiscounts[groupId].finalAmount) {
-          total += groupDiscounts[groupId].finalAmount;
-        } else {
-          total += originalAmount;
-        }
+    let url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
+    if (selectedMonth !== "all") {
+      url += `&month=${encodeURIComponent(selectedMonth)}`; // o'zbekcha uchun xavfsiz
+    }
+
+    console.log("Yangi so'rov yuborildi:", url); // debug
+
+    setIsLoadingUnpaid(true);
+    setUnpaid([]); // har safar jadvalni tozalash
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP xato: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data?.data || []);
+        setUnpaid(list);
+        console.log("Yuklandi:", list.length, "ta qarzdor");
+      })
+      .catch(err => {
+        console.error("Fetch xatosi:", err);
+        toast.error("Qarzdorlar yuklanmadi");
+      })
+      .finally(() => {
+        setIsLoadingUnpaid(false);
+      });
+
+  }, [showUnpaid, selectedYear, selectedMonth]);
+
+  // Sahifa birinchi marta yuklanganda joriy yil qarzdorlarini yuklash
+  useEffect(() => {
+    const loadInitialUnpaidCount = async () => {
+      try {
+        const url = `${API_URL}/get_unpaid_payments?year=${new Date().getFullYear()}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Initial count yuklanmadi");
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data?.data || []);
+        setCurrentYearUnpaidCount(list.length);
+      } catch (err) {
+        console.error("Initial unpaid count xatosi:", err);
+        setCurrentYearUnpaidCount(0); // xato bo'lsa 0 ko'rsatamiz
       }
-    });
+    };
 
-    return total;
-  };
+    loadInitialUnpaidCount();
+  }, []);
 
   const allMonths = [
     "Yanvar",
@@ -200,6 +240,23 @@ function Payments() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!showUnpaid) return; // faqat ochiq bo'lsa yangilaymiz
+
+    const updateCount = async () => {
+      try {
+        const url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data?.data || []);
+        setCurrentYearUnpaidCount(list.length);
+      } catch { }
+    };
+
+    updateCount();
+  }, [selectedYear, showUnpaid]);
 
   const addPayment = async (e) => {
     e.preventDefault();
@@ -517,12 +574,31 @@ function Payments() {
     return !currentOrNextMonthPaid && students.find((s) => s.id === studentId);
   };
 
+  const calculateTotalAmount = () => {
+    let total = 0;
+    selectedGroups.forEach((groupId) => {
+      const group = groups.find((g) => g.id === groupId);
+      if (!group) return;
+      const amount = calculatePaymentAmount(
+        group,
+        formData.for_which_month,
+        formData.came_in_school
+      );
+      total += amount;
+    });
+    return total;
+  };
+
   useEffect(() => {
     const total = calculateTotalAmount();
     setTotalAmount(total);
   }, [selectedGroups, groupDiscounts, formData.for_which_month, formData.pupil_id, formData.came_in_school]);
 
   const sendNotification = async (studentId) => {
+    if (sendingNotification[studentId]) return; // takroriy bosishni oldini olish
+
+    setSendingNotification(prev => ({ ...prev, [studentId]: true }));
+
     try {
       const response = await fetch(
         `${API_URL}/payment_alert/${studentId}`,
@@ -535,20 +611,27 @@ function Payments() {
       if (response.ok) {
         toast.success("Xabar muvaffaqiyatli jo'natildi");
       } else {
-        throw new Error("Xabarni jo'natishda xatolik");
+        const errorData = await response.json();
+        toast.error(errorData.message || "Xabar jo'natishda xatolik");
       }
     } catch (err) {
-      toast.error(`Xabarni jo'natishda xatolik: ${err.message}`);
+      toast.error("Xabarni jo'natishda xatolik yuz berdi");
+    } finally {
+      setSendingNotification(prev => ({ ...prev, [studentId]: false }));
     }
   };
 
-  const filteredPayments = payments.filter(
-    (payment) =>
-      `${payment.student?.first_name} ${payment.student?.last_name}`
-        ?.toLowerCase()
-        ?.includes(searchTerm.toLowerCase()) &&
-      (monthFilter === "all" || payment.for_which_month === monthFilter)
-  );
+  const filteredPayments = payments.filter((payment) => {
+    const matchesSearch = `${payment.student?.first_name || ""} ${payment.student?.last_name || ""}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const matchesMonth = monthFilter === "all" || payment.for_which_month === monthFilter;
+    const matchesYear = selectedPaymentYear === "all" ||
+      new Date(payment.created_at).getFullYear().toString() === selectedPaymentYear;
+
+    return matchesSearch && matchesMonth && matchesYear;
+  });
 
   useEffect(() => {
     if (formData.pupil_id && groups.length > 0) {
@@ -611,40 +694,40 @@ function Payments() {
 
   const calculatePaymentAmount = (group, month, cameInSchool) => {
     if (!group || !month || !cameInSchool) return group?.payment_amount || "";
-  
+
     const monthlyFee = Number(group.payment_amount);
     if (!monthlyFee) return "";
-  
+
     // Joriy yil va oy
     const currentYear = new Date().getFullYear(); // to'g'rilandi
-  
+
     // Tanlangan oyning indeksi
     const monthIndex = allMonths.findIndex(m => m === month);
     if (monthIndex === -1) return monthlyFee;
-  
+
     // Tanlangan oyning birinchi va oxirgi kuni
     const selectedMonthFirstDay = new Date(currentYear, monthIndex, 1);
     const selectedMonthLastDay = new Date(currentYear, monthIndex + 1, 0);
-  
+
     // O'quvchining kelgan sanasi
     const cameDate = new Date(cameInSchool);
-  
+
     // Agar o'quvchi tanlangan oydan keyin kelgan bo'lsa
     if (cameDate > selectedMonthLastDay) return "0";
-  
+
     // Agar o'quvchi tanlangan oydan oldin kelgan bo'lsa
     if (cameDate <= selectedMonthFirstDay) return monthlyFee.toString();
-  
+
     // O'quvchi oyning o'rtasida kelgan bo'lsa
     const daysInMonth = selectedMonthLastDay.getDate();
     const daysToPay = daysInMonth - cameDate.getDate() + 1;
-  
+
     // Kunlik to'lov miqdori
     const dailyFee = monthlyFee / daysInMonth;
-  
+
     // To'lov miqdori
     const calculatedAmount = Math.round(dailyFee * daysToPay);
-  
+
     return calculatedAmount.toString();
   };
 
@@ -700,20 +783,200 @@ function Payments() {
           <BookOpen size={24} color="#104292" />
           <h1 className="text-2xl font-bold">To'lovlar</h1>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setAddModal(true);
-            setSelectedGroups([]);
-            setGroupDiscounts({});
-            setTotalAmount(0);
-          }}
-          style={{ display: "flex", alignItems: "center", gap: "8px" }}
-        >
-          <Plus size={20} />
-          To'lov qo'shish
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => setShowUnpaid(!showUnpaid)}
+            className={`px-5 py-2.5 rounded-[5px] font-medium text-white shadow-sm transition-all duration-200 relative
+    ${showUnpaid
+                ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
+                : 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700'}`}
+          >
+            {showUnpaid ? "Yashirish" : "Qarzdorlar"}
+            {currentYearUnpaidCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-700 text-white text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center border-2 border-white px-1.5">
+                {currentYearUnpaidCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => {
+              setAddModal(true);
+              setSelectedGroups([]);
+              setGroupDiscounts({});
+              setTotalAmount(0);
+            }}
+            className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white font-medium rounded-[5px] shadow-sm transition-all duration-200 flex items-center gap-2"
+          >
+            <Plus size={20} />  
+            To'lov qo'shish
+          </button>
+        </div>
       </div>
+
+      {showUnpaid && (
+        <div className="mb-8">
+          {/* Filtrlar */}
+          <div className="mb-6 flex flex-wrap gap-6 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Yil</label>
+              <select
+                value={selectedYear}
+                onChange={e => {
+                  setSelectedYear(e.target.value);
+                  setUnpaid([]);           // yangi yil tanlanganda tozalash
+                }}
+                className="w-32 px-3 py-2 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+              >
+                {years.map(y => (
+                  <option key={y} value={y}>{y}-yil</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Oy</label>
+              <select
+                value={selectedMonth}
+                onChange={e => {
+                  setSelectedMonth(e.target.value);
+                  setUnpaid([]);           // yangi oy tanlanganda tozalash
+                }}
+                className="w-40 px-3 py-2 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+              >
+                <option value="all">Barcha oylar</option>
+                {allMonths.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* ← Jadval shu yerdan boshlanadi */}
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-xl shadow-sm p-5">
+            <div className="flex justify-between mb-3">
+              <h3 className="text-xl font-bold text-amber-800 mb-4 flex items-center gap-2">
+                <AlertCircle size={24} />
+                To'lanmagan to'lovlar ({selectedYear} yil {selectedMonth !== "all" ? selectedMonth : "barcha oylar"})
+              </h3>
+              <button
+                onClick={async () => {
+                  if (!unpaid.length) return;
+                  toast(
+                    <div>
+                      <p>
+                        Diqqat! Barcha qarzdorga xabar jo'natmoqchimisiz?
+                      </p>
+                      <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                        <button
+                          style={{
+                            padding: "8px 22px",
+                            background: "#dc3545",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                          onClick={async () => {
+                            const promises = unpaid.map(item => sendNotification(item.student?.id));
+                            await Promise.all(promises);
+                            toast.success("Barcha xabarlar jo'natildi");
+                            toast.dismiss();
+                          }}
+                        >
+                          Jo'natish
+                        </button>
+                        <button
+                          style={{
+                            padding: "8px 16px",
+                            background: "#6c757d",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => toast.dismiss()}
+                        >
+                          Bekor qilish
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }}
+                disabled={Object.values(sendingNotification).some(v => v)}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-[5px] shadow disabled:opacity-50"
+              >
+                Barchasiga xabar jo'natish
+              </button>
+            </div>
+
+            {isLoadingUnpaid ? (
+              <div className="text-center py-10 text-gray-500">Yuklanmoqda...</div>
+            ) : unpaid.length === 0 ? (
+              <div className="text-center py-10 text-gray-600">
+                Bu yil/oy bo'yicha qarzdor topilmadi
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-amber-200">
+                  <thead className="bg-amber-100">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-amber-900">#</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-amber-900">O'quvchi</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-amber-900">Telefon</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-amber-900">Guruh</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-amber-900">Oy</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-amber-900">Summa</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-amber-900">Amal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-amber-100 bg-white">
+                    {unpaid.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-amber-50">
+                        <td className="px-4 py-3 text-sm text-gray-700">{idx + 1}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">
+                          {item.student?.fullName || "Noma'lum"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {item.student?.phone || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.group?.name || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.month} {item.year}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900">
+                          {Number(item.group?.monthlyFee || 0).toLocaleString("uz-UZ")} so'm
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => sendNotification(item.student?.id)}
+                            disabled={sendingNotification[item.student?.id || ""]}
+                            className={`px-4 py-1.5 text-white text-sm rounded shadow-sm transition-colors flex items-center gap-2
+      ${sendingNotification[item.student?.id || ""]
+                                ? "bg-gray-500 cursor-not-allowed"
+                                : "bg-red-600 hover:bg-red-700"
+                              }`}
+                          >
+                            {sendingNotification[item.student?.id || ""] ? (
+                              <>
+                                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                                Yuborilmoqda...
+                              </>
+                            ) : (
+                              "Xabar jo'natish"
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
@@ -1396,9 +1659,10 @@ function Payments() {
           }}
         >
           <h3 style={{ fontWeight: "bold", fontSize: "1.2rem" }}>
-            To'lov qilganlar (
-            {filteredPayments.length})
+            To'lov qilganlar ({filteredPayments.length}) – {selectedPaymentYear === "all" ? "Barcha yillar" : selectedPaymentYear + "-yil"}
+            {monthFilter !== "all" && `, ${monthFilter}`}
           </h3>
+
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
             <input
               type="text"
@@ -1408,11 +1672,22 @@ function Payments() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+
+            <select 
+              value={selectedPaymentYear}
+              onChange={(e) => setSelectedPaymentYear(e.target.value)}
+              style={{ width: "140px", border: "1px solid rgb(200, 200, 200)", borderRadius: "5px" }}
+            >
+              <option value="all">Barcha yillar</option>
+              {years.map(y => (
+                <option key={y} value={y}>{y}-yil</option>
+              ))}
+            </select>
+
             <select
-              className="select"
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
-              style={{ width: "200px" }}
+              style={{ width: "130px", border: "1px solid rgb(200, 200, 200)", borderRadius: "5px" }}
             >
               <option value="all">Barcha oylar</option>
               {allMonths.map((month) => (
@@ -1504,30 +1779,6 @@ function Payments() {
                 );
               })
             )}
-            {/* Display overdue students without payments */}
-            {students
-              .filter((student) => isOverdue(student.id))
-              .map((student, index) => (
-                <tr
-                  key={`overdue-${student.id}`}
-                  style={{ backgroundColor: "#cfd694", color: "black" }}
-                >
-                  <td style={{ textAlign: "center" }}>{index + 1}</td>
-                  <td style={{ textAlign: "center" }}>{`${student.first_name} ${student.last_name}`}</td>
-                  <td colSpan={6} style={{ textAlign: "center", fontWeight: "bold" }}>
-                    Ushbu oy uchun to'lov amalga oshirmagan
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <button
-                      className="btn btn-warning"
-                      onClick={() => sendNotification(student.id)}
-                      style={{ backgroundColor: "red", color: "white" }}
-                    >
-                      Xabar jo'natish
-                    </button>
-                  </td>
-                </tr>
-              ))}
           </tbody>
         </table>
       </div>
