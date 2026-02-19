@@ -30,12 +30,14 @@ function Payments() {
     for_which_month: "",
     comment: "",
     shouldBeConsideredAsPaid: false,
+    came_in_school: "",
+    for_which_group: "",
   });
+  const [selectedGroups, setSelectedGroups] = useState([]);
   const [addModal, setAddModal] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
-  const [selectedGroups, setSelectedGroups] = useState([]);
-  const [discount, setDiscount] = useState(0);
+  const [groupDiscounts, setGroupDiscounts] = useState({}); // { groupId: { percent: number, amount: number } }
   const [totalAmount, setTotalAmount] = useState(0); // Umumiy summa
 
   const [formData, setFormData] = useState({
@@ -47,26 +49,32 @@ function Payments() {
     for_which_month: "",
     comment: "",
     shouldBeConsideredAsPaid: false,
+    came_in_school: "",
   });
 
-  const calculateTotalAmount = (groupsList, month, cameInSchool, discountPercent) => {
-    if (!groupsList || groupsList.length === 0 || !month || !cameInSchool) return 0;
+  const calculateTotalAmount = () => {
+    if (!formData.pupil_id || selectedGroups.length === 0 || !formData.for_which_month) return 0;
 
     let total = 0;
-    groupsList.forEach(groupId => {
+    selectedGroups.forEach(groupId => {
       const group = groups.find(g => g.id === groupId);
       if (group) {
-        const amount = calculatePaymentAmount(group, month, cameInSchool);
-        total += Number(amount) || 0;
+        const originalAmount = Number(calculatePaymentAmount(
+          group,
+          formData.for_which_month,
+          formData.came_in_school
+        ));
+
+        // Agar guruh uchun chegirma belgilangan bo'lsa
+        if (groupDiscounts[groupId] && groupDiscounts[groupId].finalAmount) {
+          total += groupDiscounts[groupId].finalAmount;
+        } else {
+          total += originalAmount;
+        }
       }
     });
 
-    // Chegirma qo'llash
-    if (discountPercent > 0 && total > 0) {
-      total = total * (1 - discountPercent / 100);
-    }
-
-    return Math.round(total);
+    return total;
   };
 
   const allMonths = [
@@ -202,7 +210,7 @@ function Payments() {
       return;
     }
 
-    // Loading state (ixtiyoriy)
+    // Loading state
     toast.loading("To'lovlar qo'shilmoqda...", { id: "add-payment" });
 
     try {
@@ -214,21 +222,20 @@ function Payments() {
       for (const groupId of selectedGroups) {
         const group = groups.find(g => g.id === groupId);
 
-        // Har bir guruh uchun to'lov miqdorini hisoblash (chegirmasiz)
-        const groupAmount = calculatePaymentAmount(
+        // Guruhning asl to'lov miqdori
+        const originalAmount = Number(calculatePaymentAmount(
           group,
           formData.for_which_month,
           formData.came_in_school
-        );
+        ));
 
-        // Chegirmani har bir guruhga teng taqsimlash yoki 
-        // umumiy summadan kelib chiqib hisoblash
-        let paymentAmount = Number(groupAmount);
+        // Chegirma qo'llangan to'lov miqdori
+        let paymentAmount = originalAmount;
+        let discountInfo = "";
 
-        // Agar chegirma bo'lsa, har bir guruh to'loviga chegirmani proporsional taqsimlash
-        if (discount > 0 && totalAmount > 0) {
-          const groupShare = paymentAmount / (totalAmount / (1 - discount / 100));
-          paymentAmount = Math.round(paymentAmount - (groupShare * discount / 100));
+        if (groupDiscounts[groupId]) {
+          paymentAmount = groupDiscounts[groupId].finalAmount || originalAmount;
+          discountInfo = ` (Chegirma: ${groupDiscounts[groupId].percent}% / ${groupDiscounts[groupId].amount} so'm)`;
         }
 
         const response = await fetch(
@@ -244,8 +251,8 @@ function Payments() {
               received: formData.received,
               for_which_month: formData.for_which_month,
               comment: formData.comment ?
-                `${formData.comment} (Guruh: ${group?.group_subject})` :
-                `Guruh: ${group?.group_subject}`,
+                `${formData.comment} (Guruh: ${group?.group_subject}${discountInfo})` :
+                `Guruh: ${group?.group_subject}${discountInfo}`,
               shouldBeConsideredAsPaid: formData.shouldBeConsideredAsPaid,
             }),
           }
@@ -287,7 +294,7 @@ function Payments() {
         setSearchTerm("");
         setShowDropdown(false);
         setSelectedGroups([]);
-        setDiscount(0);
+        setGroupDiscounts({});
         setTotalAmount(0);
         setAddModal(false);
       } else {
@@ -348,6 +355,15 @@ function Payments() {
     }
   };
 
+  const getStudentGroups = (studentId) => {
+    const student = students.find((s) => s.id === studentId);
+    // student?.groups mavjudligini tekshirish
+    if (student?.groups && Array.isArray(student.groups)) {
+      return student.groups.map((group) => group.id);
+    }
+    return [];
+  };
+
   const deletePayment = async (id) => {
     try {
       const response = await fetch(
@@ -401,7 +417,7 @@ function Payments() {
     setStudentSearch(`${student.first_name} ${student.last_name}`);
     setShowDropdown(false);
     setSelectedGroups([]); // Tanlangan guruhlarni tozalash
-    setDiscount(0); //
+    setGroupDiscounts({}); //
     setFormData((prev) => ({
       ...prev,
       shouldBeConsideredAsPaid: false,
@@ -411,37 +427,83 @@ function Payments() {
   const handleGroupToggle = (groupId) => {
     setSelectedGroups(prev => {
       if (prev.includes(groupId)) {
-        return prev.filter(id => id !== groupId);
+        // Guruhni olib tashlash
+        const newSelected = prev.filter(id => id !== groupId);
+        // Guruhni olib tashlaganda discountlardan ham o'chirish
+        setGroupDiscounts(prevDiscounts => {
+          const newDiscounts = { ...prevDiscounts };
+          delete newDiscounts[groupId];
+          return newDiscounts;
+        });
+        return newSelected;
       } else {
+        // Guruhni qo'shish
         return [...prev, groupId];
       }
     });
   };
 
-  const handleDiscountChange = (value) => {
-    // Agar value bo'sh string bo'lsa, 0 qaytar
-    if (value === "") {
-      setDiscount(0);
-      return;
-    }
+  // Foiz bo'yicha chegirma o'zgartirish
+  const handlePercentDiscount = (groupId, percentValue) => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
 
-    // Faqat raqamlarni olish
-    const numericValue = value.replace(/[^0-9]/g, '');
+    // Guruhning asl to'lov miqdori
+    const originalAmount = Number(calculatePaymentAmount(
+      group,
+      formData.for_which_month,
+      formData.came_in_school
+    ));
 
-    // Agar numericValue bo'sh bo'lmasa
-    if (numericValue !== "") {
-      // Number ga o'tkazish va 0-100 oralig'ida cheklash
-      let discountValue = parseInt(numericValue, 10);
-      discountValue = Math.min(100, Math.max(0, discountValue));
-      setDiscount(discountValue);
-    } else {
-      setDiscount(0);
-    }
+    // Foizni 0-100 oralig'ida cheklash
+    let percent = percentValue === "" ? 0 : Math.min(100, Math.max(0, parseInt(percentValue) || 0));
+
+    // Chegirma summasini hisoblash
+    const discountAmount = Math.round(originalAmount * percent / 100);
+    const finalAmount = originalAmount - discountAmount;
+
+    setGroupDiscounts(prev => ({
+      ...prev,
+      [groupId]: {
+        percent: percent,
+        amount: discountAmount,
+        finalAmount: finalAmount
+      }
+    }));
   };
 
-  const getStudentGroups = (studentId) => {
-    const student = students.find((s) => s.id === studentId);
-    return student?.groups.map((group) => group.id) || []; // `groups` dan `id` larni olish
+  // Summa bo'yicha to'lanadigan miqdorni o'zgartirish
+  const handleAmountDiscount = (groupId, amountValue) => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+
+    // Guruhning asl to'lov miqdori
+    const originalAmount = Number(calculatePaymentAmount(
+      group,
+      formData.for_which_month,
+      formData.came_in_school
+    ));
+
+    // To'lanadigan summani 0 - originalAmount oralig'ida cheklash
+    let finalAmount = amountValue === "" ? originalAmount : Math.min(originalAmount, Math.max(0, parseInt(amountValue) || 0));
+
+    // Agar 0 kiritilsa, originalAmount ga tenglashtirish
+    if (finalAmount === 0) finalAmount = originalAmount;
+
+    // Chegirma summasini hisoblash
+    const discountAmount = originalAmount - finalAmount;
+
+    // Foizni hisoblash
+    const percent = originalAmount > 0 ? Math.round(discountAmount * 100 / originalAmount) : 0;
+
+    setGroupDiscounts(prev => ({
+      ...prev,
+      [groupId]: {
+        percent: percent,
+        amount: discountAmount,
+        finalAmount: finalAmount
+      }
+    }));
   };
 
   const isOverdue = (studentId) => {
@@ -450,32 +512,15 @@ function Payments() {
       (p) =>
         [currentMonth, nextMonth].includes(p.for_which_month) &&
         new Date(p.created_at) >=
-        new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1) // new Date() ishlatildi
     );
     return !currentOrNextMonthPaid && students.find((s) => s.id === studentId);
   };
 
   useEffect(() => {
-    if (formData.pupil_id && selectedGroups.length > 0 && formData.for_which_month) {
-      const total = calculateTotalAmount(
-        selectedGroups,
-        formData.for_which_month,
-        formData.came_in_school,
-        discount
-      );
-      setTotalAmount(total);
-      // setFormData(prev => ({
-      //   ...prev,
-      //   payment_amount: total.toString()
-      // }));
-    } else {
-      setTotalAmount(0);
-      // setFormData(prev => ({
-      //   ...prev,
-      //   payment_amount: ""
-      // }));
-    }
-  }, [selectedGroups, discount, formData.for_which_month, formData.pupil_id, formData.came_in_school]);
+    const total = calculateTotalAmount();
+    setTotalAmount(total);
+  }, [selectedGroups, groupDiscounts, formData.for_which_month, formData.pupil_id, formData.came_in_school]);
 
   const sendNotification = async (studentId) => {
     try {
@@ -566,41 +611,40 @@ function Payments() {
 
   const calculatePaymentAmount = (group, month, cameInSchool) => {
     if (!group || !month || !cameInSchool) return group?.payment_amount || "";
-
+  
     const monthlyFee = Number(group.payment_amount);
     if (!monthlyFee) return "";
-
+  
     // Joriy yil va oy
-    const now = new Date();
-    const currentYear = now.getFullYear();
-
+    const currentYear = new Date().getFullYear(); // to'g'rilandi
+  
     // Tanlangan oyning indeksi
     const monthIndex = allMonths.findIndex(m => m === month);
     if (monthIndex === -1) return monthlyFee;
-
+  
     // Tanlangan oyning birinchi va oxirgi kuni
     const selectedMonthFirstDay = new Date(currentYear, monthIndex, 1);
     const selectedMonthLastDay = new Date(currentYear, monthIndex + 1, 0);
-
+  
     // O'quvchining kelgan sanasi
     const cameDate = new Date(cameInSchool);
-
+  
     // Agar o'quvchi tanlangan oydan keyin kelgan bo'lsa
     if (cameDate > selectedMonthLastDay) return "0";
-
+  
     // Agar o'quvchi tanlangan oydan oldin kelgan bo'lsa
     if (cameDate <= selectedMonthFirstDay) return monthlyFee.toString();
-
+  
     // O'quvchi oyning o'rtasida kelgan bo'lsa
     const daysInMonth = selectedMonthLastDay.getDate();
     const daysToPay = daysInMonth - cameDate.getDate() + 1;
-
+  
     // Kunlik to'lov miqdori
     const dailyFee = monthlyFee / daysInMonth;
-
+  
     // To'lov miqdori
     const calculatedAmount = Math.round(dailyFee * daysToPay);
-
+  
     return calculatedAmount.toString();
   };
 
@@ -661,7 +705,7 @@ function Payments() {
           onClick={() => {
             setAddModal(true);
             setSelectedGroups([]);
-            setDiscount(0);
+            setGroupDiscounts({});
             setTotalAmount(0);
           }}
           style={{ display: "flex", alignItems: "center", gap: "8px" }}
@@ -994,7 +1038,7 @@ function Payments() {
           onClick={() => {
             setAddModal(false);
             setSelectedGroups([]);
-            setDiscount(0);
+            setGroupDiscounts({});
             setTotalAmount(0);
           }}
         >
@@ -1009,7 +1053,7 @@ function Payments() {
                 onClick={() => {
                   setAddModal(false);
                   setSelectedGroups([]);
-                  setDiscount(0);
+                  setGroupDiscounts({});
                   setTotalAmount(0);
                 }}
                 className="text-white text-2xl leading-none hover:opacity-80"
@@ -1059,42 +1103,99 @@ function Payments() {
                 </div>
 
                 {/* Guruh selector - ko'p tanlovli */}
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-700">
                     Guruhlar * (bir nechtasini tanlashingiz mumkin)
                   </label>
-                  <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto p-2">
+                  <div className="border border-gray-300 rounded-lg max-h-80 overflow-y-auto p-2">
                     {formData.pupil_id && getStudentGroups(formData.pupil_id).length > 0 ? (
                       getStudentGroups(formData.pupil_id).map((groupId) => {
                         const group = groups.find((g) => g.id === groupId);
-                        return group ? (
-                          <div
-                            key={group.id}
-                            className={`p-2 mb-1 rounded cursor-pointer transition-colors ${selectedGroups.includes(group.id)
-                              ? "bg-blue-100 border border-blue-500"
-                              : "hover:bg-gray-100"
-                              }`}
-                            onClick={() => handleGroupToggle(group.id)}
-                          >
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedGroups.includes(group.id)}
-                                onChange={() => { }}
-                                className="h-4 w-4 text-blue-600 rounded"
-                              />
-                              <span className="ml-2 flex-1">
-                                {group.group_subject}
-                              </span>
+                        if (!group) return null;
+
+                        const originalAmount = Number(calculatePaymentAmount(
+                          group,
+                          formData.for_which_month,
+                          formData.came_in_school
+                        ));
+
+                        const isSelected = selectedGroups.includes(group.id);
+                        const groupDiscount = groupDiscounts[group.id] || { percent: 0, amount: 0, finalAmount: originalAmount };
+
+                        return (
+                          <div key={group.id} className="mb-3 border rounded-lg overflow-hidden">
+                            {/* Guruh tanlash qismi */}
+                            <div
+                              className={`p-3 cursor-pointer transition-colors flex items-center justify-between ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                                }`}
+                              onClick={() => handleGroupToggle(group.id)}
+                            >
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => { }}
+                                  className="h-4 w-4 text-blue-600 rounded"
+                                />
+                                <span className="ml-2 font-medium">{group.group_subject}</span>
+                              </div>
                               <span className="text-sm font-medium text-gray-600">
-                                {group.payment_amount?.toLocaleString()} so'm
+                                {originalAmount.toLocaleString()} so'm
                               </span>
                             </div>
+
+                            {/* Chegirma qismi - faqat tanlangan guruhlar uchun ko'rsatiladi */}
+                            {isSelected && (
+                              <div className="p-3 bg-gray-50 border-t grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">Chegirma foizi (%)</label>
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                      value={groupDiscount.percent || ""}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/[^0-9]/g, '');
+                                        handlePercentDiscount(group.id, value);
+                                      }}
+                                      placeholder="0"
+                                    />
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">%</span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">To'lanadigan summa</label>
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                      value={groupDiscount.finalAmount || ""}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/[^0-9]/g, '');
+                                        handleAmountDiscount(group.id, value);
+                                      }}
+                                      placeholder={originalAmount.toLocaleString()}
+                                    />
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">so'm</span>
+                                  </div>
+                                </div>
+                                {groupDiscount.percent > 0 && (
+                                  <div className="col-span-2 text-xs text-green-600 mt-1">
+                                    Chegirma: {groupDiscount.percent}% ({groupDiscount.amount.toLocaleString()} so'm)
+                                    <span className="text-gray-500 ml-2">asl: {originalAmount.toLocaleString()} so'm</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        ) : null;
+                        );
                       })
                     ) : (
-                      <p className="text-gray-500 text-center py-2">
+                      <p className="text-gray-500 text-center py-4">
                         {formData.pupil_id
                           ? "Ushbu o'quvchiga guruh bog'lanmagan"
                           : "Avval o'quvchini tanlang"}
@@ -1102,9 +1203,10 @@ function Payments() {
                     )}
                   </div>
                   {selectedGroups.length > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Tanlangan guruhlar: {selectedGroups.length} ta
-                    </p>
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700">Umumiy to'lov: {totalAmount.toLocaleString()} so'm</p>
+                      <p className="text-xs text-gray-500 mt-1">Tanlangan guruhlar: {selectedGroups.length} ta</p>
+                    </div>
                   )}
                 </div>
 
@@ -1133,35 +1235,6 @@ function Payments() {
                           return g ? `${g.group_subject}: ${g.payment_amount?.toLocaleString()} so'm` : '';
                         }).join(' + ')}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Chegirma inputi */}
-                  <div>
-                    <label className="block mb-2 text-sm font-semibold text-gray-700">
-                      Chegirma (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"  // "number" dan "text" ga o'zgartiring
-                        inputMode="numeric"  // Mobile uchun raqamli klaviatura
-                        pattern="[0-9]*"     // Faqat raqamlar
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value={discount === 0 ? "" : discount}  // 0 bo'lsa bo'sh string ko'rsat
-                        onChange={(e) => handleDiscountChange(e.target.value)}
-                        placeholder="0"
-                        min="0"
-                        max="100"
-                        step="1"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                        %
-                      </span>
-                    </div>
-                    {discount > 0 && totalAmount > 0 && (
-                      <p className="text-xs text-green-600 mt-1">
-                        Chegirma: {discount}% ({(totalAmount * discount / 100).toLocaleString()} so'm)
-                      </p>
                     )}
                   </div>
                 </div>
@@ -1292,7 +1365,7 @@ function Payments() {
                 onClick={() => {
                   setAddModal(false);
                   setSelectedGroups([]);
-                  setDiscount(0);
+                  setGroupDiscounts({});
                   setTotalAmount(0);
                 }}
                 className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
