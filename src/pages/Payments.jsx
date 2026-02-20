@@ -8,6 +8,27 @@ import LottieLoading from "../components/Loading";
 import API_URL from "../conf/api";
 
 function Payments() {
+
+  const allMonths = [
+    "Yanvar",
+    "Fevral",
+    "Mart",
+    "Aprel",
+    "May",
+    "Iyun",
+    "Iyul",
+    "Avgust",
+    "Sentyabr",
+    "Oktyabr",
+    "Noyabr",
+    "Dekabr",
+  ];
+  const now = new Date();
+  const currentMonthIndex = now.getMonth();
+  const currentMonth = allMonths[currentMonthIndex];
+  const nextMonth = allMonths[(currentMonthIndex + 1) % 12];
+  const radioMonths = [currentMonth, nextMonth];
+  const selectMonths = allMonths.filter(m => !radioMonths.includes(m));
   const [payments, setPayments] = useState([]);
   const [students, setStudents] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -33,6 +54,7 @@ function Payments() {
     came_in_school: "",
     for_which_group: "",
   });
+
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [addModal, setAddModal] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -42,7 +64,6 @@ function Payments() {
   const [unpaid, setUnpaid] = useState([]);
   const [showUnpaid, setShowUnpaid] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-  const [selectedMonth, setSelectedMonth] = useState("all");
   const [isLoadingUnpaid, setIsLoadingUnpaid] = useState(false);
   const [formData, setFormData] = useState({
     for_which_group: "", // "group_id" o'rniga "for_which_group"
@@ -58,25 +79,27 @@ function Payments() {
   const [currentYearUnpaidCount, setCurrentYearUnpaidCount] = useState(0);
   const [selectedPaymentYear, setSelectedPaymentYear] = useState(new Date().getFullYear().toString());
   const [sendingNotification, setSendingNotification] = useState({});
-
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const years = Array.from({ length: 6 }, (_, i) => (new Date().getFullYear() - i).toString());
 
   useEffect(() => {
     if (!showUnpaid) {
-      setUnpaid([]);           // yopilganda tozalash
+      setUnpaid([]);
       setIsLoadingUnpaid(false);
       return;
     }
 
     let url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
+
+    // Agar "all" tanlanmagan bo'lsa — faqat tanlangan oy uchun
     if (selectedMonth !== "all") {
-      url += `&month=${encodeURIComponent(selectedMonth)}`; // o'zbekcha uchun xavfsiz
+      url += `&month=${encodeURIComponent(selectedMonth)}`;
     }
+    // Agar "all" tanlangan bo'lsa — hech qanday month qo'shmaymiz (backendda barchasi qaytadi)
 
-    console.log("Yangi so'rov yuborildi:", url); // debug
-
+    console.log("Yangi so'rov yuborildi:", url);
     setIsLoadingUnpaid(true);
-    setUnpaid([]); // har safar jadvalni tozalash
+    setUnpaid([]);
 
     fetch(url)
       .then(res => {
@@ -95,7 +118,6 @@ function Payments() {
       .finally(() => {
         setIsLoadingUnpaid(false);
       });
-
   }, [showUnpaid, selectedYear, selectedMonth]);
 
   // Sahifa birinchi marta yuklanganda joriy yil qarzdorlarini yuklash
@@ -117,29 +139,6 @@ function Payments() {
     loadInitialUnpaidCount();
   }, []);
 
-  const allMonths = [
-    "Yanvar",
-    "Fevral",
-    "Mart",
-    "Aprel",
-    "May",
-    "Iyun",
-    "Iyul",
-    "Avgust",
-    "Sentyabr",
-    "Oktyabr",
-    "Noyabr",
-    "Dekabr",
-  ];
-
-  const now = new Date();
-  const currentMonthIndex = now.getMonth();
-  const currentMonth = allMonths[currentMonthIndex];
-  const nextMonth = allMonths[(currentMonthIndex + 1) % 12];
-  const radioMonths = [currentMonth, nextMonth];
-  const selectMonths = allMonths.filter(
-    (month) => !radioMonths.includes(month)
-  );
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -787,7 +786,7 @@ function Payments() {
           <button
             onClick={() => setShowUnpaid(!showUnpaid)}
             className={`px-5 py-2.5 rounded-[5px] font-medium text-white shadow-sm transition-all duration-200 relative
-    ${showUnpaid
+      ${showUnpaid
                 ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
                 : 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700'}`}
           >
@@ -807,7 +806,7 @@ function Payments() {
             }}
             className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white font-medium rounded-[5px] shadow-sm transition-all duration-200 flex items-center gap-2"
           >
-            <Plus size={20} />  
+            <Plus size={20} />
             To'lov qo'shish
           </button>
         </div>
@@ -839,14 +838,18 @@ function Payments() {
                 value={selectedMonth}
                 onChange={e => {
                   setSelectedMonth(e.target.value);
-                  setUnpaid([]);           // yangi oy tanlanganda tozalash
+                  setUnpaid([]); // yangi oy tanlanganda tozalash
                 }}
                 className="w-40 px-3 py-2 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
               >
-                <option value="all">Barcha oylar</option>
-                {allMonths.map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
+                <option value={currentMonth}>Joriy oy ({currentMonth})</option>
+                {allMonths
+                  .filter(m => m !== currentMonth)
+                  .map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                {/* Agar xohlasangiz "all" ni qoldirishingiz mumkin */}
+                {/* <option value="all">Barcha oylar (sekin yuklanadi)</option> */}
               </select>
             </div>
           </div>
@@ -953,7 +956,7 @@ function Payments() {
                             onClick={() => sendNotification(item.student?.id)}
                             disabled={sendingNotification[item.student?.id || ""]}
                             className={`px-4 py-1.5 text-white text-sm rounded shadow-sm transition-colors flex items-center gap-2
-      ${sendingNotification[item.student?.id || ""]
+        ${sendingNotification[item.student?.id || ""]
                                 ? "bg-gray-500 cursor-not-allowed"
                                 : "bg-red-600 hover:bg-red-700"
                               }`}
@@ -1673,7 +1676,7 @@ function Payments() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            <select 
+            <select
               value={selectedPaymentYear}
               onChange={(e) => setSelectedPaymentYear(e.target.value)}
               style={{ width: "140px", border: "1px solid rgb(200, 200, 200)", borderRadius: "5px" }}
