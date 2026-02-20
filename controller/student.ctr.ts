@@ -214,7 +214,6 @@ async function createStudent(
       left_school,
     } = req.body as ICreateStudentDto;
 
-    // Validate group_ids
     if (!group_ids || !Array.isArray(group_ids) || group_ids.length === 0) {
       return next(
         BaseError.BadRequest(
@@ -224,13 +223,12 @@ async function createStudent(
       );
     }
 
-    // Start transaction
     const t = await sequelize.transaction();
-    let student; // Declare student variable
+    let student;
+
     try {
       const ReturnedId = await generateStudentId(t);
 
-      // Create student
       student = await Student.create(
         {
           first_name,
@@ -251,74 +249,57 @@ async function createStudent(
         { transaction: t }
       );
 
-      const currentDate = new Date();
-      const month = changeMonths(currentDate.getMonth() + 1);
-      const year = currentDate.getFullYear();
+      const currentYear = new Date().getFullYear();
+      const currentMonthIndex = new Date().getMonth() + 1;
 
-      // Add student to groups
-      for (const group_id of group_ids) {
-        const studentGroup = await StudentGroup.create(
-          {
-            student_id: student.dataValues.id,
-            group_id,
-            month,
-            year,
-          },
-          { transaction: t }
-        );
-
-        const group_name = await Group.findByPk(group_id, {
-          transaction: t,
-        });
-        if (!group_name) {
-          throw BaseError.BadRequest(
-            404,
-            i18next.t("group_not_found", { lng: lang })
-          );
-        }
-        await group_name.increment("students_amount", {
-          by: 1,
-          transaction: t,
-        });
-
-        // Uncomment if notifications are needed
-        // await createNotification(
-        //   student.dataValues.id,
-        //   i18next.t("added_to_group", {
-        //     group_subject: group_name.dataValues.group_subject,
-        //     lng: lang,
-        //   }),
-        //   { transaction: t }
-        // );
+      const monthsToCreate = [];
+      for (let m = currentMonthIndex; m <= 12; m++) {
+        monthsToCreate.push(monthsInUzbek[m]);
       }
 
-      await t.commit(); // Commit transaction
+      for (const group_id of group_ids) {
+        // Joriy oydan yil oxirigacha har bir oy uchun yozuv yaratish
+        for (const month of monthsToCreate) {
+          await StudentGroup.findOrCreate({
+            where: {
+              student_id: student.dataValues.id,
+              group_id,
+              month,
+              year: currentYear,
+            },
+            defaults: {
+              paid: false,
+            },
+            transaction: t,
+          });
+        }
+
+        // Guruh students_amount ni oshirish
+        const group = await Group.findByPk(group_id, { transaction: t });
+        if (group) {
+          await group.increment("students_amount", { by: 1, transaction: t });
+        }
+      }
+
+      await t.commit();
     } catch (error) {
-      await t.rollback(); // Rollback transaction on error
+      await t.rollback();
       throw error;
     }
 
-    // Non-transactional operations
+    // Tranzaksiyadan tashqari operatsiyalar
     try {
       await updateStudentPaymentStatus(student.dataValues.id);
 
       const welcomeMessage = `Assalomu alaykum hurmatli ${student.dataValues.first_name} ${student.dataValues.last_name}!\nSizni o'quvchilarimiz orasida ko'rib turganimizdan juda xursandmiz!\nSizning shaxsiy ID raqamingiz: ID${student.dataValues.studental_id}\nSiz shaxsiy ID raqamingizdan foydalangan holda markazimizning @murojaat_crm_bot telegram boti orqali bizga istalgan vaqtda murojaat qilishingiz mumkin.\nO'qishlaringizda muvaffaqiyatlar tilaymiz!\n\nHurmat bilan,\n"Intellectual Progress Star" jamoasi!`;
 
-      // Uncomment if SMS sending is implemented
-      // await sendSMS(
-      //   student.dataValues.id,
-      //   student.dataValues.phone_number,
-      //   welcomeMessage
-      // );
-
       return res.status(200).json(student);
     } catch (error) {
-      // Handle errors for non-transactional operations
-      console.error("Tranzaksion bo'lmagan operatsiyada xatolik", error);
+      console.error("Tranzaksiyadan tashqari xatolik:", error);
       return next(error);
     }
   } catch (error: any) {
-    console.error("createStudentda xatolik", error);
+    console.error("createStudentda xatolik:", error);
     return next(error);
   }
 }
@@ -354,7 +335,7 @@ async function updateStudent(
 
     const t = await sequelize.transaction();
     try {
-      // Update student details
+      // Student ma'lumotlarini yangilash
       await student.update(
         {
           first_name,
@@ -378,28 +359,23 @@ async function updateStudent(
           transaction: t,
         });
 
-        const existingGroupIds = existingStudentGroups.map(
-          (sg) => sg.dataValues.group_id
-        );
-        const newGroupIds = group_ids.filter(
-          (id) => !existingGroupIds.includes(id)
-        );
-        const removedGroupIds = existingGroupIds.filter(
-          (id) => !group_ids.includes(id)
-        );
+        const existingGroupIds = existingStudentGroups.map((sg) => sg.dataValues.group_id);
+        const newGroupIds = group_ids.filter((id) => !existingGroupIds.includes(id));
+        const removedGroupIds = existingGroupIds.filter((id) => !group_ids.includes(id));
 
-        const currentDate = new Date();
-        const month = changeMonths(currentDate.getMonth() + 1);
-        const year = currentDate.getFullYear();
+        const currentYear = new Date().getFullYear();
+        const currentMonthIndex = new Date().getMonth() + 1;
 
-        // Remove old groups
+        const monthsToCreate = [];
+        for (let m = currentMonthIndex; m <= 12; m++) {
+          monthsToCreate.push(monthsInUzbek[m]);
+        }
+
+        // Eski guruhlarni o'chirish
         for (const groupId of removedGroupIds) {
           const group = await Group.findByPk(groupId, { transaction: t });
           if (group) {
-            await group.increment("students_amount", {
-              by: -1,
-              transaction: t,
-            });
+            await group.increment("students_amount", { by: -1, transaction: t });
           }
           await StudentGroup.destroy({
             where: { student_id: student.dataValues.id, group_id: groupId },
@@ -407,33 +383,30 @@ async function updateStudent(
           });
         }
 
-        // Add new groups with current month and year
+        // Yangi guruhlar qo'shish — joriy oydan yil oxirigacha
         for (const group_id of newGroupIds) {
-          const group = await Group.findByPk(group_id, { transaction: t });
-          if (!group) {
-            throw BaseError.BadRequest(
-              404,
-              i18next.t("group_not_found", { lng: lang })
-            );
+          for (const month of monthsToCreate) {
+            await StudentGroup.findOrCreate({
+              where: {
+                student_id: student.dataValues.id,
+                group_id,
+                month,
+                year: currentYear,
+              },
+              defaults: { paid: false },
+              transaction: t,
+            });
           }
-          await StudentGroup.create(
-            {
-              student_id: student.dataValues.id,
-              group_id,
-              month,
-              year,
-              paid: false,
-            },
-            { transaction: t }
-          );
-          await group.increment("students_amount", { by: 1, transaction: t });
+
+          const group = await Group.findByPk(group_id, { transaction: t });
+          if (group) {
+            await group.increment("students_amount", { by: 1, transaction: t });
+          }
         }
 
-        // Update total_groups
+        // total_groups ni yangilash
         await student.update(
-          {
-            total_groups: group_ids.length,
-          },
+          { total_groups: group_ids.length },
           { transaction: t }
         );
       }
@@ -447,7 +420,7 @@ async function updateStudent(
       throw error;
     }
   } catch (error: any) {
-    console.error("Error in updateStudent:", error);
+    console.error("updateStudentda xatolik:", error);
     next(error);
   }
 }
