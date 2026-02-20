@@ -120,19 +120,21 @@ function Payments() {
       });
   }, [showUnpaid, selectedYear, selectedMonth]);
 
-  // Sahifa birinchi marta yuklanganda joriy yil qarzdorlarini yuklash
   useEffect(() => {
     const loadInitialUnpaidCount = async () => {
       try {
-        const url = `${API_URL}/get_unpaid_payments?year=${new Date().getFullYear()}`;
+        const url = `${API_URL}/get_unpaid_payments?year=${new Date().getFullYear()}&month=${encodeURIComponent(currentMonth)}`;
+        // ↑ Bu yerda month parametrini qo‘shdik — endi faqat joriy oy!
+
         const res = await fetch(url);
         if (!res.ok) throw new Error("Initial count yuklanmadi");
+
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data?.data || []);
         setCurrentYearUnpaidCount(list.length);
       } catch (err) {
         console.error("Initial unpaid count xatosi:", err);
-        setCurrentYearUnpaidCount(0); // xato bo'lsa 0 ko'rsatamiz
+        setCurrentYearUnpaidCount(0);
       }
     };
 
@@ -239,23 +241,32 @@ function Payments() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
-    if (!showUnpaid) return; // faqat ochiq bo'lsa yangilaymiz
-
     const updateCount = async () => {
       try {
-        const url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
+        let url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
+        if (selectedMonth !== "all") {
+          url += `&month=${encodeURIComponent(selectedMonth)}`;
+        } else {
+          // "all" bo‘lsa — butun yilni hisoblaymiz
+          url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
+        }
+
         const res = await fetch(url);
         if (!res.ok) return;
+
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data?.data || []);
         setCurrentYearUnpaidCount(list.length);
-      } catch { }
+      } catch (err) {
+        setCurrentYearUnpaidCount(0);
+      }
     };
 
-    updateCount();
-  }, [selectedYear, showUnpaid]);
+    if (showUnpaid) {
+      updateCount();
+    }
+  }, [showUnpaid, selectedYear, selectedMonth]);
 
   const addPayment = async (e) => {
     e.preventDefault();
