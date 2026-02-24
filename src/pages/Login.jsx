@@ -13,17 +13,41 @@ function Login({ setIsAuthenticated }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("savedEmail");
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
+  const validateInputs = () => {
+    let valid = true;
+
+    if (!email.trim()) {
+      setEmailError("Email kiritilishi shart");
+      valid = false;
+    } else {
+      setEmailError("");
+    }
+
+    if (password.length < 5) {
+      setPasswordError("Parol kamida 5 ta belgidan iborat bo‘lishi kerak");
+      valid = false;
+    } else {
+      setPasswordError("");
+    }
+
+    return valid;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateInputs()) return;
+
     setLoading(true);
 
     try {
@@ -43,7 +67,7 @@ function Login({ setIsAuthenticated }) {
       setIsAuthenticated(true);
       setShowSuccess(true);
 
-      navigate("/dashboard")
+      navigate("/dashboard");
     } catch (err) {
       toast.error(err.message || "Kirishda xatolik yuz berdi");
     } finally {
@@ -53,8 +77,8 @@ function Login({ setIsAuthenticated }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 relative overflow-hidden px-4">
-
-      {/* ✅ Success overlay (tick bilan) */}
+      
+      {/* ✅ Success overlay */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
@@ -140,7 +164,9 @@ function Login({ setIsAuthenticated }) {
               autoComplete="username"
               required
             />
+            {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Parol
@@ -163,6 +189,7 @@ function Login({ setIsAuthenticated }) {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
           </div>
 
           <motion.button
@@ -172,11 +199,7 @@ function Login({ setIsAuthenticated }) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
           >
-            {loading ? (
-              <LoginLoading />
-            ) : (
-              "Kirish"
-            )}
+            {loading ? <LoginLoading /> : "Kirish"}
           </motion.button>
         </form>
       </motion.div>
