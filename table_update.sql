@@ -1,56 +1,56 @@
 UPDATE users 
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL 
   AND role NOT IN ('superadmin','director');
 
 -- Students
 UPDATE students 
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Teachers
 UPDATE teachers 
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Groups
 UPDATE groups 
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Payments
 UPDATE payments 
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Expenses
 UPDATE expenses 
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Notes
 UPDATE notes 
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- New Students
 UPDATE new_students
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Registration Links
 UPDATE registration_links
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Rooms
 UPDATE rooms
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Reserve Students
 UPDATE reserve_students
-SET branch_id = '11111111-1111-1111-1111-111111111111'
+SET branch_id = '52044690-5f2f-4d76-a28f-f8096583f240'
 WHERE branch_id IS NULL;
 
 -- Tekshirish

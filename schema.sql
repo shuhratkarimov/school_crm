@@ -262,13 +262,15 @@ CREATE TABLE branches (
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
     address VARCHAR(255) NOT NULL,
+    manager_id UUID,
+    center_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE notifications (
+CREATE TABLE user_notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -279,13 +281,13 @@ CREATE TABLE notifications (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_notifications_user
+    CONSTRAINT fk_user_notifications_user
         FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
+CREATE INDEX idx_user_notifications_user_id ON user_notifications(user_id);
+CREATE INDEX idx_user_notifications_is_read ON user_notifications(is_read);
+CREATE INDEX idx_user_notifications_created_at ON user_notifications(created_at DESC);

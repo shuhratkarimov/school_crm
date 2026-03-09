@@ -49,6 +49,8 @@ const allowedOrigins = [
   'https://register.intellectualprogress.uz',
   'http://teacher.intellectualprogress.uz',
   'https://teacher.intellectualprogress.uz',
+  'http://director.intellectualprogress.uz',
+  'https://director.intellectualprogress.uz',
   'http://193.181.208.209:8080',
   'http://localhost:5173',
 ];
