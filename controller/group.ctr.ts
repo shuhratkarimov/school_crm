@@ -16,18 +16,47 @@ import { validate as uuidValidate } from "uuid";
 import StudentGroup from "../Models/student_groups_model";
 import sequelize from '../config/database.config';
 import { ReserveStudent } from "../Models/reserve_student_model";
-import { generateStudentId } from "./student.ctr";
+import { generateStudentId, monthsInUzbek, updateStudentPaymentStatus } from "./student.ctr";
+import { withBranchScope } from "../Utils/branch_scope.helper";
 
 async function approveReserveStudent(req: Request, res: Response, next: NextFunction) {
   const { id } = req.params;
-  const { group_ids = [] } = req.body; // ixtiyoriy guruh(lar)
+  const { group_ids = [] } = req.body;
 
   try {
-    const reserve = await ReserveStudent.findByPk(id);
-    if (!reserve) return next(BaseError.BadRequest(404, "Zaxiradagi o'quvchi topilmadi"));
+    const reserve = await ReserveStudent.findOne({
+      where: withBranchScope(req, { id }),
+    });
+
+    if (!reserve) {
+      return next(
+        BaseError.BadRequest(404, "Zaxiradagi o'quvchi topilmadi (yoki ruxsat yo'q)")
+      );
+    }
+
     const ReturnedId = await generateStudentId();
+
     await sequelize.transaction(async (t) => {
-      // students ga ko'chirish
+      let safeGroupIds: string[] = [];
+
+      if (group_ids.length > 0) {
+        const allowedGroups = await Group.findAll({
+          where: withBranchScope(req, { id: { [Op.in]: group_ids } }),
+          attributes: ["id", "group_subject"],
+          transaction: t,
+        });
+
+        const allowedIds = new Set(
+          allowedGroups.map((g: any) => String(g.get("id")))
+        );
+
+        safeGroupIds = group_ids.filter((gid: string) => allowedIds.has(String(gid)));
+
+        if (safeGroupIds.length !== group_ids.length) {
+          throw BaseError.BadRequest(403, "Group ro'yxatida ruxsatsiz guruh bor");
+        }
+      }
+
       const newStudent = await Student.create(
         {
           first_name: reserve.dataValues.first_name,
@@ -39,31 +68,69 @@ async function approveReserveStudent(req: Request, res: Response, next: NextFunc
           parents_phone_number: reserve.dataValues.parents_phone_number,
           came_in_school: reserve.dataValues.came_in_school,
           studental_id: ReturnedId,
+          branch_id: reserve.dataValues.branch_id,
+          total_groups: safeGroupIds.length,
+          paid_groups: 0,
         },
         { transaction: t }
       );
 
-      // agar guruh(lar) berilgan bo'lsa — biriktirish
-      if (group_ids.length > 0) {
-        const records = group_ids.map((gid: string) => ({
-          student_id: newStudent.dataValues.id,
-          group_id: gid,
-        }));
-        await StudentGroup.bulkCreate(records, { transaction: t, ignoreDuplicates: true });
+      if (safeGroupIds.length > 0) {
+        const currentYear = new Date().getFullYear();
+        const currentMonthIndex = new Date().getMonth() + 1;
+
+        const monthsToCreate: string[] = [];
+        for (let m = currentMonthIndex; m <= 12; m++) {
+          monthsToCreate.push(monthsInUzbek[m]);
+        }
+
+        for (const gid of safeGroupIds) {
+          for (const month of monthsToCreate) {
+            await StudentGroup.findOrCreate({
+              where: {
+                student_id: newStudent.dataValues.id,
+                group_id: gid,
+                month,
+                year: currentYear,
+              },
+              defaults: {
+                paid: false,
+              },
+              transaction: t,
+            });
+          }
+
+          const group = await Group.findOne({
+            where: withBranchScope(req, { id: gid }),
+            transaction: t,
+          });
+
+          if (group) {
+            await group.increment("students_amount", { by: 1, transaction: t });
+          }
+        }
       }
 
-      // zaxiradan o'chirish
       await reserve.destroy({ transaction: t });
+
+      await updateStudentPaymentStatus(newStudent.dataValues.id);
     });
 
-    res.json({ success: true, message: "O'quvchi students jadvaliga o'tkazildi va guruh(lar)ga biriktirildi" });
+    return res.status(200).json({
+      success: true,
+      message: "O'quvchi students jadvaliga o'tkazildi va guruh(lar)ga biriktirildi",
+    });
   } catch (err) {
     next(err);
   }
-};
+}
 
 const createReserveStudent = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const scope = (req as any).scope;
+    const branch_id = scope?.all ? req.body.branch_id : scope.branchIds?.[0];
+    if (!branch_id) return next(BaseError.BadRequest(400, "branch_id required"));
+
     const {
       first_name,
       last_name,
@@ -93,6 +160,7 @@ const createReserveStudent = async (req: Request, res: Response, next: NextFunct
       notes: notes?.trim(),
       status: "new",
       created_at: new Date(),
+      branch_id
     });
 
     res.status(201).json({
@@ -157,6 +225,7 @@ export const importStudents = async (req: Request, res: Response, next: NextFunc
 export const getReserveStudents = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const students = await ReserveStudent.findAll({
+      where: withBranchScope(req),
       order: [["created_at", "DESC"]],
     });
     res.status(200).json(students);
@@ -170,10 +239,10 @@ export const updateReserveStudent = async (req: Request, res: Response, next: Ne
     const { id } = req.params;
     const data = req.body;
 
-    const student = await ReserveStudent.findByPk(id);
-    if (!student) {
-      return next(BaseError.BadRequest(404, "Zaxiradagi o'quvchi topilmadi"));
-    }
+    const student = await ReserveStudent.findOne({
+      where: withBranchScope(req, { id }),
+    });
+    if (!student) return next(BaseError.BadRequest(404, "Topilmadi (yoki ruxsat yo'q)"));
 
     // Agar telefon o'zgartirilsa, unique tekshirish
     if (data.phone_number && data.phone_number !== student.dataValues.phone_number) {
@@ -202,10 +271,10 @@ export const deleteReserveStudent = async (req: Request, res: Response, next: Ne
   try {
     const { id } = req.params;
 
-    const student = await ReserveStudent.findByPk(id);
-    if (!student) {
-      return next(BaseError.BadRequest(404, "Zaxiradagi o'quvchi topilmadi"));
-    }
+    const student = await ReserveStudent.findOne({
+      where: withBranchScope(req, { id }),
+    });
+    if (!student) return next(BaseError.BadRequest(404, "Topilmadi (yoki ruxsat yo'q)"));
 
     await student.destroy();
 
@@ -223,6 +292,7 @@ async function getGroups(
   try {
     const lang = "uz";
     const groups = await Group.findAll({
+      where: withBranchScope(req),
       include: [
         {
           model: Teacher,
@@ -260,14 +330,15 @@ async function getGroups(
   }
 }
 
-async function getOneGroup(
+async function getOneTeacherGroup(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<Response | void> {
   try {
+    const groupId = req.params.id
     const lang = "uz";
-    const group = await Group.findByPk(req.params.id as string, {
+    const group = await Group.findByPk(groupId, {
       include: [
         {
           model: Teacher,
@@ -288,22 +359,63 @@ async function getOneGroup(
       ],
     });
 
-    if (!group) {
-      return next(
-        BaseError.BadRequest(404, i18next.t("group_not_found", { lng: lang }))
-      );
-    }
+    if (!group) return next(BaseError.BadRequest(404, "Guruh topilmadi (yoki ruxsat yo'q)"));
+
+    const studentsInThisGroup = await Student.findAll({
+      include: [{
+        model: StudentGroup,
+        as: "studentGroups",
+        where: { group_id: group.dataValues.id },
+        attributes: [],
+      }],
+    });
+
+    res.status(200).json({ group, studentsInThisGroup });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getOneGroup(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const lang = "uz";
+    const group = await Group.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+      include: [
+        {
+          model: Teacher,
+          as: "teacher",
+          attributes: [
+            "id",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "subject",
+          ],
+        },
+        {
+          model: Schedule,
+          as: "groupSchedules", // Yangi alias
+          include: [{ model: Room, as: "room", attributes: ["id", "name"] }],
+        },
+      ],
+    });
+
+    if (!group) return next(BaseError.BadRequest(404, "Guruh topilmadi (yoki ruxsat yo'q)"));
 
     // StudentGroup orqali guruhga bog'langan o'quvchilarni olish
     const studentsInThisGroup = await Student.findAll({
-      include: [
-        {
-          model: StudentGroup,
-          as: "studentGroups",
-          where: { group_id: group.dataValues.id },
-          attributes: [],
-        },
-      ],
+      where: withBranchScope(req), // student.branch_id filter
+      include: [{
+        model: StudentGroup,
+        as: "studentGroups",
+        where: { group_id: group.dataValues.id },
+        attributes: [],
+      }],
     });
 
     res.status(200).json({ group, studentsInThisGroup });
@@ -385,19 +497,16 @@ async function createGroup(
       );
     }
 
-    const room = await Room.findByPk(room_id);
-    if (!room) {
-      return next(
-        BaseError.BadRequest(404, i18next.t("room_not_found", { lng: lang }))
-      );
-    }
+    const scope = (req as any).scope;
+    const branch_id = scope?.all ? req.body.branch_id : scope.branchIds?.[0];
 
-    const teacher = await Teacher.findByPk(teacher_id);
-    if (!teacher) {
-      return next(
-        BaseError.BadRequest(404, i18next.t("teacher_not_found", { lng: lang }))
-      );
-    }
+    if (!branch_id) return next(BaseError.BadRequest(400, "branch_id required"));
+
+    const room = await Room.findOne({ where: withBranchScope(req, { id: room_id }) });
+    if (!room) return next(BaseError.BadRequest(404, "Room topilmadi (yoki ruxsat yo'q)"));
+
+    const teacher = await Teacher.findOne({ where: withBranchScope(req, { id: teacher_id }) });
+    if (!teacher) return next(BaseError.BadRequest(404, "Teacher topilmadi (yoki ruxsat yo'q)"));
 
     const parsedDays = days.split("-").map((item) => item.toUpperCase());
 
@@ -429,6 +538,7 @@ async function createGroup(
       teacher_id,
       monthly_fee,
       room_id,
+      branch_id
     });
 
     // Jadval yozuvlarini yaratish
@@ -471,7 +581,10 @@ async function updateGroup(
       monthly_fee,
     } = req.body as IUpdateGroupDTO;
 
-    const group = await Group.findByPk(req.params.id as string);
+    const group = await Group.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
+    if (!group) return next(BaseError.BadRequest(404, "Guruh topilmadi (yoki ruxsat yo'q)"));
 
     if (!group) {
       return next(
@@ -560,7 +673,9 @@ async function deleteGroup(
 ): Promise<Response | void> {
   try {
     const lang = "uz";
-    const group = await Group.findByPk(req.params.id as string);
+    const group = await Group.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
 
     if (!group) {
       return next(
@@ -587,6 +702,7 @@ export {
   createGroup,
   updateGroup,
   deleteGroup,
+  getOneTeacherGroup,
   getOneGroupForTeacherAttendance,
   approveReserveStudent,
   createReserveStudent,

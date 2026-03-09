@@ -6,6 +6,7 @@ interface ExpenseAttributes {
   title: string;
   amount: number;
   date: string;
+  branch_id: string;
 }
 
 interface ExpenseCreationAttributes extends Optional<ExpenseAttributes, "id"> {}
@@ -15,6 +16,7 @@ export class Expense extends Model<ExpenseAttributes, ExpenseCreationAttributes>
   public title!: string;
   public amount!: number;
   public date!: string;
+  public branch_id!: string;
 }
 
 Expense.init(
@@ -36,6 +38,14 @@ Expense.init(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,
@@ -46,4 +56,5 @@ Expense.init(
   }
 );
 
-Expense.sync({ force: false });
+export default Expense;
+

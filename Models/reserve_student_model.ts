@@ -35,6 +35,14 @@ ReserveStudent.init({
         defaultValue: DataTypes.NOW,
         allowNull: false,
     },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
 }, {
     sequelize,
     tableName: 'reserve_students',

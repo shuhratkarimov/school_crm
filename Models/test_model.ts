@@ -71,6 +71,5 @@ Test.init(
   }
 );
 
-Test.sync({ force: false });
 
 export default Test;

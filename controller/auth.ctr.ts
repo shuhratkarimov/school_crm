@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import User from "../Models/user_model";
+import { User } from "../Models/user_model";
 import { BaseError } from "../Utils/base_error";
 import bcryptjs from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
@@ -10,15 +10,14 @@ import { ICreateUserDto } from "../DTO/user/create_user_dto";
 import { IVerifyEmailDto } from "../DTO/user/verify_user_dto";
 import { ILoginDto } from "../DTO/user/login_user_dto";
 import { Teacher } from "../Models";
+import lang from "../Utils/lang";
 
 dotenv.config();
-
-User.sync({ force: false });
 
 async function checkAuth(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies.accesstoken;
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized at check auth" });
   }
 
   try {
@@ -32,7 +31,7 @@ async function checkAuth(req: Request, res: Response, next: NextFunction) {
 async function checkTeacherAuth(req: Request, res: Response) {
   try {
     const token = req.cookies.accesstoken;
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
+    if (!token) return res.status(401).json({ message: "Unauthorized at check teacher auth" });
 
     const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
     const teacher = await Teacher.findByPk(decoded.id);
@@ -229,7 +228,7 @@ async function login(req: Request, res: Response, next: NextFunction) {
         sameSite: "lax",
         maxAge: 60 * 60 * 1000,
       });
-      
+
       res.cookie("refreshtoken", refreshtoken, {
         httpOnly: true,
         secure: isSecure,
@@ -248,30 +247,36 @@ async function login(req: Request, res: Response, next: NextFunction) {
 }
 
 function logout(req: Request, res: Response, next: NextFunction) {
-  jwt.verify(
-    req.cookies.refreshtoken,
-    process.env.REFRESH_SECRET_KEY as string
-  );
-  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
-  res.clearCookie("accesstoken", {
-    httpOnly: true,
-    secure: isSecure,
-    sameSite: "lax",
-    path: "/",
-  });
-  res.clearCookie("refreshtoken", {
-    httpOnly: true,
-    secure: isSecure,
-    sameSite: "lax",
-    path: "/",
-  });
-  res
-    .status(200)
-    .json({
-      message: i18next.t("logout_success", {
-        lng: req.headers["accept-language"] || "uz",
-      }),
+  try {
+    const cookie = req.cookies.refreshtoken;
+    if (!cookie) return next(BaseError.BadRequest(401, "Token topilmadi"));
+    jwt.verify(
+      cookie,
+      process.env.REFRESH_SECRET_KEY as string
+    );
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    res.clearCookie("accesstoken", {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      path: "/",
     });
+    res.clearCookie("refreshtoken", {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      path: "/",
+    });
+    res
+      .status(200)
+      .json({
+        message: i18next.t("logout_success", {
+          lng: req.headers["accept-language"] || "uz",
+        }),
+      });
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function changePassword(req: Request, res: Response, next: NextFunction) {
@@ -308,6 +313,7 @@ async function getProfile(req: Request, res: Response, next: NextFunction) {
 
     const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
     const user = await User.findByPk(decoded.id);
+
     if (!user) return next(BaseError.BadRequest(404, "Foydalanuvchi topilmadi"));
 
     res.status(200).json({ user: { id: user.dataValues.id, username: user.dataValues.username, email: user.dataValues.email } });
@@ -318,7 +324,7 @@ async function getProfile(req: Request, res: Response, next: NextFunction) {
 
 async function updateProfile(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, username } = req.body;  
+    const { email, username } = req.body;
     const foundUser = await User.findOne({ where: { email: email } });
     if (!foundUser) {
       return next(
@@ -332,4 +338,151 @@ async function updateProfile(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export { register, login, verify, logout, resendVerificationCode, checkAuth, checkTeacherAuth, changePassword, getProfile, updateProfile };
+async function getMe(req: Request, res: Response) {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized at getme" });
+  }
+
+  res.json({
+    id: user.id,
+    role: user.role,
+    first_name: user.first_name,
+  });
+};
+
+async function getAllUsers(req: Request, res: Response, next: NextFunction) {
+  try {
+    const users = await User.findAll();
+    res.status(200).json({ users });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getOneUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id);
+    if (!user) return next(BaseError.BadRequest(404, "Foydalanuvchi topilmadi"));
+    res.status(200).json({ user });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const { username, email } = req.body;
+    const user = await User.findByPk(id);
+    if (!user) return next(BaseError.BadRequest(404, "Foydalanuvchi topilmadi"));
+    await user.update({ username: username, email: email });
+    res.status(200).json({ message: "Foydalanuvchi muvaffaqiyatli o'zgartirildi" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id);
+    if (!user) return next(BaseError.BadRequest(404, "Foydalanuvchi topilmadi"));
+    await user.destroy();
+    res.status(200).json({ message: "Foydalanuvchi muvaffaqiyatli o'chirildi" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function checkDirectorAuth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.cookies.accesstoken;
+    if (!token) return next(BaseError.BadRequest(401, "Unauthorized at check teacher auth"));
+
+    const decoded = jwt.verify(token, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
+    const director = await User.findByPk(decoded.id);
+    if (!director) return next(BaseError.BadRequest(401, "Director not found"));
+    if (director.dataValues.role !== "director") {
+      return next(BaseError.BadRequest(401, "You are not director"));
+    }
+    res.status(200).json({ director: { id: director.dataValues.id, username: director.dataValues.username } });
+  } catch (err) {
+    next(BaseError.BadRequest(401, "Invalid or expired token"));
+  }
+}
+
+async function directorLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email, password } = req.body
+    if (!email || !password) return next(BaseError.BadRequest(400, "Email and password are required"))
+    const foundDirector = await User.findOne({ where: { email } })
+    if (!foundDirector) {
+      return next(BaseError.BadRequest(401, "Director not found"))
+    }
+    if (foundDirector.dataValues.role !== "director" && foundDirector.dataValues.role !== "superadmin") {
+      return next(BaseError.BadRequest(401, "Forbidden!"))
+    }
+    const checkPassword = await bcryptjs.compare(password, foundDirector.dataValues.password)
+    if (!checkPassword) {
+      return next(BaseError.BadRequest(401, "Invalid password"))
+    }
+    const payload: { id: string; username: string; email: string; role: string } = {
+      id: foundDirector.dataValues.id,
+      username: foundDirector.dataValues.username,
+      email: foundDirector.dataValues.email,
+      role: foundDirector.dataValues.role,
+    };
+    const generateAccessToken = (payload: object | null): string => {
+      if (!payload) throw new Error("Payload cannot be null");
+
+      const secretKey = process.env.ACCESS_SECRET_KEY;
+      if (!secretKey) throw new Error("ACCESS_SECRET_KEY is not defined");
+
+      const expiresIn = process.env.ACCESS_EXPIRING_TIME || "15m";
+      return jwt.sign(
+        payload,
+        secretKey as string,
+        { expiresIn } as jwt.SignOptions
+      );
+    };
+
+    const generateRefreshToken = (payload: object | null): string => {
+      if (!payload) throw new Error("Payload cannot be null");
+
+      const secretKey = process.env.REFRESH_SECRET_KEY;
+      if (!secretKey) throw new Error("REFRESH_SECRET_KEY is not defined");
+
+      return jwt.sign(
+        payload,
+        secretKey as string,
+        { expiresIn: "7d" } as jwt.SignOptions
+      );
+    };
+    const accesstoken = generateAccessToken(payload);
+    const refreshtoken = generateRefreshToken(payload);
+
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    res.cookie("accesstoken", accesstoken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000,
+    });
+
+    res.cookie("refreshtoken", refreshtoken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res
+      .status(200).send({ message: "Director logged in successfully" })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export { register, login, verify, logout, resendVerificationCode, checkAuth, checkTeacherAuth, changePassword, getProfile, updateProfile, getMe, getAllUsers, getOneUser, updateUser, deleteUser, checkDirectorAuth, directorLogin };

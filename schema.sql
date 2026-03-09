@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     timestamp TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS teachers (
@@ -23,7 +24,8 @@ CREATE TABLE IF NOT EXISTS teachers (
     username VARCHAR DEFAULT NULL,
     password VARCHAR DEFAULT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS students (
@@ -43,7 +45,8 @@ CREATE TABLE IF NOT EXISTS students (
     left_school DATE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    studental_id VARCHAR NOT NULL
+    studental_id VARCHAR NOT NULL,
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS rooms (
@@ -51,7 +54,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     name VARCHAR NOT NULL,
     capacity INT,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS groups (
@@ -88,11 +92,11 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_type VARCHAR NOT NULL,
     received VARCHAR NOT NULL,
     for_which_month VARCHAR NOT NULL,
-    for_which_group VARCHAR NOT NULL,
     comment VARCHAR DEFAULT '',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    "shouldBeConsideredAsPaid" BOOLEAN NOT NULL DEFAULT FALSE
+    "shouldBeConsideredAsPaid" BOOLEAN NOT NULL DEFAULT FALSE,
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS appeals (
@@ -132,7 +136,8 @@ CREATE TABLE IF NOT EXISTS expenses (
     amount INT NOT NULL,
     date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS notes (
@@ -141,7 +146,8 @@ CREATE TABLE IF NOT EXISTS notes (
     description TEXT NOT NULL,
     date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS schedules (
@@ -223,7 +229,8 @@ CREATE TABLE new_students (
     phone VARCHAR(50) NOT NULL,
     interviewed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 
@@ -231,7 +238,8 @@ CREATE TABLE registration_links (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     subject VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    branch_id INTEGER REFERENCES branches(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE reserve_students (
@@ -248,3 +256,36 @@ CREATE TABLE reserve_students (
   notes             TEXT,                                   -- qo‘shimcha izoh (masalan: qayerdan kelgan, qachon qo‘shilgan)
   status            VARCHAR(20) DEFAULT 'new'               -- new, contacted, test_passed, rejected va h.k.
 );
+
+CREATE TABLE branches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'info',
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    meta JSONB DEFAULT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_notifications_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);

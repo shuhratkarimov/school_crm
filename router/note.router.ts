@@ -1,14 +1,20 @@
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import { getNotes, createNote, updateNote, deleteNote } from "../controller/note.ctr";
-import { RequestHandler } from "express";
+import { authMiddleware } from "../middlewares/auth-guard.middleware";
+import { roleMiddleware } from "../middlewares/role.middleware";
+import { accessScopeMiddleware } from "../middlewares/access-scope.middleware";
 
-const NoteRouter:Router = Router();
+const NoteRouter: Router = Router();
 
-NoteRouter.get("/get_notes", getNotes as RequestHandler);
-NoteRouter.post("/create_note", createNote as RequestHandler);
-NoteRouter.put("/update_note/:id", updateNote as RequestHandler);
-NoteRouter.delete("/delete_note/:id", deleteNote as RequestHandler);
+const secured = [
+  authMiddleware,
+  roleMiddleware("manager", "director", "superadmin"),
+  accessScopeMiddleware,
+] as RequestHandler[];
 
-export {
-    NoteRouter
-}
+NoteRouter.get("/get_notes", ...secured, getNotes as RequestHandler);
+NoteRouter.post("/create_note", ...secured, createNote as RequestHandler);
+NoteRouter.put("/update_note/:id", ...secured, updateNote as RequestHandler);
+NoteRouter.delete("/delete_note/:id", ...secured, deleteNote as RequestHandler);
+
+export { NoteRouter };

@@ -2,11 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import NewStudent from "../Models/newstudent_model";
 import { BaseError } from "../Utils/base_error";
 import { RegistrationLink } from "../Models/registration_link_model";
+import { withBranchScope } from "../Utils/branch_scope.helper"
 
-async function getNewStudents(req: Request, res: Response, next: NextFunction) {
+async function getNewStudents(req: any, res: Response, next: NextFunction) {
   try {
     const students = await NewStudent.findAll({
-      order: [['created_at', 'DESC']]
+      where: withBranchScope(req),
+      order: [["created_at", "DESC"]],
     });
     res.json(students);
   } catch (error) {
@@ -14,34 +16,46 @@ async function getNewStudents(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-async function createNewStudent(req: Request, res: Response, next: NextFunction) {
+async function registerNewStudentPublic(req: Request, res: Response, next: NextFunction) {
   try {
-    const { first_name, last_name, phone, subject } = req.body;
+    const { token } = req.params;
+    const { first_name, last_name, phone } = req.body;
 
-    if (!first_name || !last_name || !phone || !subject) {
-      return next(BaseError.BadRequest(400, 'Barcha maydonlar kiritilishi shart'));
+    if (!first_name?.trim() || !last_name?.trim() || !phone?.trim()) {
+      return next(BaseError.BadRequest(400, "Barcha maydonlar kiritilishi shart"));
     }
 
-    const linkExists = await RegistrationLink.findOne({ where: { subject } });
-    if (!linkExists) {
-      return next(BaseError.BadRequest(400, `Ushbu fan uchun ro'yxatdan o'tish linki mavjud emas: ${subject}`));
-    }
+    const link = await RegistrationLink.findOne({
+      where: { token },
+      attributes: ["subject", "branch_id"],
+    });
+    if (!link) return next(BaseError.BadRequest(404, "Link topilmadi"));
 
-    const student = await NewStudent.create({ first_name, last_name, phone, subject });
-    res.status(201).json(student);
-  } catch (error) {
-    next(error);
+    const student = await NewStudent.create({
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      phone,
+      subject: link.get("subject"),
+      branch_id: link.get("branch_id"),
+    });
+
+    return res.status(201).json(student);
+  } catch (e) {
+    next(e);
   }
 }
 
-async function updateNewStudent(req: Request, res: Response, next: NextFunction) {
+async function updateNewStudent(req: any, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
     const { interviewed } = req.body;
 
-    const student = await NewStudent.findByPk(id);
+    const student = await NewStudent.findOne({
+      where: withBranchScope(req, { id }),
+    });
+
     if (!student) {
-      return next(BaseError.BadRequest(404, 'Yangi o`quvchi topilmadi'));
+      return next(BaseError.BadRequest(404, "Yangi o`quvchi topilmadi (yoki ruxsat yo‘q)"));
     }
 
     await student.update({ interviewed });
@@ -51,13 +65,16 @@ async function updateNewStudent(req: Request, res: Response, next: NextFunction)
   }
 }
 
-async function deleteNewStudent(req: Request, res: Response, next: NextFunction) {
+async function deleteNewStudent(req: any, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
 
-    const student = await NewStudent.findByPk(id);
+    const student = await NewStudent.findOne({
+      where: withBranchScope(req, { id }),
+    });
+
     if (!student) {
-      return next(BaseError.BadRequest(404, 'Yangi o`quvchi topilmadi'));
+      return next(BaseError.BadRequest(404, "Yangi o`quvchi topilmadi (yoki ruxsat yo‘q)"));
     }
 
     await student.destroy();
@@ -67,4 +84,4 @@ async function deleteNewStudent(req: Request, res: Response, next: NextFunction)
   }
 }
 
-export { getNewStudents, createNewStudent, updateNewStudent, deleteNewStudent };
+export { getNewStudents, registerNewStudentPublic, updateNewStudent, deleteNewStudent };

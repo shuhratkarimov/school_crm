@@ -1,13 +1,28 @@
 import { Router, RequestHandler } from "express";
-import { getRegistrationLinks, createRegistrationLink, updateRegistrationLink, deleteRegistrationLink } from "../controller/link-generator.ctr";
+import {
+  getRegistrationLinks,
+  createRegistrationLink,
+  updateRegistrationLink,
+  deleteRegistrationLink,
+  getRegistrationLinkByToken
+} from "../controller/link-generator.ctr";
 
-const LinkGeneratorRouter:Router = Router()
+import { authMiddleware } from "../middlewares/auth-guard.middleware";
+import { roleMiddleware } from "../middlewares/role.middleware";
+import { accessScopeMiddleware } from "../middlewares/access-scope.middleware";
 
-LinkGeneratorRouter.get("/get-registration-links", getRegistrationLinks as RequestHandler)
-LinkGeneratorRouter.post("/create-registration-link", createRegistrationLink as RequestHandler)
-LinkGeneratorRouter.put("/update-registration-link/:id", updateRegistrationLink as RequestHandler)
-LinkGeneratorRouter.delete("/delete-registration-link/:id", deleteRegistrationLink as RequestHandler)
+const LinkGeneratorRouter: Router = Router();
 
-export {
-    LinkGeneratorRouter
-}
+const secured = [
+  authMiddleware,
+  roleMiddleware("manager", "director", "superadmin"),
+  accessScopeMiddleware,
+] as RequestHandler[];
+
+LinkGeneratorRouter.get("/get-registration-link-by-token/:token", getRegistrationLinkByToken as RequestHandler);
+LinkGeneratorRouter.get("/get-registration-links", ...secured, getRegistrationLinks as RequestHandler);
+LinkGeneratorRouter.post("/create-registration-link", ...secured, createRegistrationLink as RequestHandler);
+LinkGeneratorRouter.put("/update-registration-link/:id", ...secured, updateRegistrationLink as RequestHandler);
+LinkGeneratorRouter.delete("/delete-registration-link/:id", ...secured, deleteRegistrationLink as RequestHandler);
+
+export { LinkGeneratorRouter };

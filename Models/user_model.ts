@@ -1,7 +1,17 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.config';
 
-class User extends Model {}
+enum Role {
+  SUPERADMIN = 'superadmin',
+  DIRECTOR = 'director',
+  TEACHER = 'teacher',
+  STUDENT = 'student',
+  PARENT = 'parent',
+  ADMIN = 'admin',
+  USER = 'user',
+}
+
+class User extends Model { }
 User.init(
   {
     id: {
@@ -26,9 +36,9 @@ User.init(
       allowNull: false,
     },
     role: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM(Role.SUPERADMIN, Role.ADMIN, Role.TEACHER, Role.STUDENT, Role.PARENT, Role.DIRECTOR, Role.USER),
       allowNull: false,
-      defaultValue: 'user',
+      defaultValue: Role.USER,
     },
     verification_code: {
       type: DataTypes.BIGINT,
@@ -43,6 +53,14 @@ User.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,
@@ -53,4 +71,7 @@ User.init(
   }
 );
 
-export default User;
+export {
+  User,
+  Role
+}

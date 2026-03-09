@@ -25,6 +25,14 @@ import { AchievementsRouter } from './router/achievements.router';
 import { testRouter } from './router/test.router';
 import { NewStudentRouter } from './router/newStudent.router';
 import { LinkGeneratorRouter } from './router/link-generator.router';
+import SuperadminRouter from './router/superadmin.routes';
+import { DirectorRouter } from './router/director.routes';
+import { SettingsRouter } from './router/settings.routes';
+import { UserNotificationRouter } from './router/user_notifications.routes';
+import { startAttendanceMissingNotifier } from './Utils/missing-classes.cron';
+import { startDailyReportNotifier } from './Utils/daily-report.cron';
+import { startWeeklyReportNotifier } from './Utils/weekly-report.cron';
+import { ReportsRouter } from './router/reports.routes';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -63,27 +71,30 @@ app.use(NoteRouter);
 app.use(ExpenseRouter);
 app.use(AchievementsRouter);
 app.use(testRouter);
-app.use(NewStudentRouter);  
+app.use(NewStudentRouter);
 app.use(LinkGeneratorRouter)
+app.use(DirectorRouter)
+app.use("/superadmin", SuperadminRouter)
+app.use(SettingsRouter)
+app.use(UserNotificationRouter)
+app.use(ReportsRouter)
 
-// Error handling
+startDailyReportNotifier();
+startWeeklyReportNotifier();
+startAttendanceMissingNotifier();
+
 app.use(errorMiddleware as any);
-sequelize.sync({ force: false })
 
-
-// Server start
-const start = async () => {
+async function start() {
   try {
     await sequelize.authenticate();
     console.log('Database connected successfully!');
-
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
   } catch (error) {
     console.error('Unable to start the server:', error);
     process.exit(1);
   }
-};
+}
 
 start();
+
+export default app;

@@ -60,6 +60,14 @@ Group.init(
       onDelete: 'SET NULL',
       onUpdate: 'CASCADE',
     },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,
@@ -69,7 +77,5 @@ Group.init(
     updatedAt: 'updated_at',
   }
 );
-
-Group.sync({force: false})
 
 export default Group;

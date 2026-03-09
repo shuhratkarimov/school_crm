@@ -5,7 +5,7 @@ import Student from "../Models/student_model";
 import Teacher from "../Models/teacher_model";
 import Payment from "../Models/payment_model";
 import Group from "../Models/group_model";
-import User from "../Models/user_model";
+import { User } from "../Models/index";
 import { BaseError } from "../Utils/base_error";
 
 async function searchGlobal(req: Request, res: Response, next: NextFunction) {

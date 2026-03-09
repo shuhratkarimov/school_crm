@@ -4,19 +4,14 @@ import { Request, Response, NextFunction } from "express";
 import { Group, Student, StudentGroup, Test, TestResult } from "../Models/index";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { sendSMS } from "../Utils/sms-service";
+import { withBranchScope } from "../Utils/branch_scope.helper";
 
-async function getTeacherTests(req: Request, res: Response, next: NextFunction) {
+async function getTeacherTests(req: any, res: Response, next: NextFunction) {
     try {
-        const accesstoken = req.cookies.accesstoken;
-        if (!accesstoken) return next(BaseError.BadRequest(400, "Token topilmadi"));
-
-        const decoded = jwt.verify(accesstoken, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
-        const teacherId = decoded.id;
+        const teacherId = req.teacher.id;
 
         const { month, year } = req.query;
-        if (!month || !year) {
-            return next(BaseError.BadRequest(400, "Yil va oy kerak"));
-        }
+        if (!month || !year) return next(BaseError.BadRequest(400, "Yil va oy kerak"));
 
         const tests = await Test.findAll({
             where: {
@@ -27,19 +22,22 @@ async function getTeacherTests(req: Request, res: Response, next: NextFunction) 
                 },
             },
             include: [{ model: Group, as: "group" }],
+            order: [["created_at", "DESC"]],
         });
 
         res.json(tests);
     } catch (err) {
-        return next(err);
+        next(err);
     }
 }
 
-async function getTestResults(req: Request, res: Response, next: NextFunction) {
+async function getTestResults(req: any, res: Response, next: NextFunction) {
     try {
+        const teacherId = req.teacher.id;
         const { test_id } = req.params;
 
-        const test = await Test.findByPk(test_id, {
+        const test = await Test.findOne({
+            where: { id: test_id, teacher_id: teacherId }, // ✅ ownership
             include: [
                 { model: Group, as: "group" },
                 {
@@ -50,52 +48,83 @@ async function getTestResults(req: Request, res: Response, next: NextFunction) {
             ],
         });
 
-        if (!test) {
-            return next(BaseError.BadRequest(404, "Test topilmadi"));
-        }
+        if (!test) return next(BaseError.BadRequest(404, "Test topilmadi"));
 
         res.json(test);
     } catch (err) {
-        return next(err);
+        next(err);
     }
 }
 
-async function getAllTestsByMonthAndYear(req: Request, res: Response, next: NextFunction) {
+async function getTestResultsByAdmin(req: any, res: Response, next: NextFunction) {
+    try {
+        const { test_id } = req.params;
+
+        const test = await Test.findOne({
+            where: { id: test_id }, // ✅ Testda faqat id
+            include: [
+                {
+                    model: Group,
+                    as: "group",
+                    required: true,
+                    where: withBranchScope(req, {}, "branch_id"), // ✅ Group.branch_id bo'yicha filter
+                },
+                {
+                    model: TestResult,
+                    as: "results",
+                    include: [{ model: Student, as: "student" }],
+                },
+            ],
+        });
+
+        if (!test) return next(BaseError.BadRequest(404, "Test topilmadi"));
+        res.json(test);
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function getAllTestsByMonthAndYear(req: any, res: Response, next: NextFunction) {
     try {
         const { month, year } = req.query;
-        if (!month || !year) {
-            return next(BaseError.BadRequest(400, "Yil va oy kerak"));
-        }
+        if (!month || !year) return next(BaseError.BadRequest(400, "Yil va oy kerak"));
+
+        const start = new Date(Number(year), Number(month) - 1, 1);
+        const end = new Date(Number(year), Number(month), 1);
 
         const tests = await Test.findAll({
             where: {
-                created_at: {
-                    [Op.gte]: new Date(Number(year), Number(month) - 1, 1),
-                    [Op.lt]: new Date(Number(year), Number(month), 1),
-                },
+                created_at: { [Op.gte]: start, [Op.lt]: end },
             },
-            include: [{ model: Group, as: "group" }],
+            include: [{
+                model: Group,
+                as: "group",
+                required: true,
+                // ✅ branch filter group orqali
+                where: withBranchScope(req, {}, "branch_id"),
+            }],
+            order: [["created_at", "DESC"]],
         });
+
         res.json(tests);
     } catch (err) {
-        return next(err);
+        next(err);
     }
 }
 
-
-async function createTest(req: Request, res: Response, next: NextFunction) {
+async function createTest(req: any, res: Response, next: NextFunction) {
     try {
-        const accesstoken = req.cookies.accesstoken;
-        if (!accesstoken) return next(BaseError.BadRequest(400, "Token topilmadi"));
+        const teacherId = req.teacher.id;
 
-        const decoded = jwt.verify(accesstoken, process.env.ACCESS_SECRET_KEY as string) as JwtPayload;
-        const teacherId = decoded.id;
+        const { group_id, test_number, test_type, total_students, attended_students, average_score, results, date } = req.body;
 
-        const { group_id, test_number, test_type, total_students, attended_students, average_score, results, date, editTimeLimit } = req.body;
-
-        if (!group_id || !test_number || !test_type || !results) {
+        if (!group_id || !test_number || !test_type || !results || !date) {
             return next(BaseError.BadRequest(400, "Barcha maydonlar to'ldirilishi kerak"));
         }
+
+        // ✅ Teacher faqat o'z guruhiga test qo'shsin
+        const group = await Group.findOne({ where: { id: group_id, teacher_id: teacherId } });
+        if (!group) return next(BaseError.BadRequest(403, "Bu guruh sizga tegishli emas"));
 
         const test = await Test.create({
             group_id,
@@ -105,21 +134,21 @@ async function createTest(req: Request, res: Response, next: NextFunction) {
             total_students,
             attended_students,
             average_score,
-            date
+            date,
         });
 
-        const testResults = results.map((result: any) => ({
+        const testResults = results.map((r: any) => ({
             test_id: test.id,
-            student_id: result.student_id, // bu UUID string
-            score: result.score,
-            attended: result.attended,
+            student_id: r.student_id,
+            score: r.score,
+            attended: r.attended,
         }));
 
         await TestResult.bulkCreate(testResults);
 
         res.status(201).json({ message: "Test saqlandi", test });
     } catch (err) {
-        return next(err);
+        next(err);
     }
 }
 
@@ -134,7 +163,7 @@ async function updateTest(req: Request, res: Response, next: NextFunction) {
 
         const { group_id, test_number, test_type, total_students, attended_students, average_score, results, date, editTimeLimit, is_sent } = req.body;
 
-        const test = await Test.findByPk(test_id);
+        const test = await Test.findOne({ where: { id: test_id, teacher_id: teacherId } });
         if (!test) return next(BaseError.BadRequest(404, "Test topilmadi"));
 
         const now = new Date();
@@ -173,16 +202,18 @@ async function updateTest(req: Request, res: Response, next: NextFunction) {
     }
 }
 
-async function deleteTest(req: Request, res: Response, next: NextFunction) {
+async function deleteTest(req: any, res: Response, next: NextFunction) {
     try {
+        const teacherId = req.teacher.id;
         const { test_id } = req.params;
-        const test = await Test.findByPk(test_id);
+
+        const test = await Test.findOne({ where: { id: test_id, teacher_id: teacherId } });
         if (!test) return next(BaseError.BadRequest(404, "Test topilmadi"));
 
         await test.destroy();
         res.status(204).send();
     } catch (err) {
-        return next(err);
+        next(err);
     }
 }
 
@@ -236,4 +267,4 @@ const sendTestResultsToParents = async (req: Request, res: Response, next: NextF
     }
 };
 
-export { getTeacherTests, getTestResults, createTest, updateTest, deleteTest, getAllTestsByMonthAndYear, sendTestResultsToParents };
+export { getTeacherTests, getTestResultsByAdmin, getTestResults, createTest, updateTest, deleteTest, getAllTestsByMonthAndYear, sendTestResultsToParents };

@@ -1,13 +1,12 @@
 import TelegramBot from "node-telegram-bot-api";
 import Appeal from "../Models/appeal_model";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { Op } from "sequelize";
-import {Group, Student} from "../Models/index";
+import { Group, Student } from "../Models/index";
 import fs from "fs";
+import { withBranchScope } from "../Utils/branch_scope.helper";
 
 let botToken = process.env.BOT_TOKEN;
-
-Appeal.sync({ force: false });
 
 if (!botToken) {
   throw new Error("Telegram bot token not found!");
@@ -105,7 +104,7 @@ bot.on("message", async (msg) => {
 
   try {
     if (text.startsWith("ID")) {
-      const findStudent = await Student.findOne({ where: { studental_id: text.slice(2) } });      
+      const findStudent = await Student.findOne({ where: { studental_id: text.slice(2) } });
       if (!findStudent) {
         const messages = loadMessages(lang);
         return bot.sendMessage(chatId, messages.incorrect_id);
@@ -146,105 +145,82 @@ bot.on("message", async (msg) => {
   }
 });
 
-export const getAppeals = async (
-  req: Request,
-  res: Response
-): Promise<Response | void> => {
+export const getAppeals = async (req: any, res: Response, next: NextFunction) => {
   try {
-    const lang = req.headers["accept-language"] || "uz";
-    const messages = loadMessages(lang);
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const appeals = await Appeal.findAll({
       where: {
-        created_at: {
-          [Op.gte]: today,
-        },
+        created_at: { [Op.gte]: today },
       },
       include: [
         {
           model: Student,
           as: "student",
-          attributes: ["first_name", "last_name", "phone_number"],
+          required: true, // ✅ Student bo‘lmasa ham chiqarmasin
+          where: withBranchScope(req, {}, "branch_id"), // ✅ filter Student.branch_id bo‘yicha
+          attributes: ["id", "first_name", "last_name", "phone_number", "branch_id"],
           include: [
             {
               model: Group,
               as: "groups",
-              attributes: ["group_subject"]
-            }
-          ]
-        }
-      ]
+              attributes: ["group_subject"],
+              through: { attributes: [] },
+            },
+          ],
+        },
+      ],
+      order: [["created_at", "DESC"]],
     });
-    
-
-    if (appeals.length === 0) {
-      return res.status(404).json({
-        message: messages.no_appeals_today,
-      });
-    }
 
     return res.status(200).json(appeals);
-  } catch (error) {
-    console.error(error);
-    const lang = req.headers["accept-language"] || "uz";
-    const messages = loadMessages(lang);
-    return res.status(500).json({ message: messages.server_error });
+  } catch (e) {
+    next(e);
   }
 };
 
-export const getLastTenDayAppeals = async (
-  req: Request,
-  res: Response
-): Promise<Response | void> => {
+export const getLastTenDayAppeals = async (req: any, res: Response, next: NextFunction) => {
   try {
-    const lang = req.headers["accept-language"] || "uz";
-    const messages = loadMessages(lang);
-
     const startOfDay = new Date();
     startOfDay.setDate(startOfDay.getDate() - 10);
     startOfDay.setHours(0, 0, 0, 0);
 
     const appeals = await Appeal.findAll({
       where: {
-        created_at: {
-          [Op.gte]: startOfDay,
-        },
+        created_at: { [Op.gte]: startOfDay },
       },
-      include: [{
-        model: Student,
-        as: "student",
-        attributes: ["first_name", "last_name", "phone_number"],
-        include: [{
-          model: Group,
-          as: "groups",
-          attributes: ["group_subject"]
-        }]
-      }]
+      include: [
+        {
+          model: Student,
+          as: "student",
+          required: true,
+          where: withBranchScope(req, {}, "branch_id"),
+          attributes: ["id", "first_name", "last_name", "phone_number", "branch_id"],
+          include: [
+            {
+              model: Group,
+              as: "groups",
+              attributes: ["group_subject"],
+              through: { attributes: [] },
+            },
+          ],
+        },
+      ],
+      order: [["created_at", "DESC"]],
     });
 
-    if (appeals.length === 0) {
-      return res.status(404).json({
-        message: messages.no_appeals_last_10_days,
-      });
-    }
-
     return res.status(200).json(appeals);
-  } catch (error) {
-    console.error(error);
-    const lang = req.headers["accept-language"] || "uz";
-    const messages = loadMessages(lang);
-    return res.status(500).json({ message: messages.server_error });
+  } catch (e) {
+    next(e);
   }
-}
+};
 
-export async function deleteAppeal( req: Request,
+export async function deleteAppeal(req: Request,
   res: Response
-): Promise<Response | void>{
+): Promise<Response | void> {
   try {
-    await Appeal.destroy({where: {id: req.params.id}})
+    await Appeal.destroy({ where: { id: req.params.id } })
     return res.status(200).json({
       message: "Deleted successfully!"
     });

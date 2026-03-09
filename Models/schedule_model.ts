@@ -63,6 +63,4 @@ Schedule.init(
   }
 );
 
-Schedule.sync({force: false})
-
 export default Schedule;

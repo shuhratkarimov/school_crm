@@ -44,6 +44,4 @@ StudentGroup.init(
   }
 );
 
-StudentGroup.sync({force: false})
-
 export default StudentGroup;

@@ -14,7 +14,7 @@ Appeal.init(
     },
     pupil_id: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'students',
         key: 'id',

@@ -6,6 +6,7 @@ interface NoteAttributes {
   title: string;
   description: string;
   date: string;
+  branch_id: string;
 }
 
 interface NoteCreationAttributes extends Optional<NoteAttributes, "id"> {}
@@ -14,7 +15,8 @@ export class Note extends Model<NoteAttributes, NoteCreationAttributes> implemen
   public id!: string;
   public title!: string;
   public description!: string;
-  public date!: string;
+  public date!: string; 
+  public branch_id!: string;
 }
 
 Note.init(
@@ -36,6 +38,14 @@ Note.init(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,
@@ -46,4 +56,4 @@ Note.init(
   }
 );
 
-Note.sync({ force: false });
+export default Note;

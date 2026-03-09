@@ -19,6 +19,14 @@ Room.init(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,

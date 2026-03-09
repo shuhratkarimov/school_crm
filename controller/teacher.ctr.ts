@@ -11,6 +11,7 @@ import bcryptjs from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { monthsInUzbek } from "./payments.ctr";
 import { col, fn, Op, where, literal, Sequelize } from "sequelize";
+import { withBranchScope } from "../Utils/branch_scope.helper";
 
 async function getTeachers(
   req: Request,
@@ -19,7 +20,7 @@ async function getTeachers(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-    const teachers = await Teacher.findAll();
+    const teachers = await Teacher.findAll({ where: withBranchScope(req) });
     if (teachers.length === 0) {
       return next(
         BaseError.BadRequest(
@@ -41,7 +42,9 @@ async function getOneTeacher(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-    const teacher = await Teacher.findByPk(req.params.id as string);
+    const teacher = await Teacher.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
     if (!teacher) {
       return next(
         BaseError.BadRequest(404, i18next.t("TEACHER_NOT_FOUND", { lng: lang }))
@@ -79,6 +82,7 @@ async function createTeacher(
       subject,
       username,
       password,
+      branch_id: req.user?.branch_id,
     });
     res.status(200).json(teacher);
   } catch (error: any) {
@@ -103,7 +107,9 @@ async function updateTeacher(
       username,
       password,
     } = req.body as IUpdateTeacherDto;
-    const teacher = await Teacher.findByPk(req.params.id as string);
+    const teacher = await Teacher.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
     if (!teacher) {
       return next(
         BaseError.BadRequest(404, "Ustoz topilmadi")
@@ -144,7 +150,9 @@ async function deleteTeacher(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-    const teacher = await Teacher.findByPk(req.params.id as string);
+    const teacher = await Teacher.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
     if (!teacher) {
       return next(
         BaseError.BadRequest(404, "Ustoz topilmadi")
@@ -293,6 +301,11 @@ async function getTeacherPayments(
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
     const teacherId = req.params.id;
+    const teacher = await Teacher.findOne({
+      where: withBranchScope(req, { id: teacherId }),
+      attributes: ["id"],
+    });
+    if (!teacher) return next(BaseError.BadRequest(403, "Sizga ruxsat yo'q"));
     const payments = await TeacherPayment.findAll({
       where: { teacher_id: teacherId },
       order: [["given_date", "DESC"]],
@@ -337,7 +350,9 @@ async function getTeacherSalaries(req: Request, res: Response, next: NextFunctio
       include: [{
         model: Teacher,
         as: 'teacher',
-        attributes: [], // faqat ism-familiya uchun kerak
+        attributes: [],
+        required: true,
+        where: withBranchScope(req),
       }],
       where: whereCondition,
       order: [['given_date', 'DESC']],
@@ -504,17 +519,17 @@ async function getTeacherDashboardStudentPayments(req: Request, res: Response, n
           },
           {
             model: Payment,
-            as: "payments",
+            as: "studentPayments",
+            required: false,
             where: {
               for_which_month: monthsInUzbek[month],
               [Op.and]: [
                 where(
-                  fn("DATE_PART", literal("'year'"), col("payments.created_at")),
+                  fn("DATE_PART", literal("'year'"), col("studentPayments.created_at")),
                   year
                 ),
               ],
             },
-            required: false,
           },
         ],
         attributes: [

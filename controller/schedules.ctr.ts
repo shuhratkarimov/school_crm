@@ -17,7 +17,7 @@ export async function getSchedules(
           },
           {
             model: Group,
-            as: "group",
+            as: "scheduleGroup",
             attributes: ["group_subject"]
           }
         ]

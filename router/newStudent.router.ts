@@ -1,14 +1,26 @@
-import express from "express";
-import { createNewStudent, deleteNewStudent, getNewStudents, updateNewStudent } from "../controller/new-student.ctr";
-import { RequestHandler } from "express";
+import express, { RequestHandler } from "express";
+import {
+  deleteNewStudent,
+  getNewStudents,
+  registerNewStudentPublic,
+  updateNewStudent
+} from "../controller/new-student.ctr";
+
+import { authMiddleware } from "../middlewares/auth-guard.middleware";
+import { roleMiddleware } from "../middlewares/role.middleware";
+import { accessScopeMiddleware } from "../middlewares/access-scope.middleware";
 
 const NewStudentRouter = express.Router();
 
-NewStudentRouter.get("/get-new-students", getNewStudents as RequestHandler);
-NewStudentRouter.post("/register-new-student", createNewStudent as RequestHandler);
-NewStudentRouter.put("/update-new-student/:id", updateNewStudent as RequestHandler);
-NewStudentRouter.delete("/delete-new-student/:id", deleteNewStudent as RequestHandler);
+const secured = [
+  authMiddleware,
+  roleMiddleware("manager", "director", "superadmin"),
+  accessScopeMiddleware,
+] as RequestHandler[];
 
-export {
-    NewStudentRouter
-}
+NewStudentRouter.get("/get-new-students", ...secured, getNewStudents as RequestHandler);
+NewStudentRouter.post("/register-new-student/:token", registerNewStudentPublic as RequestHandler);
+NewStudentRouter.put("/update-new-student/:id", ...secured, updateNewStudent as RequestHandler);
+NewStudentRouter.delete("/delete-new-student/:id", ...secured, deleteNewStudent as RequestHandler);
+
+export { NewStudentRouter };

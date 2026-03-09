@@ -30,7 +30,15 @@ NewStudent.init(
     interviewed: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
-    }
+    },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,
@@ -40,7 +48,5 @@ NewStudent.init(
     updatedAt: 'updated_at',
   }
 );
-
-NewStudent.sync({ force: false });
 
 export default NewStudent;

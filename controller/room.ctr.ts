@@ -5,6 +5,7 @@ import { Room, Schedule, Group, Teacher } from "../Models/index";
 import { Op } from "sequelize";
 import { ICreateRoomDto } from "../DTO/room/create-room.dto";
 import { IUpdateRoomDto } from "../DTO/room/update-room.dto";
+import { withBranchScope } from "../Utils/branch_scope.helper";
 
 async function getRooms(
   req: Request,
@@ -13,7 +14,9 @@ async function getRooms(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"] || "uz";
-    const rooms = await Room.findAll();
+    const rooms = await Room.findAll({
+      where: withBranchScope(req),
+    });
 
     if (rooms.length === 0) {
       return next(
@@ -27,7 +30,7 @@ async function getRooms(
         const schedules = await Schedule.findAll({
           where: { room_id: room.dataValues.id },
           include: [
-            { model: Group, as: "group", attributes: ["id", "group_subject"] },
+            { model: Group, as: "scheduleGroup", attributes: ["id", "group_subject"] },
             {
               model: Teacher,
               as: "teacher",
@@ -92,7 +95,7 @@ async function getRooms(
         let afternoonBusyMinutes = 0; // 13:00 - 21:00 (480 daqiqa)
 
         busyIntervalsByDay.forEach((intervals) => {
-          intervals.forEach((interval:any) => {
+          intervals.forEach((interval: any) => {
             const start = interval.start;
             const end = interval.end;
 
@@ -157,7 +160,9 @@ async function getOneRoom(
   try {
     const lang = req.headers["accept-language"] || "uz";
     const roomId = req.params.id;
-    const room = await Room.findByPk(roomId);
+    const room = await Room.findOne({
+      where: withBranchScope(req, { id: roomId }),
+    });
 
     if (!room) {
       return next(
@@ -169,7 +174,7 @@ async function getOneRoom(
     const schedules = await Schedule.findAll({
       where: { room_id: roomId },
       include: [
-        { model: Group, as: "group", attributes: ["id", "group_subject"] },
+        { model: Group, as: "scheduleGroup", attributes: ["id", "group_subject"] },
         {
           model: Teacher,
           as: "teacher",
@@ -230,7 +235,7 @@ async function getOneRoom(
     let afternoonBusyMinutes = 0; // 13:00 - 21:00 (480 daqiqa)
 
     busyIntervalsByDay.forEach((intervals) => {
-      intervals.forEach((interval:any) => {
+      intervals.forEach((interval: any) => {
         const start = interval.start;
         const end = interval.end;
 
@@ -294,12 +299,29 @@ async function createRoom(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"] || "uz";
-    const { name, capacity } = req.body as ICreateRoomDto;
+    const { name, capacity, branch_id } = req.body as any;
 
-    const room = await Room.create({
-      name,
-      capacity,
-    });
+    let finalBranchId = branch_id;
+
+    // manager bo'lsa avtomatik
+    if (req.user?.role === "manager") {
+      finalBranchId = req.user.branch_id;
+    }
+
+    // director bo'lsa scope ichidan bo'lishi shart
+    if (req.user?.role === "director") {
+      if (!finalBranchId) return next(BaseError.BadRequest(400, "branch_id required"));
+      if (!req.scope?.branchIds?.includes(finalBranchId)) {
+        return next(BaseError.BadRequest(403, "Sizga ruxsat yo'q (branch scope)"));
+      }
+    }
+
+    // superadmin bo'lsa branch_id talab qil (yoki default qoida o'zingda)
+    if (req.user?.role === "superadmin" && !finalBranchId) {
+      return next(BaseError.BadRequest(400, "branch_id required"));
+    }
+
+    const room = await Room.create({ name, capacity, branch_id: finalBranchId });
 
     res.status(201).json({
       message: i18next.t("room_created", { lng: lang }),
@@ -317,9 +339,12 @@ async function updateRoom(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"] || "uz";
-    const { name, capacity } = req.body as IUpdateRoomDto;
+    const { name, capacity, branch_id } = req.body as any;
 
-    const room = await Room.findByPk(req.params.id);
+    const room = await Room.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
+    if (!room) return next(BaseError.BadRequest(404, "Room topilmadi yoki ruxsat yo'q"));
 
     if (!room) {
       return next(
@@ -400,9 +425,9 @@ async function getAvailableRooms(
       (schedule) => schedule.dataValues.room_id
     );
     const availableRooms = await Room.findAll({
-      where: {
+      where: withBranchScope(req, {
         id: { [Op.notIn]: busyRoomIds },
-      },
+      }),
     });
 
     res.status(200).json(availableRooms);
@@ -411,9 +436,10 @@ async function getAvailableRooms(
   }
 }
 
-export async function getRoomsBusinessPercent() {
+export async function getRoomsBusinessPercent(branchIds?: string[]) {
   try {
-    const rooms = await Room.findAll();
+    const roomWhere = branchIds?.length ? { branch_id: { [Op.in]: branchIds } } : {};
+    const rooms = await Room.findAll({ where: roomWhere });
 
     if (rooms.length === 0) {
       return
@@ -425,7 +451,7 @@ export async function getRoomsBusinessPercent() {
         const schedules = await Schedule.findAll({
           where: { room_id: room.dataValues.id },
           include: [
-            { model: Group, as: "group", attributes: ["id", "group_subject"] },
+            { model: Group, as: "scheduleGroup", attributes: ["id", "group_subject"] },
             {
               model: Teacher,
               as: "teacher",
@@ -490,7 +516,7 @@ export async function getRoomsBusinessPercent() {
         let afternoonBusyMinutes = 0; // 13:00 - 21:00 (480 daqiqa)
 
         busyIntervalsByDay.forEach((intervals) => {
-          intervals.forEach((interval:any) => {
+          intervals.forEach((interval: any) => {
             const start = interval.start;
             const end = interval.end;
 
@@ -544,11 +570,170 @@ export async function getRoomsBusinessPercent() {
     for (const item of roomsWithOccupancy) {
       percent += item.occupancyPercentage
     }
-    percent = roomsWithOccupancy ? percent/roomsWithOccupancy.length:0
+    percent = roomsWithOccupancy ? percent / roomsWithOccupancy.length : 0
     return percent
   } catch (error: any) {
     throw new Error(error)
   }
+}
+
+async function getRoomsBusinessPercentByBranch(branchIds: string[]) {
+  const schedules = await Schedule.findAll({
+    attributes: ["room_id", "day", "start_time", "end_time"],
+    include: [
+      {
+        model: Room,
+        as: "room",
+        attributes: ["branch_id"],
+        required: true,
+        where: { branch_id: { [Op.in]: branchIds } },
+      },
+    ],
+    raw: true,
+  });
+
+  const roomMap = new Map<string, any[]>();
+
+  for (const s of schedules as any[]) {
+    const roomId = s.room_id;
+
+    if (!roomMap.has(roomId)) {
+      roomMap.set(roomId, []);
+    }
+
+    roomMap.get(roomId)!.push(s);
+  }
+
+  const branchAgg = new Map<string, { sum: number; count: number }>();
+
+  for (const [roomId, schedules] of roomMap) {
+    const branchId = schedules[0]["room.branch_id"];
+
+    const occ = calcOccupancy(schedules);
+
+    const cur = branchAgg.get(branchId) ?? { sum: 0, count: 0 };
+    cur.sum += occ;
+    cur.count += 1;
+
+    branchAgg.set(branchId, cur);
+  }
+
+  const result = new Map<string, number>();
+
+  for (const [branchId, data] of branchAgg) {
+    result.set(branchId, Math.round(data.sum / data.count));
+  }
+
+  return result;
+}
+
+function calcOccupancy(schedules: any[]) {
+  const totalMinutes = 16 * 60 * 6; // 5760
+
+  const busyByDay = new Map<string, any[]>();
+
+  for (const s of schedules) {
+    const day = s.day.toLowerCase();
+
+    if (day === "yakshanba") continue;
+
+    const [sh, sm] = s.start_time.split(":");
+    const [eh, em] = s.end_time.split(":");
+
+    const start = Number(sh) * 60 + Number(sm);
+    const end = Number(eh) * 60 + Number(em);
+
+    if (!busyByDay.has(day)) busyByDay.set(day, []);
+
+    busyByDay.get(day)!.push({ start, end });
+  }
+
+  let busyMinutes = 0;
+
+  for (const intervals of busyByDay.values()) {
+    intervals.sort((a, b) => a.start - b.start);
+
+    const merged = [intervals[0]];
+
+    for (let i = 1; i < intervals.length; i++) {
+      const cur = intervals[i];
+      const last = merged[merged.length - 1];
+
+      if (cur.start <= last.end) {
+        last.end = Math.max(last.end, cur.end);
+      } else {
+        merged.push(cur);
+      }
+    }
+
+    for (const m of merged) {
+      busyMinutes += Math.min(m.end - m.start, 960);
+    }
+  }
+
+  const pct = (busyMinutes / totalMinutes) * 100;
+
+  return Math.min(Math.round(pct), 100);
+}
+
+async function getRoomStatsByBranch(branchIds: string[]) {
+  const rooms = await Room.findAll({
+    where: {
+      branch_id: { [Op.in]: branchIds },
+    },
+    attributes: ["id", "branch_id", "name"],
+    include: [
+      {
+        model: Schedule,
+        as: "roomSchedules",
+        attributes: ["id"],
+        required: false,
+      },
+    ],
+  });
+
+  const result = new Map<
+    string,
+    { totalRooms: number; busyRooms: number; emptyRooms: number }
+  >();
+
+  for (const room of rooms as any[]) {
+    const plainRoom =
+      typeof room.get === "function" ? room.get({ plain: true }) : room;
+
+    const branchId = String(plainRoom.branch_id);
+    const schedules = Array.isArray(plainRoom.roomSchedules)
+      ? plainRoom.roomSchedules
+      : [];
+
+    const current = result.get(branchId) ?? {
+      totalRooms: 0,
+      busyRooms: 0,
+      emptyRooms: 0,
+    };
+
+    current.totalRooms += 1;
+
+    if (schedules.length > 0) {
+      current.busyRooms += 1;
+    } else {
+      current.emptyRooms += 1;
+    }
+
+    result.set(branchId, current);
+  }
+
+  for (const branchId of branchIds) {
+    if (!result.has(String(branchId))) {
+      result.set(String(branchId), {
+        totalRooms: 0,
+        busyRooms: 0,
+        emptyRooms: 0,
+      });
+    }
+  }
+
+  return result;
 }
 
 export {
@@ -558,4 +743,6 @@ export {
   updateRoom,
   deleteRoom,
   getAvailableRooms,
+  getRoomsBusinessPercentByBranch,
+  getRoomStatsByBranch,
 };

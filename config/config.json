@@ -1,0 +1,23 @@
+{
+    "development": {
+      "username": "postgres",
+      "password": "shuhrat0049",
+      "database": "crm",
+      "host": "127.0.0.1",
+      "dialect": "postgres"
+    },
+    "test": {
+      "username": "postgres",
+      "password": "shuhrat0049",
+      "database": "crm_test",
+      "host": "127.0.0.1",
+      "dialect": "postgres"
+    },
+    "production": {
+      "username": "postgres",
+      "password": "shuhrat0049",
+      "database": "crm_prod",
+      "host": "127.0.0.1",
+      "dialect": "postgres"
+    }
+  }

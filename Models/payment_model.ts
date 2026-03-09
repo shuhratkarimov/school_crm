@@ -49,10 +49,6 @@ Payment.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    for_which_group: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
     shouldBeConsideredAsPaid: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -62,6 +58,10 @@ Payment.init(
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: ""
+    },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: false
     }
   },
   {
@@ -73,5 +73,4 @@ Payment.init(
   }
 );
 
-Payment.sync({ force: false })
 export default Payment;

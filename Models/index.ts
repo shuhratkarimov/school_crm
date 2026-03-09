@@ -4,7 +4,7 @@ import Payment from "./payment_model";
 import Student from "./student_model";
 import Teacher from "./teacher_model";
 import { Attendance, AttendanceRecord } from "./attendance_model"; // ✅ NAMED import
-import User from "./user_model";
+import { User } from "./user_model";
 import Center from "./center_model";
 import Notification from "./notification_model";
 import NotificationToCenter from "./notification_center.model";
@@ -15,6 +15,14 @@ import Achievement from "./achievement_model";
 import Test from "./test_model";
 import TestResult from "./test_result_model";
 import TeacherPayment from "./teacher-payment.model";
+import Branch from "./branches_model";
+import Expense from "./expense_model";
+import Note from "./note_model";
+import NewStudent from "./newstudent_model";
+import RegistrationLink from "./registration_link_model";
+import TeacherBalance from "./teacher-balance.model";
+import UserSettings from "./user_settings.model";
+import UserNotification from "./user_notification_model";
 
 // 1. Teacher ↔ Group
 Teacher.hasMany(Group, {
@@ -63,33 +71,43 @@ Student.belongsToMany(Group, {
   onUpdate: "CASCADE",
 });
 
-Student.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "student" }, onDelete: "CASCADE", onUpdate: "CASCADE" });
-Achievement.belongsTo(Student, { foreignKey: "achiever_id", constraints: false, as: "student", onDelete: "CASCADE", onUpdate: "CASCADE" });
+Student.hasMany(Achievement, {
+  foreignKey: "achiever_id",
+  constraints: false,
+  scope: { achiever_type: "student" },
+  as: "achievements",
+});
 
-Teacher.hasMany(Achievement, { foreignKey: "achiever_id", constraints: false, scope: { achiever_type: "teacher" }, onDelete: "CASCADE", onUpdate: "CASCADE" });
-Achievement.belongsTo(Teacher, { foreignKey: "achiever_id", constraints: false, as: "teacher", onDelete: "CASCADE", onUpdate: "CASCADE" });
+Teacher.hasMany(Achievement, {
+  foreignKey: "achiever_id",
+  constraints: false,
+  scope: { achiever_type: "teacher" },
+  as: "achievements",
+});
+
+Achievement.belongsTo(Student, {
+  foreignKey: "achiever_id",
+  constraints: false,
+  as: "student",
+});
+
+Achievement.belongsTo(Teacher, {
+  foreignKey: "achiever_id",
+  constraints: false,
+  as: "teacher",
+});
 
 // 4. Student ↔ Payment
-Student.hasMany(Payment, {
-  foreignKey: "pupil_id",
-  as: "payments",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
-});
-Payment.belongsTo(Student, {
-  foreignKey: "pupil_id",
-  as: "student",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
-});
+Student.hasMany(Payment, { foreignKey: "pupil_id", as: "studentPayments" });
+Payment.belongsTo(Student, { foreignKey: "pupil_id", as: "student" });
 
 // 5. Student ↔ Appeal
+// Student -> Appeals
 Student.hasMany(Appeal, {
   foreignKey: "pupil_id",
   as: "appeals",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
 });
+
 Appeal.belongsTo(Student, {
   foreignKey: "pupil_id",
   as: "student",
@@ -137,6 +155,20 @@ TeacherPayment.belongsTo(Teacher, {
   as: "teacher",            // bu alias bilan include da ishlatiladi
 });
 
+Teacher.hasMany(TeacherBalance, {
+  foreignKey: "teacher_id",
+  as: "teacherBalance",
+  onDelete: "CASCADE",
+});
+
+TeacherBalance.belongsTo(Teacher, {
+  foreignKey: "teacher_id",
+  as: "teacher",
+});
+
+Group.hasMany(Payment, { foreignKey: "group_id", as: "groupPayments" });
+Payment.belongsTo(Group, { foreignKey: "group_id", as: "paymentGroup" });
+
 // ✅ 6.2 Student ↔ AttendanceRecord
 Student.hasMany(AttendanceRecord, {
   foreignKey: "student_id",
@@ -148,21 +180,6 @@ AttendanceRecord.belongsTo(Student, {
   foreignKey: "student_id",
   as: "student",
   onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-
-// Group ↔ Payment (One-to-Many)
-Group.hasMany(Payment, {
-  foreignKey: "for_which_group",
-  as: "payments",           // Group dan Paymentlarni olish uchun alias
-  onDelete: "SET NULL",     // yoki "CASCADE" – sizning logikangizga qarab
-  onUpdate: "CASCADE",
-});
-
-Payment.belongsTo(Group, {
-  foreignKey: "for_which_group",
-  as: "group",              // Payment dan Groupni olish uchun alias (include da ishlatiladi)
-  onDelete: "SET NULL",
   onUpdate: "CASCADE",
 });
 
@@ -208,18 +225,8 @@ Schedule.belongsTo(Room, {
   onUpdate: "CASCADE",
 });
 
-Group.hasMany(Schedule, {
-  foreignKey: "group_id",
-  as: "groupSchedules",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-Schedule.belongsTo(Group, {
-  foreignKey: "group_id",
-  as: "group",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
+Group.hasMany(Schedule, { foreignKey: "group_id", as: "groupSchedules" });
+Schedule.belongsTo(Group, { foreignKey: "group_id", as: "scheduleGroup" });
 
 Teacher.hasMany(Schedule, {
   foreignKey: "teacher_id",
@@ -248,18 +255,20 @@ StudentGroup.belongsTo(Student, {
   onUpdate: "CASCADE",
 });
 
-Group.hasMany(StudentGroup, {
-  foreignKey: "group_id",
-  as: "studentGroups",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
+
+User.hasOne(UserSettings, {
+  foreignKey: "user_id",
+  as: "settings",
 });
-StudentGroup.belongsTo(Group, {
-  foreignKey: "group_id",
-  as: "group",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
+
+UserSettings.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user",
 });
+
+// StudentGroup ↔ Group
+Group.hasMany(StudentGroup, { foreignKey: "group_id", as: "studentGroups" });
+StudentGroup.belongsTo(Group, { foreignKey: "group_id", as: "studentGroupParent" });
 
 Group.hasMany(Test, { foreignKey: "group_id", as: "tests" });
 Test.belongsTo(Group, { foreignKey: "group_id", as: "group" });
@@ -269,6 +278,60 @@ TestResult.belongsTo(Test, { foreignKey: "test_id", as: "test" });
 
 Student.hasMany(TestResult, { foreignKey: "student_id", as: "test_results" });
 TestResult.belongsTo(Student, { foreignKey: "student_id", as: "student" });
+
+// Branch ↔ Teacher
+Branch.hasMany(Teacher, { foreignKey: 'branch_id', as: 'branchTeachers' });
+Teacher.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+// Branch ↔ Student
+Branch.hasMany(Student, { foreignKey: 'branch_id', as: 'branchStudents' });
+Student.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+// Branch ↔ Room
+Branch.hasMany(Room, { foreignKey: 'branch_id', as: 'branchRooms' });
+Room.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+// Branch ↔ Group
+Branch.hasMany(Group, { foreignKey: 'branch_id', as: 'branchGroups' });
+Group.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+// Branch ↔ Expense
+Branch.hasMany(Expense, { foreignKey: 'branch_id', as: 'branchExpenses' });
+Expense.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+// Branch ↔ Note
+Branch.hasMany(Note, { foreignKey: 'branch_id', as: 'branchNotes' });
+Note.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+// Branch ↔ NewStudent
+Branch.hasMany(NewStudent, { foreignKey: 'branch_id', as: 'branchNewStudents' });
+NewStudent.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+// Branch ↔ RegistrationLink
+Branch.hasMany(RegistrationLink, { foreignKey: 'branch_id', as: 'branchRegistrationLinks' });
+RegistrationLink.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+
+Center.hasMany(Branch, { foreignKey: "center_id", as: "branches" });
+Branch.belongsTo(Center, { foreignKey: "center_id", as: "center" });
+
+Center.belongsTo(User, { foreignKey: "director_id", as: "director" });
+User.hasMany(Center, { foreignKey: "director_id", as: "directedCenters" });
+
+Branch.belongsTo(User, { foreignKey: "manager_id", as: "manager" });
+User.hasMany(Branch, { foreignKey: "manager_id", as: "managedBranches" });
+
+Branch.hasMany(User, { foreignKey: "branch_id", as: "users" });
+User.belongsTo(Branch, { foreignKey: "branch_id", as: "branch" });
+
+User.hasMany(UserNotification, {
+  foreignKey: "user_id",
+  as: "notifications",
+});
+
+UserNotification.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user",
+});
 
 export {
   Teacher,
@@ -287,4 +350,14 @@ export {
   StudentGroup,
   Test,
   TestResult,
+  Branch,
+  Expense,
+  Note,
+  NewStudent,
+  RegistrationLink,
+  TeacherPayment,
+  Achievement,
+  TeacherBalance,
+  UserNotification,
+  UserSettings,
 };

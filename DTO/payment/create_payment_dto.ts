@@ -4,7 +4,7 @@ export interface ICreatePaymentDto {
   payment_type: string;
   received: string;
   for_which_month: string;
-  for_which_group: string;
+  group_id: string;
   comment?: string;
   shouldBeConsideredAsPaid?: boolean;
 }

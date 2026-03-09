@@ -68,7 +68,15 @@ Student.init(
     studental_id: {
       type: DataTypes.STRING,
       allowNull: false
-    }
+    },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,
@@ -78,7 +86,5 @@ Student.init(
     updatedAt: 'updated_at',
   }
 );
-
-Student.sync({force: false})
 
 export default Student;

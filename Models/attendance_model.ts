@@ -66,6 +66,3 @@ AttendanceRecord.init(
     updatedAt: "updated_at",
   }
 );
-
-Attendance.sync({ force: false });
-AttendanceRecord.sync({ force: false });

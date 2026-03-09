@@ -50,6 +50,4 @@ TestResult.init(
   { sequelize, modelName: "TestResult", tableName: "test_results", timestamps: false }
 );
 
-sequelize.sync({force: false});
-
 export default TestResult;

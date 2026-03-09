@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Sequelize, col, fn, Op, literal } from "sequelize";
 import i18next from "../Utils/lang";
-import { Appeal, Notification, Payment, Student } from "../Models/index";
+import { Appeal, Notification, Payment, Student, User, UserNotification, UserSettings } from "../Models/index";
 import { ICreateStudentDto } from "../DTO/student/create_student_dto";
 import { BaseError } from "../Utils/base_error";
 import { IUpdateStudentDto } from "../DTO/student/update_student_dto";
@@ -14,6 +14,8 @@ import StudentGroup from "../Models/student_groups_model";
 import { getRoomsBusinessPercent } from "./room.ctr";
 import { DateTime } from "luxon";
 import { AttendanceExtension } from "../Models/extend_attendance_model";
+import { withBranchScope } from "../Utils/branch_scope.helper";
+import { io } from "../server";
 
 const groupTimeZone = "Asia/Tashkent";
 
@@ -79,14 +81,49 @@ async function generateStudentId(transaction?: any): Promise<string> {
 async function getStudents(req: Request, res: Response, next: NextFunction) {
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+
     const currentMonth = changeMonths(new Date().getMonth() + 1);
     const currentYear = new Date().getFullYear();
 
-    // Query param sifatida month va year olish (ixtiyoriy)
     const month = (req.query.month as string) || currentMonth;
-    const year = parseInt(req.query.year as string) || currentYear;
+    const year = Number(req.query.year) || currentYear;
 
-    const students = await Student.findAll({
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const offset = (page - 1) * limit;
+
+    const search = String(req.query.search || "").trim();
+    const paymentFilter = String(req.query.paymentFilter || "all").trim();
+
+    const studentWhere: any = {
+      ...withBranchScope(req),
+    };
+
+    if (search) {
+      studentWhere[Op.or] = [
+        { first_name: { [Op.iLike]: `%${search}%` } },
+        { last_name: { [Op.iLike]: `%${search}%` } },
+        {
+          [Op.and]: [
+            Sequelize.where(
+              fn(
+                "concat",
+                col("Student.first_name"),
+                " ",
+                col("Student.last_name")
+              ),
+              { [Op.iLike]: `%${search}%` }
+            ),
+          ],
+        },
+        { phone_number: { [Op.iLike]: `%${search}%` } },
+        { father_name: { [Op.iLike]: `%${search}%` } },
+        { studental_id: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+
+    const { rows: students, count: totalItems } = await Student.findAndCountAll({
+      where: studentWhere,
       include: [
         {
           model: Group,
@@ -98,36 +135,90 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
               model: Teacher,
               as: "teacher",
               attributes: ["id", "first_name", "last_name", "phone_number"],
+              required: false,
             },
           ],
+          required: false,
         },
         {
           model: StudentGroup,
           as: "studentGroups",
           attributes: ["group_id", "paid", "month", "year"],
           required: false,
+          where: {
+            month,
+            year,
+          },
+          include: [
+            {
+              model: Group,
+              as: "studentGroupParent",
+              attributes: [],
+              required: true,
+              where: withBranchScope(req),
+            },
+          ],
         },
       ],
+      distinct: true,
+      order: [["created_at", "DESC"]],
+      limit,
+      offset,
     });
 
-    // Har bir student uchun total_groups va paid_groups ni hisoblash
-    const studentsWithGroups = students.map(student => {
-      const allGroups = student.dataValues.groups.length;
-      const studentGroups = student.dataValues.studentGroups.filter((sg: any) => sg.month === month && sg.year === year);
-      const totalGroups = studentGroups.length;
-      const paidGroups = studentGroups.filter((sg: any) => sg.paid).length;
+    const studentsWithGroups = students.map((student: any) => {
+      const plain = typeof student.get === "function"
+        ? student.get({ plain: true })
+        : student;
+
+      const allGroups = plain.groups?.length || 0;
+      const monthStudentGroups = plain.studentGroups || [];
+      const totalGroups = monthStudentGroups.length;
+      const paidGroups = monthStudentGroups.filter((sg: any) => sg.paid).length;
+
       return {
-        ...student.dataValues,
-        total_groups: totalGroups, // Dinamik hisoblanadi
-        paid_groups: paidGroups,  // Dinamik hisoblanadi
+        ...plain,
+        total_groups: totalGroups,
+        paid_groups: paidGroups,
         all_groups: allGroups,
       };
     });
 
-    if (studentsWithGroups.length === 0) {
-      return next(BaseError.BadRequest(404, i18next.t("students_not_found", { lng: lang })));
+    let filteredStudents = studentsWithGroups;
+
+    if (paymentFilter !== "all") {
+      filteredStudents = studentsWithGroups.filter((student: any) => {
+        const totalGroups = student.total_groups || 0;
+        const paidGroups = student.paid_groups || 0;
+
+        const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
+        const isPartiallyPaid = totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
+        const isUnpaid = totalGroups > 0 && paidGroups === 0;
+
+        return (
+          (paymentFilter === "fullyPaid" && isFullyPaid) ||
+          (paymentFilter === "partiallyPaid" && isPartiallyPaid) ||
+          (paymentFilter === "unpaid" && isUnpaid)
+        );
+      });
     }
-    res.status(200).json(studentsWithGroups);
+
+    const totalFilteredItems =
+      paymentFilter === "all" ? totalItems : filteredStudents.length;
+
+    const totalPages = Math.max(Math.ceil(totalFilteredItems / limit), 1);
+
+    return res.status(200).json({
+      data: filteredStudents,
+      pagination: {
+        page,
+        limit,
+        totalItems: totalFilteredItems,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error: any) {
     next(error);
   }
@@ -140,7 +231,8 @@ async function getOneStudent(
 ): Promise<Response | void> {
   try {
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-    const student = await Student.findByPk(req.params.id as string, {
+    const student = await Student.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
       include: [
         {
           model: Group,
@@ -172,12 +264,22 @@ async function getOneGroupStudents(
     if (!groupId) return res.status(400).json({ error: "group_id required" });
 
     const students = await Student.findAll({
+      where: withBranchScope(req),
       include: [
         {
           model: StudentGroup,
           as: "studentGroups",
           where: { group_id: groupId },
           attributes: [],
+          include: [
+            {
+              model: Group,
+              as: "studentGroupParent",
+              where: withBranchScope(req),
+              attributes: [],
+              required: true,
+            },
+          ],
         },
       ],
     });
@@ -192,13 +294,62 @@ async function getOneGroupStudents(
     next(error);
   }
 }
+
+async function getOneGroupStudentsForTeacher(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const lang = "uz";
+    const groupId = req.query.group_id as string;
+    if (!groupId) return res.status(400).json({ error: "group_id required" });
+
+    const students = await Student.findAll({
+      include: [
+        {
+          model: StudentGroup,
+          as: "studentGroups",
+          where: { group_id: groupId },
+          attributes: [],
+          include: [
+            {
+              model: Group,
+              as: "studentGroupParent",
+              attributes: [],
+              required: true,
+            },
+          ],
+        },
+      ],
+    });
+
+    if (students.length === 0) {
+      return next(
+        BaseError.BadRequest(404, i18next.t("student_not_found", { lng: lang }))
+      );
+    }
+    res.status(200).json(students);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function createStudent(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<Response | void> {
   try {
+    const branchId = req.scope?.branchIds?.[0];
+    if (!branchId) {
+      return next(BaseError.BadRequest(403, "Branch aniqlanmadi"));
+    }
+
+    const branchManager = await User.findOne({ where: { branch_id: branchId, role: "manager" } })
+
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+
     const {
       first_name,
       last_name,
@@ -224,8 +375,8 @@ async function createStudent(
     }
 
     const t = await sequelize.transaction();
-    let student;
-
+    let student: Student;
+    let groupNames: string[] = [];
     try {
       const ReturnedId = await generateStudentId(t);
 
@@ -245,6 +396,7 @@ async function createStudent(
           studental_id: ReturnedId,
           total_groups: group_ids.length,
           paid_groups: 0,
+          branch_id: branchId,
         },
         { transaction: t }
       );
@@ -258,7 +410,6 @@ async function createStudent(
       }
 
       for (const group_id of group_ids) {
-        // Joriy oydan yil oxirigacha har bir oy uchun yozuv yaratish
         for (const month of monthsToCreate) {
           await StudentGroup.findOrCreate({
             where: {
@@ -274,24 +425,103 @@ async function createStudent(
           });
         }
 
-        // Guruh students_amount ni oshirish
-        const group = await Group.findByPk(group_id, { transaction: t });
+        const group = await Group.findOne({
+          where: withBranchScope(req, { id: group_id }),
+          transaction: t,
+        });
+
         if (group) {
           await group.increment("students_amount", { by: 1, transaction: t });
+          groupNames.push(group.dataValues.group_subject);
         }
       }
 
+      const studentName = [
+        (student as any).first_name,
+        (student as any).last_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const targetUsers = await User.findAll({
+        where: { role: "director" },
+        attributes: ["id"],
+        transaction: t,
+      });
+
+      const targetUserIds = targetUsers.map((u: any) => u.id);
+
+      const settings = await UserSettings.findAll({
+        where: {
+          user_id: targetUserIds,
+          student_registration: true,
+        },
+        attributes: ["user_id"],
+        transaction: t,
+      });
+
+      const enabledUserIds = new Set(settings.map((s: any) => s.user_id));
+
+      const filteredUsers = targetUsers.filter((u: any) => enabledUserIds.has(u.id));
+
+      const notificationsPayload = (filteredUsers as any[]).map((user: any) => ({
+        user_id: user.id,
+        title: "Yangi o'quvchi qo'shildi",
+        message: `${branchManager?.dataValues.username || "O'quvchi"} ${studentName || "O'quvchi"}ni ${groupNames.join(", ")} guruhlariga qo'shdi`,
+        type: "success",
+        is_read: false,
+        meta: {
+          pupil_id: student.dataValues.id,
+          branch_id: student.dataValues.branch_id,
+        },
+      }));
+
+      let createdNotifications: any[] = [];
+
+      if (notificationsPayload.length > 0) {
+        createdNotifications = await UserNotification.bulkCreate(notificationsPayload, {
+          transaction: t,
+          returning: true,
+        });
+      }
+
       await t.commit();
+
+      if (io && createdNotifications.length > 0) {
+        for (const notification of createdNotifications) {
+          const roomName = `user:${notification.user_id}`;
+
+          io.to(roomName).emit("new-notification", {
+            id: notification.id,
+            user_id: notification.user_id,
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            color:
+              notification.type === "success"
+                ? "green"
+                : notification.type === "warning"
+                  ? "yellow"
+                  : notification.type === "danger"
+                    ? "red"
+                    : "blue",
+            isRead: Boolean(notification.is_read),
+            createdAt: notification.created_at,
+            timeAgo: "Hozirgina",
+            meta: notification.meta ?? null,
+          });
+        }
+      }
+
     } catch (error) {
       await t.rollback();
       throw error;
     }
 
-    // Tranzaksiyadan tashqari operatsiyalar
+    // transactiondan tashqaridagi ishlar
     try {
       await updateStudentPaymentStatus(student.dataValues.id);
-
-      const welcomeMessage = `Assalomu alaykum hurmatli ${student.dataValues.first_name} ${student.dataValues.last_name}!\nSizni o'quvchilarimiz orasida ko'rib turganimizdan juda xursandmiz!\nSizning shaxsiy ID raqamingiz: ID${student.dataValues.studental_id}\nSiz shaxsiy ID raqamingizdan foydalangan holda markazimizning @murojaat_crm_bot telegram boti orqali bizga istalgan vaqtda murojaat qilishingiz mumkin.\nO'qishlaringizda muvaffaqiyatlar tilaymiz!\n\nHurmat bilan,\n"Intellectual Progress Star" jamoasi!`;
 
       return res.status(200).json(student);
     } catch (error) {
@@ -326,7 +556,9 @@ async function updateStudent(
       left_school,
     } = req.body as IUpdateStudentDto;
 
-    const student = await Student.findByPk(req.params.id as string);
+    const student = await Student.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
     if (!student) {
       return next(
         BaseError.BadRequest(404, i18next.t("student_not_found", { lng: lang }))
@@ -434,7 +666,8 @@ async function deleteStudent(
     const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
     const t = await sequelize.transaction();
     try {
-      const student = await Student.findByPk(req.params.id as string, {
+      const student = await Student.findOne({
+        where: withBranchScope(req, { id: req.params.id }),
         transaction: t,
       });
       if (!student) {
@@ -489,7 +722,12 @@ const getMonthlyStudentStats = async (
   next: NextFunction
 ): Promise<Response | void> => {
   try {
+    let branchIds: string[] | undefined;
+    if (!req.scope?.all) {
+      branchIds = req.scope?.branchIds;
+    }
     const allStudentsByMonth = await Student.findAll({
+      where: withBranchScope(req),
       attributes: [
         [fn("TO_CHAR", col("created_at"), "YYYY-MM"), "month"],
         [fn("COUNT", col("*")), "total_count"],
@@ -498,8 +736,8 @@ const getMonthlyStudentStats = async (
       order: [[fn("TO_CHAR", col("created_at"), "YYYY-MM"), "ASC"]],
     });
 
-    const totalTeachers = await Teacher.count();
-    const totalGroups = await Group.count();
+    const totalTeachers = await Teacher.count({ where: withBranchScope(req) });
+    const totalGroups = await Group.count({ where: withBranchScope(req) });
 
     const leftStudentsByMonth = await Student.findAll({
       attributes: [
@@ -516,6 +754,7 @@ const getMonthlyStudentStats = async (
     const currentMonth = new Date().toISOString().slice(0, 7);
 
     const thisMonthStatsOfStudents = await Student.findAll({
+      where: withBranchScope(req),
       attributes: [
         [fn("TO_CHAR", col("created_at"), "YYYY-MM"), "month"],
         [fn("COUNT", col("*")), "total_students"],
@@ -541,6 +780,7 @@ const getMonthlyStudentStats = async (
     });
 
     const latestStudents = await Student.findAll({
+      where: withBranchScope(req),
       order: [["created_at", "DESC"]],
       limit: 10,
       include: [
@@ -560,11 +800,12 @@ const getMonthlyStudentStats = async (
       ],
     });
 
-    const totalStudents = await Student.findAndCountAll();
-    const totalPaymentThisMonth = await getThisMonthTotalPayments();
-    const latestPaymentsForThisMonth = await latestPayments();
-    const roomsBusinessPercentAll = await getRoomsBusinessPercent();
+    const totalStudents = await Student.findAndCountAll({ where: withBranchScope(req) });
+    const totalPaymentThisMonth = await getThisMonthTotalPayments(req);
+    const latestPaymentsForThisMonth = await latestPayments(req);
+    const roomsBusinessPercentAll = await getRoomsBusinessPercent(branchIds);
     const studentsByGender = await Student.findAll({
+      where: withBranchScope(req),
       attributes: [
         [
           Sequelize.literal(`
@@ -621,7 +862,6 @@ async function updateStudentPaymentStatus(
     if (!student) return;
 
     const currentMonth = changeMonths(new Date().getMonth() + 1);
-    console.log(currentMonth);
     const currentYear = new Date().getFullYear();
 
     // Joriy oydagi to'liq to'lov qilingan guruhlar sonini hisoblash
@@ -661,7 +901,7 @@ async function getPaymentsByStudent(req: Request, res: Response, next: NextFunct
 
   try {
     const payments = await Payment.findAll({
-      where: { pupil_id: student_id },
+      where: { ...withBranchScope(req), pupil_id: student_id },
       order: [['created_at', 'DESC']],
       attributes: [
         'id',
@@ -677,7 +917,7 @@ async function getPaymentsByStudent(req: Request, res: Response, next: NextFunct
       include: [
         {
           model: Group,
-          as: 'group',                                 // associationda qanday yozilgan bo'lsa
+          as: 'paymentGroup',                                 // associationda qanday yozilgan bo'lsa
           attributes: ['group_subject'],
           include: [
             {
@@ -701,11 +941,11 @@ async function getPaymentsByStudent(req: Request, res: Response, next: NextFunct
       comment: p.dataValues.comment,
       created_at: p.dataValues.created_at,
       shouldBeConsideredAsPaid: p.dataValues.shouldBeConsideredAsPaid,
-      group: p.dataValues.group
+      group: p.dataValues.paymentGroup
         ? {
-          group_subject: p.dataValues.group.group_subject,
-          teacher: p.dataValues.group.teacher
-            ? `${p.dataValues.group.teacher.first_name} ${p.dataValues.group.teacher.last_name}`.trim()
+          group_subject: p.dataValues.paymentGroup.group_subject,
+          teacher: p.dataValues.paymentGroup.teacher
+            ? `${p.dataValues.paymentGroup.teacher.first_name} ${p.dataValues.paymentGroup.teacher.last_name}`.trim()
             : null
         }
         : null
@@ -729,7 +969,10 @@ async function getGroupAttendanceSummary(req: Request, res: Response, next: Next
     const now = DateTime.now().setZone("Asia/Tashkent");
 
     // Guruh ma'lumotlari (dars kunlari)
-    const group = await Group.findByPk(groupId, { attributes: ['days'] });
+    const group = await Group.findOne({
+      where: withBranchScope(req, { id: groupId }),
+      attributes: ['days'],
+    });
     if (!group) return res.status(404).json({ error: "Guruh topilmadi" });
 
     const classDays = group.dataValues.days.split('-').map((d: string) => d.trim().toUpperCase());
@@ -1188,6 +1431,47 @@ async function getAttendanceByDate(req: Request, res: Response, next: NextFuncti
   }
 }
 
+async function getAttendanceByTeacher(req: Request, res: Response, next: NextFunction) {
+  try {
+    const lang = "uz";
+    const group_id = req.params.groupId;
+    const { date } = req.query;
+
+    if (!date || typeof date !== "string") {
+      return next(
+        BaseError.BadRequest(400, "Noto'g'ri sana kiritildi")
+      );
+    }
+
+    const attendance = await Attendance.findOne({
+      where: { group_id, date },
+      include: [
+        {
+          model: AttendanceRecord,
+          as: "records",
+          include: [
+            {
+              model: Student,
+              as: "student",
+              attributes: ["id", "first_name", "last_name"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!attendance) {
+      return next(
+        BaseError.BadRequest(404, "Yo'qlama topilmadi")
+      );
+    }
+
+    res.status(200).json(attendance);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function getTodayAttendanceStats(
   req: Request,
   res: Response,
@@ -1204,7 +1488,9 @@ async function getTodayAttendanceStats(
     const daysInUzbek = ["YAKSHANBA", "DUSHANBA", "SESHANBA", "CHORSHANBA", "PAYSHANBA", "JUMA", "SHANBA"];
     const todayDayName = daysInUzbek[dayOfWeek % 7]; // Luxon 1-7, biz array 0-6
 
-    const groups = await Group.findAll();
+    const groups = await Group.findAll({
+      where: withBranchScope(req),
+    });
 
     // Bugungi darslar uchun guruhlarni filtr qilish
     const todaysGroups = groups.filter((g) =>
@@ -1295,6 +1581,13 @@ async function getOverallAttendanceStats(req: Request, res: Response, next: Next
         model: Attendance,
         as: 'attendance',
         where: { date: { [Op.between]: [weekStart.toISODate(), weekEnd.toISODate()] } },
+        include: [{
+          model: Group,
+          as: "group",   // Attendance.belongsTo(Group, { as: ... })
+          where: withBranchScope(req),
+          required: true,
+          attributes: [],
+        }],
         required: true,
         attributes: [],
       }],
@@ -1318,6 +1611,13 @@ async function getOverallAttendanceStats(req: Request, res: Response, next: Next
         model: Attendance,
         as: 'attendance',
         where: { date: { [Op.between]: [monthStart.toISODate(), monthEnd.toISODate()] } },
+        include: [{
+          model: Group,
+          as: "group",   // Attendance.belongsTo(Group, { as: ... })
+          where: withBranchScope(req),
+          required: true,
+          attributes: [],
+        }],
         required: true,
         attributes: [],
       }],
@@ -1356,4 +1656,8 @@ export {
   getGroupAttendanceSummary,
   getOverallAttendanceStats,
   getPaymentsByStudent,
+  getOneGroupStudentsForTeacher,
+  getAttendanceByTeacher,
+  updateStudentPaymentStatus,
+  monthsInUzbek
 };

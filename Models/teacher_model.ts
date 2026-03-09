@@ -49,6 +49,14 @@ Teacher.init(
       allowNull: true,
       defaultValue: null
     },
+    branch_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+    },
   },
   {
     sequelize,
