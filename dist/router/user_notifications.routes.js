@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UserNotificationRouter = void 0;
+const express_1 = require("express");
+const auth_guard_middleware_1 = require("../middlewares/auth-guard.middleware");
+const role_middleware_1 = require("../middlewares/role.middleware");
+const access_scope_middleware_1 = require("../middlewares/access-scope.middleware");
+const user_notification_ctr_1 = require("../controller/user_notification.ctr");
+const UserNotificationRouter = (0, express_1.Router)();
+exports.UserNotificationRouter = UserNotificationRouter;
+UserNotificationRouter.get("/director-panel/notifications", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, user_notification_ctr_1.getMyNotifications);
+UserNotificationRouter.put("/director-panel/notifications/read-all", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, user_notification_ctr_1.markAllNotificationsRead);
+UserNotificationRouter.put("/director-panel/notifications/:id/read", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, user_notification_ctr_1.markNotificationRead);

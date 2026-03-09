@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SettingsRouter = void 0;
+const express_1 = require("express");
+const auth_guard_middleware_1 = require("../middlewares/auth-guard.middleware");
+const role_middleware_1 = require("../middlewares/role.middleware");
+const access_scope_middleware_1 = require("../middlewares/access-scope.middleware");
+const settings_ctr_1 = require("../controller/settings.ctr");
+const SettingsRouter = (0, express_1.Router)();
+exports.SettingsRouter = SettingsRouter;
+SettingsRouter.get("/director-panel/settings", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, settings_ctr_1.getMySettings);
+SettingsRouter.put("/director-panel/settings/profile", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, settings_ctr_1.updateMyProfile);
+SettingsRouter.put("/director-panel/settings/password", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, settings_ctr_1.updateMyPassword);
+SettingsRouter.put("/director-panel/settings/notifications", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, settings_ctr_1.updateMyNotifications);
+SettingsRouter.put("/director-panel/settings/preferences", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, settings_ctr_1.updateMyPreferences);

@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DirectorRouter = void 0;
+const express_1 = require("express");
+const auth_guard_middleware_1 = require("../middlewares/auth-guard.middleware");
+const role_middleware_1 = require("../middlewares/role.middleware");
+const access_scope_middleware_1 = require("../middlewares/access-scope.middleware");
+const director_ctr_1 = require("../controller/director.ctr");
+const DirectorRouter = (0, express_1.Router)();
+exports.DirectorRouter = DirectorRouter;
+DirectorRouter.get("/director-panel/dashboard/stats", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getDashboardStats);
+DirectorRouter.get("/director-panel/dashboard/revenue", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getRevenueChart);
+DirectorRouter.get("/director-panel/dashboard/branches", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getBranchPerformance);
+DirectorRouter.get("/director-panel/branches/full-analytics", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getBranchesFullAnalytics);
+DirectorRouter.get("/director-panel/groups/analytics", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getGroupsAnalytics);
+DirectorRouter.get("/director-panel/debts", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getDirectorDebts);
+DirectorRouter.get("/director-panel/teachers/analytics", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getTeachersAnalytics);
+DirectorRouter.get("/director-panel/rooms/occupancy", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, director_ctr_1.getRoomsOccupancyAnalytics);

@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReportsRouter = void 0;
+const express_1 = require("express");
+const auth_guard_middleware_1 = require("../middlewares/auth-guard.middleware");
+const role_middleware_1 = require("../middlewares/role.middleware");
+const access_scope_middleware_1 = require("../middlewares/access-scope.middleware");
+const reports_ctr_1 = require("../controller/reports.ctr");
+const ReportsRouter = (0, express_1.Router)();
+exports.ReportsRouter = ReportsRouter;
+ReportsRouter.get("/director-panel/reports/daily", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, reports_ctr_1.getDailyReport);
+ReportsRouter.get("/director-panel/reports/weekly", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, reports_ctr_1.getWeeklyReport);
+ReportsRouter.get("/director-panel/reports/test-weekly", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, reports_ctr_1.testWeeklyReportNotification);
+ReportsRouter.get("/director-panel/reports/test-daily", auth_guard_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)("superadmin", "director"), access_scope_middleware_1.accessScopeMiddleware, reports_ctr_1.testDailyReportNotification);
