@@ -127,7 +127,7 @@ function Students() {
     return `${day}.${month}.${year}`;
   };
   const fetchStudents = async (
-    page = pagination.page,
+    page = currentPage,
     search = searchTerm,
     payment = paymentFilter,
     month = monthFilter,
