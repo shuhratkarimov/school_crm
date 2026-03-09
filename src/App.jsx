@@ -62,73 +62,12 @@ function DirectorRoute({ children, isAuthenticated }) {
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [teacherAuthenticated, setTeacherAuthenticated] = useState(false);
+  const [cpanelAuthenticated, setCpanelAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const hostname = window.location.hostname;
   const [directorAuthenticated, setDirectorAuthenticated] = useState(false);
-
-  // Director panel uchun state'lar
-  const [darkMode, setDarkMode] = useState(false);
-  const [language, setLanguage] = useState('uz');
-  const [user, setUser] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  // Translations
-  const translations = {
-    uz: {
-      dashboard: "Boshqaruv paneli",
-      totalStudents: "Jami o'quvchilar",
-      totalTeachers: "Jami o'qituvchilar",
-      totalRevenue: "Jami daromad",
-      activeGroups: "Faol guruhlar",
-      monthlyRevenue: "Oylik daromad",
-      studentsGrowth: "O'quvchilar o'sishi",
-      branchPerformance: "Filiallar faoliyati",
-      debtMonitoring: "Qarz monitoringi",
-      teacherPerformance: "O'qituvchilar faoliyati",
-      roomsOccupancy: "Xonalar bandligi",
-      recentStudents: "Oxirgi o'quvchilar",
-      recentPayments: "Oxirgi to'lovlar",
-      settings: "Sozlamalar",
-      logout: "Chiqish",
-      search: "Qidirish",
-      allBranches: "Barcha filiallar",
-      viewAll: "Barchasini ko'rish",
-      markAllRead: "Hammasini o'qilgan deb belgilash",
-      noNotifications: "Bildirishnomalar yo'q",
-      profile: "Profil",
-      changePassword: "Parolni o'zgartirish",
-      editProfile: "Profilni tahrirlash"
-    },
-    en: {
-      dashboard: "Dashboard",
-      totalStudents: "Total Students",
-      totalTeachers: "Total Teachers",
-      totalRevenue: "Total Revenue",
-      activeGroups: "Active Groups",
-      monthlyRevenue: "Monthly Revenue",
-      studentsGrowth: "Students Growth",
-      branchPerformance: "Branch Performance",
-      debtMonitoring: "Debt Monitoring",
-      teacherPerformance: "Teacher Performance",
-      roomsOccupancy: "Rooms Occupancy",
-      recentStudents: "Recent Students",
-      recentPayments: "Recent Payments",
-      settings: "Settings",
-      logout: "Logout",
-      search: "Search",
-      allBranches: "All Branches",
-      viewAll: "View All",
-      markAllRead: "Mark all as read",
-      noNotifications: "No notifications",
-      profile: "Profile",
-      changePassword: "Change Password",
-      editProfile: "Edit Profile"
-    }
-  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -145,10 +84,8 @@ function App() {
           navigate(`/student-registration${location.search}`);
         }
         setLoading(false);
-        setAuthChecked(true);
       } else {
         setLoading(false);
-        setAuthChecked(true);
       }
     };
     checkAuth();
@@ -161,19 +98,19 @@ function App() {
         credentials: "include",
       });
       if (response.ok) {
-        setIsAuthenticated(true);
+        setCpanelAuthenticated(true);
         if (location.pathname === "/cpanel-login") {
           navigate("/cpanel");
         }
       } else {
-        setIsAuthenticated(false);
+        setCpanelAuthenticated(false);
         if (location.pathname !== "/cpanel-login") {
           navigate("/cpanel-login");
         }
       }
     } catch (error) {
       console.error("CPanel auth check error:", error);
-      setIsAuthenticated(false);
+      setCpanelAuthenticated(false);
       if (location.pathname !== "/cpanel-login") {
         navigate("/cpanel-login");
       }
@@ -631,12 +568,12 @@ function App() {
             />
             <Route
               path="/cpanel-login"
-              element={<CPanelLogin setIsAuthenticated={setIsAuthenticated} checkAuth={checkCPanelAuth} />}
+              element={<CPanelLogin setIsAuthenticated={setCpanelAuthenticated} checkAuth={checkCPanelAuth} />}
             />
             <Route
               path="/cpanel"
               element={
-                <CPanelRoute isAuthenticated={isAuthenticated}>
+                <CPanelRoute isAuthenticated={cpanelAuthenticated}>
                   <SuperAdmin />
                 </CPanelRoute>
               }
