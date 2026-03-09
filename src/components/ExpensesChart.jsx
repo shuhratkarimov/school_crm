@@ -26,7 +26,7 @@ export default function MonthlyExpenses({ expenses = [], salaries = [] }) {
   // Backenddan oddiy xarajatlar
   const fetchMonthlyExpenses = async () => {
     try {
-      const res = await fetch(`${API_URL}/get_monthly_expenses`);
+      const res = await fetch(`${API_URL}/get_monthly_expenses`, { credentials: "include" });
       if (!res.ok) throw new Error();
       const data = await res.json();
       setMonthlyExpenses(data); // [{month: '2025-01', monthName: 'Yanvar', jami: 0}, ...]
@@ -39,7 +39,7 @@ export default function MonthlyExpenses({ expenses = [], salaries = [] }) {
   // Backenddan o'qituvchi to'lovlari (sizning yangi endpoint)
   const fetchMonthlySalaries = async () => {
     try {
-      const res = await fetch(`${API_URL}/get_teacher_salaries`);
+      const res = await fetch(`${API_URL}/get_teacher_salaries`, { credentials: "include" });
       if (!res.ok) throw new Error();
       const data = await res.json();
       // monthly_summary ni olish

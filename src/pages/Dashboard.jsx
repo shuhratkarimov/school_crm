@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import LottieLoading from "../components/Loading";
-import { GraduationCap, Users, BookOpen, Wallet, TrendingUp } from "lucide-react";
+import { GraduationCap, Users, BookOpen, Wallet, TrendingUp, ChartLine } from "lucide-react";
 import "../../styles/styles.css";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -15,6 +15,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Line,
+  LineChart
 } from "recharts";
 import API_URL from "../conf/api";
 
@@ -39,11 +41,32 @@ function Dashboard() {
   const [animatedWeekAttendance, setAnimatedWeekAttendance] = useState(0);
   const [animatedMonthAttendance, setAnimatedMonthAttendance] = useState(0);
   const [monthlySalaries, setMonthlySalaries] = useState([]);
+  const [dailyPayments, setDailyPayments] = useState([]);
+  const animateValue = (start, end, duration, setValue) => {
+    let startTimestamp = null;
+
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easeInOut =
+        progress < 0.5
+          ? 2 * progress * progress
+          : -1 + (4 - 2 * progress) * progress;
+
+      const currentValue = Math.floor(start + (end - start) * easeInOut);
+      setValue(Number.isFinite(currentValue) ? currentValue : 0);
+
+      if (progress < 1) requestAnimationFrame(step);
+    };
+
+    requestAnimationFrame(step);
+  };
 
   useEffect(() => {
     const fetchOverall = async () => {
       try {
-        const res = await fetch(`${API_URL}/overall-attendance-stats`);
+        const res = await fetch(`${API_URL}/overall-attendance-stats`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           setOverallAttendance(data);
@@ -62,7 +85,7 @@ function Dashboard() {
 
   const fetchMonthlySalaries = async () => {
     try {
-      const res = await fetch(`${API_URL}/get_teacher_salaries`);
+      const res = await fetch(`${API_URL}/get_teacher_salaries`, { credentials: "include" });
       if (!res.ok) throw new Error("O'qituvchi to'lovlarini olishda xatolik");
       const data = await res.json();
       setMonthlySalaries(data.monthly_summary || []);
@@ -78,7 +101,7 @@ function Dashboard() {
         : 0;
 
       // Animatsiyani SHU YERDA chaqiramiz!
-      animateValue(0, percent, 1500, setAnimatedAttendance);
+      animateValue(0, percent, 1000, setAnimatedAttendance);
     }
   }, [todayAttendance]);  // todayAttendance o'zgarganda ishlaydi
 
@@ -91,28 +114,28 @@ function Dashboard() {
     return `${day}.${month}.${year}`;
   }
 
-  const animateValue = (start, end, duration, setValue) => {
-    let startTimestamp = null;
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      const easeInOut =
-        progress < 0.5
-          ? 2 * progress * progress
-          : -1 + (4 - 2 * progress) * progress;
-      const currentValue = Math.floor(start + (end - start) * easeInOut);
-      setValue(currentValue);
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
+  const formatFullDate = (dateString) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    return `${day}.${month}.${year}`;
   };
+
+  useEffect(() => {
+    const present = Number(todayAttendance?.present ?? 0);
+    const total = Number(todayAttendance?.total ?? 0);
+
+    const percentRaw = total > 0 ? (present / total) * 100 : 0;
+    const percent = Math.min(100, Math.max(0, Math.round(percentRaw)));
+
+    animateValue(0, percent, 1000, setAnimatedAttendance);
+  }, [todayAttendance]);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
         const response = await fetch(
-          `${API_URL}/get_stats`
+          `${API_URL}/get_stats`, { credentials: "include" }
         );
         if (response.ok) {
           const data = await response.json();
@@ -128,13 +151,11 @@ function Dashboard() {
 
     const fetchTodayAttendance = async () => {
       try {
-        const res = await fetch(`${API_URL}/get_attendance_stats`);
+        const res = await fetch(`${API_URL}/get_attendance_stats`, { credentials: "include" });
         const data = await res.json();
         const total = data.total;
         const present = data.present;
         setTodayAttendance({ total, present });
-        const percent = Math.round((present / (total || 1)) * 100);
-        animateValue(0, percent, 1500, setAnimatedAttendance);
       } catch (err) {
         console.error("Davomat olinmadi:", err);
       } finally {
@@ -144,9 +165,10 @@ function Dashboard() {
 
     const fetchYearlyPayments = async () => {
       try {
-        const res = await fetch(`${API_URL}/get_yearly_payments`);
+        const res = await fetch(`${API_URL}/get_yearly_payments`, { credentials: "include" });
         const data = await res.json();
-        setYearlyPayments(data);
+        setYearlyPayments(data.monthly || []);
+        setDailyPayments(data.dailyThisMonth || []);
       } catch (err) {
         console.error("Yillik to'lovlar olinmadi:", err);
       } finally {
@@ -156,7 +178,7 @@ function Dashboard() {
 
     const fetchMonthlyExpenses = async () => {
       try {
-        const res = await fetch(`${API_URL}/get_monthly_expenses`);
+        const res = await fetch(`${API_URL}/get_monthly_expenses`, { credentials: "include" });
         if (!res.ok) throw new Error("Oylik xarajatlarni olishda xatolik yuz berdi");
         const data = await res.json();
         setMonthlyExpenses(data);
@@ -175,18 +197,18 @@ function Dashboard() {
 
   useEffect(() => {
     if (!loading && stats) {
-      animateValue(0, stats.totalStudents?.count || 0, 1500, setAnimatedStudents);
-      animateValue(0, stats.roomsBusinessPercentAll || 0, 1500, setAnimatedRoomPercent);
-      animateValue(0, stats.totalGroups || 0, 1500, setAnimatedGroups);
-      animateValue(0, stats.totalPaymentThisMonth || 0, 1500, setAnimatedPayment);
-      animateValue(0, stats.totalTeachers || 0, 1500, setAnimatedTeachers);
+      animateValue(0, stats.totalStudents?.count || 0, 1000, setAnimatedStudents);
+      animateValue(0, stats.roomsBusinessPercentAll || 0, 1000, setAnimatedRoomPercent);
+      animateValue(0, stats.totalGroups || 0, 1000, setAnimatedGroups);
+      animateValue(0, stats.totalPaymentThisMonth || 0, 1000, setAnimatedPayment);
+      animateValue(0, stats.totalTeachers || 0, 1000, setAnimatedTeachers);
       const totalStudents = stats.totalStudents?.count;
       const malePercent = totalStudents ? Math.round((stats.studentsGender.male / totalStudents) * 100) : 0;
       const femalePercent = totalStudents ? Math.round((stats.studentsGender.female / totalStudents) * 100) : 0;
-      animateValue(0, malePercent, 1500, setAnimatedMalePercent);
-      animateValue(0, femalePercent, 1500, setAnimatedFemalePercent);
-      animateValue(0, stats.studentsGender.male || 0, 1500, setAnimatedMaleCount);
-      animateValue(0, stats.studentsGender.female || 0, 1500, setAnimatedFemaleCount);
+      animateValue(0, malePercent, 1000, setAnimatedMalePercent);
+      animateValue(0, femalePercent, 1000, setAnimatedFemalePercent);
+      animateValue(0, stats.studentsGender.male || 0, 1000, setAnimatedMaleCount);
+      animateValue(0, stats.studentsGender.female || 0, 1000, setAnimatedFemaleCount);
     }
   }, [loading, stats]);
 
@@ -210,22 +232,22 @@ function Dashboard() {
 
   const combinedData = Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
-  
+
     const payment =
       yearlyPayments.find(
         (p) => parseInt(p.month.split("-")[1]) === month
       ) || { jami: 0 };
-  
+
     const expense =
       monthlyExpenses.find(
         (e) => parseInt(e.month.split("-")[1]) === month
       ) || { jami: 0 };
-  
+
     const salary =
       monthlySalaries.find(
         (s) => parseInt(s.month.split("-")[1]) === month
       ) || { total: 0 };
-  
+
     return {
       monthName: monthsInUzbek[month],
       income: payment.jami,
@@ -238,10 +260,10 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <TrendingUp size={24} color="#104292" />
+        <ChartLine size={24} color="#104292" />
         <h1 className="text-2xl font-bold text-gray-800">
-          {today.getDate().toString().padStart(2, "0")}-{monthsInUzbek[today.getMonth() + 1]}{" "}
-          {today.getFullYear()}-yil holatiga raqamli statistika:
+          {today.getDate().toString().padStart(2, "0")}-{monthsInUzbek[today.getMonth() + 1]}
+          <span> holatiga raqamli statistika:</span>
         </h1>
       </div>
 
@@ -375,8 +397,8 @@ function Dashboard() {
           <div className="ml-4">
             <div className="text-sm text-blue-700 font-medium">
               Bugungi davomat (
-              {todayAttendance?.present ? todayAttendance.present : "0"}/
-              {todayAttendance?.total ? todayAttendance.total : "0"})
+              {Number(todayAttendance?.present ?? 0)}/
+              {Number(todayAttendance?.total ?? 0)})
             </div>
           </div>
         </div>
@@ -417,37 +439,63 @@ function Dashboard() {
         <h3 className="font-bold text-lg mb-2 text-gray-700">
           Yillik tushumlar va xarajatlar
         </h3>
-        <ResponsiveContainer width="100%" height={300} className="p-1">
-          <BarChart
-            data={combinedData}
-            margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="monthName" />
-            <YAxis
-              tickFormatter={(value) => value.toLocaleString("uz-UZ")}
-            />
-            <Tooltip
-              formatter={(value, name) =>
-                `${value.toLocaleString("uz-UZ")} so'm`
-              }
-              labelStyle={{ fontWeight: "bold", color: "#1e3a8a" }}
-            />
-            <Legend />
-            <Bar
-              dataKey="income"
-              name="Tushumlar"
-              fill="#2563eb"
-              radius={[4, 4, 0, 0]}
-            />
-            <Bar
-              dataKey="expense"
-              name="Xarajatlar"
-              fill="#ef4444"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+
+        {/* Bar Chart */}
+        <div className="p-1">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={combinedData}
+              margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="monthName" />
+              <YAxis tickFormatter={(value) => value.toLocaleString("uz-UZ")} />
+              <Tooltip
+                formatter={(value) => `${Number(value).toLocaleString("uz-UZ")} so'm`}
+                labelStyle={{ fontWeight: "bold", color: "#1e3a8a" }}
+              />
+              <Legend />
+              <Bar dataKey="income" name="Tushumlar" fill="#2563eb" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expense" name="Xarajatlar" fill="#ef4444" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Line Chart */}
+        <div className="mt-8 border-t pt-6">
+          <h3 className="font-bold text-lg mb-2 text-gray-700">
+            Kunlik tushumlar (shu oy)
+          </h3>
+
+          <div className="p-1">
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart
+                data={dailyPayments}
+                margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="day"
+                  tickFormatter={(val) => String(val).slice(8)} // "01","02",...
+                />
+                <YAxis tickFormatter={(value) => value.toLocaleString("uz-UZ")} />
+                <Tooltip
+                  formatter={(value) => `${Number(value).toLocaleString("uz-UZ")} so'm`}
+                  labelFormatter={(label) => `Sana: ${formatFullDate(label)}`}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="jami"
+                  name="Kunlik tushum"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

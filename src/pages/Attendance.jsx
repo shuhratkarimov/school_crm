@@ -120,6 +120,7 @@ export default function Attendance() {
           message: message.trim(),
           // yoki: phone_numbers: groupStudents.map(s => s.phone_number).filter(Boolean)
         }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -146,7 +147,9 @@ export default function Attendance() {
 
     const fetchAttendanceStats = async () => {
       try {
-        const res = await fetch(`${API_URL}/group-attendance-summary/${selectedGroup.id}`);
+        const res = await fetch(`${API_URL}/group-attendance-summary/${selectedGroup.id}`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error();
         const data = await res.json();
         setAttendanceSummary(data);
@@ -167,7 +170,9 @@ export default function Attendance() {
 
     const fetchSummary = async () => {
       try {
-        const res = await fetch(`${API_URL}/group-payment-summary/${selectedGroup.id}`);
+        const res = await fetch(`${API_URL}/group-payment-summary/${selectedGroup.id}`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error();
         const data = await res.json();
         setPaymentSummary(data);
@@ -195,6 +200,7 @@ export default function Attendance() {
           group_id: selectedGroupForExtension.id,
           extended_until: extendedUntil
         }),
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -213,7 +219,10 @@ export default function Attendance() {
   const fetchExtensionInfo = async (groupId) => {
     try {
       const response = await fetch(
-        `${API_URL}/get_extend_attendance_time/${groupId}`
+        `${API_URL}/get_extend_attendance_time/${groupId}`,
+        {
+          credentials: "include",
+        }
       );
 
       if (response.ok) {
@@ -308,11 +317,21 @@ export default function Attendance() {
         paymentsResponse,
         roomsResponse,
       ] = await Promise.all([
-        fetch(`${API_URL}/get_groups`).catch(() => ({ ok: false })),
-        fetch(`${API_URL}/get_teachers`).catch(() => ({ ok: false })),
-        fetch(`${API_URL}/get_students`).catch(() => ({ ok: false })),
-        fetch(`${API_URL}/get_payments`).catch(() => ({ ok: false })),
-        fetch(`${API_URL}/get_rooms`).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_groups`, {
+          credentials: "include",
+        }).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_teachers`, {
+          credentials: "include",
+        }).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_students`, {
+          credentials: "include",
+        }).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_payments`, {
+          credentials: "include",
+        }).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/get_rooms`, {
+          credentials: "include",
+        }).catch(() => ({ ok: false })),
       ]);
 
       if (groupsResponse.ok) {
@@ -455,6 +474,7 @@ export default function Attendance() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(groupData),
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -527,6 +547,7 @@ export default function Attendance() {
             end_time: `${editFormData.end_time}:00`,
             monthly_fee: Number(editFormData.monthly_fee),
           }),
+          credentials: "include",
         }
       );
 
@@ -569,6 +590,7 @@ export default function Attendance() {
         `${API_URL}/delete_group/${id}`,
         {
           method: "DELETE",
+          credentials: "include",
         }
       );
 
@@ -652,7 +674,7 @@ export default function Attendance() {
     const studentsAmount = groupStudents.length;
     const paidStudents = payments.filter(
       (payment) =>
-        payment.for_which_group === groupId &&
+        payment.group_id === groupId &&
         payment.for_which_month.toUpperCase() === currentMonth
     );
     const paidStudentsAmount = paidStudents.length;
@@ -720,7 +742,7 @@ export default function Attendance() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/get_groups`);
+      const res = await fetch(`${API_URL}/get_groups`, { credentials: "include" });
       if (!res.ok) throw new Error("Guruhlarni yuklashda xatolik");
       const data = await res.json();
 
@@ -731,7 +753,8 @@ export default function Attendance() {
 
         try {
           const resAtt = await fetch(
-            `${API_URL}/get_attendance_by_date/${group.id}?date=${dateStr}`
+            `${API_URL}/get_attendance_by_date/${group.id}?date=${dateStr}`,
+            { credentials: "include" }
           );
           if (resAtt.status === 404) {
             status = "no_attendance";
@@ -762,7 +785,8 @@ export default function Attendance() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${API_URL}/get_one_group_students?group_id=${groupId}`
+        `${API_URL}/get_one_group_students?group_id=${groupId}`,
+        { credentials: "include" }
       );
       if (!res.ok) throw new Error("O'quvchilarni yuklashda xatolik");
       const data = await res.json();
@@ -797,7 +821,8 @@ export default function Attendance() {
       let res; // oldindan e’lon qilamiz
 
       res = await fetch(
-        `${API_URL}/get_attendance_by_date/${groupId}?date=${formatDate(date)}`
+        `${API_URL}/get_attendance_by_date/${groupId}?date=${formatDate(date)}`,
+        { credentials: "include" }
       );
 
       if (res.status === 404) {
@@ -841,7 +866,8 @@ export default function Attendance() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${API_URL}/get_one_teacher/${teacher_id}`
+        `${API_URL}/get_one_teacher/${teacher_id}`,
+        { credentials: "include" }
       );
       if (!res.ok) throw new Error("Ustozni yuklashda xatolik");
       const data = await res.json();
@@ -1390,7 +1416,7 @@ export default function Attendance() {
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 text-white">
+            <div className="bg-[#104292] px-6 py-4 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Plus size={24} className="bg-white text-blue-600 p-1 rounded-full" />
@@ -1482,9 +1508,9 @@ export default function Attendance() {
                     {daysOfWeek.map((day) => (
                       <label
                         key={day}
-                        className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.days.includes(day)
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-300 hover:border-gray-400'
+                        className={`min-w-0 flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.days.includes(day)
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-300 hover:border-gray-400"
                           }`}
                       >
                         <input
@@ -1493,13 +1519,19 @@ export default function Attendance() {
                           onChange={() => handleDaysChange(day)}
                           className="hidden"
                         />
-                        <div className={`w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.days.includes(day)
-                          ? 'border-blue-500 bg-blue-500 text-white'
-                          : 'border-gray-400'
-                          }`}>
+
+                        <div
+                          className={`shrink-0 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.days.includes(day)
+                              ? "border-blue-500 bg-blue-500 text-white"
+                              : "border-gray-400"
+                            }`}
+                        >
                           {formData.days.includes(day) && <Check size={14} />}
                         </div>
-                        <span className="text-sm font-medium">{day}</span>
+
+                        <span className="min-w-0 truncate text-sm font-medium">
+                          {day}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -1560,13 +1592,13 @@ export default function Attendance() {
                   <button
                     type="button"
                     onClick={() => setAddModal(false)}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium"
+                    className="px-6 py-2 btn btn-secondary rounded-lg transition-colors duration-200 font-medium"
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium flex items-center gap-2"
+                    className="px-6 py-2 btn btn-primary text-white rounded-lg transition-colors duration-200 font-medium flex items-center gap-2"
                     disabled={formData.days.length === 0}
                   >
                     <Plus size={18} />
@@ -1804,7 +1836,7 @@ export default function Attendance() {
                           type="checkbox"
                           checked={editFormData.days.includes(day)}
                           onChange={() => handleDaysChange(day, true)}
-                          style={{ scale: "1.5", cursor: "pointer" }}
+                          style={{ scale: "1.5", cursor: "pointer", }}
                         />
                         {day}
                       </label>

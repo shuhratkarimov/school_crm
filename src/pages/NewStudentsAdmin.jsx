@@ -68,6 +68,7 @@ export default function NewStudentsAdmin() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ interviewed: !currentStatus }),
+        credentials: "include"
       });
       if (response.ok) {
         fetchStudents();

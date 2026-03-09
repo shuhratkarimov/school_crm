@@ -154,6 +154,12 @@ export default function LinkGenerator() {
     );
   };
 
+  const makePublicLink = (token) =>
+    `https://register.intellectualprogress.uz/student-registration/${token}`;
+
+  const makePublicLinkLocal = (token) =>
+    `http://localhost:5173/student-registration/${token}`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto">
@@ -210,14 +216,14 @@ export default function LinkGenerator() {
                       <p className="font-semibold">{link.subject}</p>
                       <p
                         className="text-gray-600 cursor-pointer hover:underline"
-                        onClick={() => copyToClipboard(`https://register.intellectualprogress.uz/student-registration?subject=${encodeURIComponent(link.subject)}`)}
+                        onClick={() => copyToClipboard(makePublicLink(link.token))}
                       >
-                        https://register.intellectualprogress.uz/student-registration?subject={encodeURIComponent(link.subject)}
+                        {link.token ? makePublicLink(link.token) : "Token yo‘q (migration qiling)"}
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => copyToClipboard(`https://register.intellectualprogress.uz/student-registration?subject=${encodeURIComponent(link.subject)}`)}
+                        onClick={() => copyToClipboard(makePublicLink(link.token))}
                         className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition"
                         title="Nusxalash"
                       >

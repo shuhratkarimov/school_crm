@@ -22,7 +22,7 @@ export default function Expenses() {
   // --- Backend bilan ishlash ---
   const fetchExpenses = async () => {
     try {
-      const res = await fetch(`${API_URL}/get_expenses`);
+      const res = await fetch(`${API_URL}/get_expenses`, { credentials: "include" });
       if (!res.ok) throw new Error("Xarajatlarni olishda xatolik yuz berdi");
       const data = await res.json();
       setExpenses(data);
@@ -40,7 +40,7 @@ export default function Expenses() {
     if (!newExpense.title || !newExpense.amount || !newExpense.date) return;
     try {
       const res = editingId
-        ? await fetch(`${API_URL}/update_expense/${editingId}`, {
+        ? await fetch(`${API_URL}/update_expense/${editingId}`, { credentials: "include" }, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
@@ -49,6 +49,7 @@ export default function Expenses() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),
+          credentials: "include",
         });
       if (!res.ok) toast.error(`Xarajat qo‘shishda xatolik yuz berdi: ${res.statusText}`);
       const saved = await res.json();
@@ -64,7 +65,7 @@ export default function Expenses() {
 
   const deleteExpense = async (id) => {
     try {
-      const res = await fetch(`${API_URL}/delete_expense/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/delete_expense/${id}`, { credentials: "include", method: "DELETE" });
       if (!res.ok) toast.error(`Xarajat o‘chirishda xatolik yuz berdi: ${res.statusText}`);
       toast.success("Xarajat o‘chirildi");
       fetchExpenses();

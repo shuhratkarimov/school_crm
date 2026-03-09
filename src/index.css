@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer utilities {
+
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}
+
 /* Global reset */
 * {
   margin: 0;
@@ -13,7 +35,8 @@
 body {
   font-family: Red Hat Display;
   font-weight: 500;
-  transition: background-color 0.3s, color 0.3s; /* Yumshoq o'tish effekti */
+  transition: background-color 0.3s, color 0.3s;
+  /* Yumshoq o'tish effekti */
 }
 
 /* Light theme */
@@ -22,13 +45,13 @@ body.light {
   color: #1e293b;
 }
 
-input[type="checkbox"]{
+input[type="checkbox"] {
   accent-color: #104292;
 }
 
 /* Dark theme */
 body.dark {
-  background-color:   #000000;
+  background-color: #000000;
   color: #e5e7eb;
 }
 
@@ -125,7 +148,8 @@ body.dark .btn-secondary:hover {
   font-size: 16px;
   background-color: white;
 }
-.input::placeholder{
+
+.input::placeholder {
   color: rgb(44, 42, 42);
 }
 
@@ -257,9 +281,12 @@ body.dark .form-group label {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) translateX(0);
   }
+
   50% {
     transform: translateY(-20px) translateX(20px);
   }
@@ -282,6 +309,7 @@ body.dark .form-group label {
     opacity: 0;
     transform: translateY(100px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -315,9 +343,19 @@ body.dark .form-group label {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 .login-form {
@@ -366,8 +404,8 @@ body.dark .form-group label {
   color: #aaa;
 }
 
-.form-input:focus + .form-label,
-.form-input:not(:placeholder-shown) + .form-label {
+.form-input:focus+.form-label,
+.form-input:not(:placeholder-shown)+.form-label {
   transform: translateY(-1.5rem);
   font-size: 0.8rem;
   color: #4b6cb7;
@@ -386,12 +424,10 @@ body.dark .form-group label {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(
-    circle at var(--mouse-x, -100px) var(--mouse-y, -100px),
-    rgba(169, 175, 225, 0.8) 0%,
-    rgba(7, 41, 210, 0.8) 50%,
-    #0042c7 100%
-  );
+  background: radial-gradient(circle at var(--mouse-x, -100px) var(--mouse-y, -100px),
+      rgba(169, 175, 225, 0.8) 0%,
+      rgba(7, 41, 210, 0.8) 50%,
+      #0042c7 100%);
   transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -429,12 +465,13 @@ body.dark .form-group label {
   width: 100%;
 }
 
-.schedule-table th, .schedule-table td {
+.schedule-table th,
+.schedule-table td {
   border: 1px solid #33ff00;
   padding: 8px;
 }
 
-.schedule-table tr{
+.schedule-table tr {
   height: 100px;
 }
 
@@ -450,18 +487,18 @@ body.dark .form-group label {
   text-align: center;
 }
 
-.schedule-table tr:last-child{
+.schedule-table tr:last-child {
   border-bottom: 2px solid #007bff;
 }
 
-.schedule-table tr{
+.schedule-table tr {
   border-right: 2px solid #007bff;
 }
 
 .schedule-table td:hover {
   opacity: 0.9;
   z-index: 10;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar {
@@ -517,12 +554,14 @@ body.dark .sidebar-item.active {
   margin-left: 250px;
   padding: 20px;
   transition: margin-left 0.3s ease;
-  flex-grow: 1;          /* Sidebar yonida qolgan joyni egallaydi */
-  background: #f9fafb;   /* fon rangi */
-  min-width: 0;  
+  flex-grow: 1;
+  /* Sidebar yonida qolgan joyni egallaydi */
+  background: #f9fafb;
+  /* fon rangi */
+  min-width: 0;
 }
 
-.sidebar.collapsed + .main-content {
+.sidebar.collapsed+.main-content {
   margin-left: 70px;
 }
 
@@ -546,11 +585,17 @@ body.dark .sidebar-item.active {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-input, select{
+input,
+select {
   font-family: Red Hat Display;
 }
 
@@ -681,14 +726,18 @@ body.dark .stat-label {
 }
 
 .highlight-class-day {
-  background-color: #7ff04b; /* Qizg'ish fon rangi */
-  color: #333; /* Matn rangi o'qilishi uchun moslashtirilgan */
-  border-radius: 50%; /* Yumaloq shakl */
+  background-color: #7ff04b;
+  /* Qizg'ish fon rangi */
+  color: #333;
+  /* Matn rangi o'qilishi uchun moslashtirilgan */
+  border-radius: 50%;
+  /* Yumaloq shakl */
 }
 
 /* Agar faqat tanlangan kunni boshqacha ko'rsatmoqchi bo'lsangiz */
 .react-datepicker__day--selected {
-  background-color: #ff4d4d !important; /* Tanlangan kun uchun quyuqroq qizil */
+  background-color: #ff4d4d !important;
+  /* Tanlangan kun uchun quyuqroq qizil */
   color: white !important;
 }
 
@@ -702,4 +751,3 @@ body.dark .stat-label {
   width: 32px;
   height: 32px;
 }
-

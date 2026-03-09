@@ -47,7 +47,9 @@
     const fetchRequests = async () => {
       try {
         setLoading(true);
-        const todayResponse = await fetch(`${API_URL}/get_appeals`);
+        const todayResponse = await fetch(`${API_URL}/get_appeals`, {
+          credentials: "include"
+        });
         let todayData = [];
         if (todayResponse.ok) {
           todayData = await todayResponse.json();
@@ -58,7 +60,9 @@
           throw new Error("Bugungi murojaatlarni olishda xatolik");
         }
 
-        const allResponse = await fetch(`${API_URL}/get_last_ten_day_appeals`);
+        const allResponse = await fetch(`${API_URL}/get_last_ten_day_appeals`, {
+          credentials: "include"
+        });
         let allData = [];
         if (allResponse.ok) {
           allData = await allResponse.json();
@@ -92,6 +96,7 @@
       try {
         const response = await fetch(`${API_URL}/send_telegram_message`, {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -120,6 +125,7 @@
       try {
         const response = await fetch(`${API_URL}/delete_appeal/${id}`, {
           method: "DELETE",
+          credentials: "include"
         });
         if (!response.ok) throw new Error("Murojaatni o'chirishda muammo yuzaga keldi!");
 

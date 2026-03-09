@@ -37,6 +37,9 @@ function PaymentReports() {
     12: "Dekabr",
   };
 
+  const formatMoney = (amount) =>
+    `${Number(amount).toLocaleString("ru-RU")} so'm`;
+
   useEffect(() => {
     fetchPaymentData();
   }, [monthFilter, yearFilter]);
@@ -146,13 +149,13 @@ function PaymentReports() {
           (sum, g) => sum + (g.monthly_fee || 0),
           0
         );
-        const totalPaid = student.payments.reduce(
+        const totalPaid = student.studentPayments.reduce(
           (sum, p) => sum + (p.payment_amount || 0),
           0
         );
 
         let debt = totalFee - totalPaid;
-        if (student.payments.some((p) => p.shouldBeConsideredAsPaid)) {
+        if (student.studentPayments.some((p) => p.shouldBeConsideredAsPaid)) {
           debt = 0;
         }
 
@@ -164,21 +167,21 @@ function PaymentReports() {
           student.parents_phone_number || "",
           monthsInUzbek[monthFilter] || "",
           yearFilter || "",
-          student.payments.length > 0 ? "To'langan" : "To'lanmagan",
-          student.payments[0]?.created_at
-            ? `${new Date(student.payments[0].created_at).toLocaleDateString(
+          student.studentPayments.length > 0 ? "To'langan" : "To'lanmagan",
+          student.studentPayments[0]?.created_at
+            ? `${new Date(student.studentPayments[0].created_at).toLocaleDateString(
               "uz-UZ"
-            )}, ${new Date(student.payments[0].created_at).toLocaleTimeString(
+            )}, ${new Date(student.studentPayments[0].created_at).toLocaleTimeString(
               "uz-UZ"
             )}`
             : "",
-          student.payments[0]?.payment_amount
-            ? `${student.payments[0].payment_amount.toLocaleString(
+          student.studentPayments[0]?.payment_amount
+            ? `${student.studentPayments[0].payment_amount.toLocaleString(
               "uz-UZ"
             )} so'm`
             : "",
           debt > 0 ? `${debt.toLocaleString("uz-UZ")} so'm` : "Yo'q",
-          student.payments[0]?.comment || "",
+          student.studentPayments[0]?.comment || "",
         ]);
       });
 
@@ -437,12 +440,12 @@ function PaymentReports() {
                             </td>
                             <td className="px-4 py-3">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${student.payments.length > 0
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${student?.studentPayments?.length > 0
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
                                   }`}
                               >
-                                {student.payments.length > 0 ? "To'langan" : "To'lanmagan"}
+                                {student?.studentPayments?.length > 0 ? "To'langan" : "To'lanmagan"}
                               </span>
                             </td>
                             <td className="px-4 py-3">
@@ -468,9 +471,9 @@ function PaymentReports() {
                                     <CreditCard size={18} className="mr-2" />
                                     To'lov ma'lumotlari
                                   </h3>
-                                  {student.payments.length > 0 ? (
+                                  {student.studentPayments?.length > 0 ? (
                                     <div className="space-y-3">
-                                      {student.payments.map((p) => (
+                                      {student.studentPayments.map((p) => (
                                         <div
                                           key={p.id}
                                           className="border-b pb-3 last:border-0 last:pb-0"
@@ -480,9 +483,8 @@ function PaymentReports() {
                                               <p className="text-sm text-gray-600">Summasi:</p>
                                               <p className="font-medium">
                                                 {p.payment_amount
-                                                  ? p.payment_amount.toLocaleString("uz-UZ")
-                                                  : "Noma'lum"}{" "}
-                                                so'm
+                                                  ? formatMoney(p.payment_amount)
+                                                  : "Noma'lum"}
                                               </p>
                                             </div>
                                             <div>
@@ -539,12 +541,12 @@ function PaymentReports() {
                           </p>
                         </div>
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${student.payments.length > 0
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${student.studentPayments?.length > 0
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
                             }`}
                         >
-                          {student.payments.length > 0 ? "To'langan" : "To'lanmagan"}
+                          {student.studentPayments?.length > 0 ? "To'langan" : "To'lanmagan"}
                         </span>
                       </div>
 
@@ -577,18 +579,17 @@ function PaymentReports() {
                             <CreditCard size={16} className="mr-2" />
                             To'lov tarixi
                           </h4>
-                          {student.payments.length > 0 ? (
+                          {student.studentPayments?.length > 0 ? (
                             <div className="space-y-3">
-                              {student.payments.map((p) => (
+                              {student.studentPayments.map((p) => (
                                 <div key={p.id} className="bg-gray-50 p-3 rounded-lg">
                                   <div className="grid grid-cols-2 gap-2">
                                     <div>
                                       <p className="text-xs text-gray-600">Summa</p>
                                       <p className="font-medium">
                                         {p.payment_amount
-                                          ? p.payment_amount.toLocaleString("uz-UZ")
-                                          : "Noma'lum"}{" "}
-                                        so'm
+                                          ? formatMoney(p.payment_amount)
+                                          : "Noma'lum"}
                                       </p>
                                     </div>
                                     <div>
@@ -630,7 +631,7 @@ function PaymentReports() {
           {/* Footer */}
           <footer className="text-center text-gray-500 text-sm mt-10">
             <p>
-              © {new Date().getFullYear()} "Intellectual Progress Star" o'quv markazi{" "}
+              © {new Date().getFullYear()} "Intellectual Progress Star" o'quv markazi
               <br /> Ustoz paneli
             </p>
           </footer>

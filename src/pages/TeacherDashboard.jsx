@@ -62,7 +62,10 @@ function TeacherDashboard() {
       let groupsWithStudents = [];
       if (data) {
         for (const group of data) {
-          const res = await fetch(`${API_URL}/get_one_group/${group.id}`);
+          const res = await fetch(`${API_URL}/get_one_teacher_group/${group.id}`, {
+            method: "GET",
+            credentials: "include",
+          });
           const groupData = await res.json();
           groupsWithStudents.push({
             ...group,

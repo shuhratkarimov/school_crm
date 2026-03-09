@@ -11,14 +11,14 @@ function Achievements() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedType, setSelectedType] = useState("students");
+  const [selectedType, setSelectedType] = useState("student");
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredAchievements, setFilteredAchievements] = useState([]);
   const [formData, setFormData] = useState({
-    entity_id: "",
+    achiever_id: "",
     achievement_title: "",
     description: "",
     date: "",
@@ -27,10 +27,11 @@ function Achievements() {
   const fetchAchievements = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/get_achievements`);
+      const response = await fetch(`${API_URL}/get_achievements`, {
+        credentials: "include",
+      });
       if (!response.ok) throw new Error("Yutuqlar ma'lumotlarini olishda xatolik!");
       if (response.status === 200) {
-        console.log(response);
         let data = await response.json();
         data = data.length ? data : [];
         setAchievements(data);
@@ -45,7 +46,9 @@ function Achievements() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch(`${API_URL}/get_students`);
+      const response = await fetch(`${API_URL}/get_students`, {
+        credentials: "include",
+      });
       let data = await response.json();
       if (!response.ok) {
         toast.error("O'quvchilar ma'lumotlarini olishda xatolik yuz berdi!");
@@ -62,7 +65,9 @@ function Achievements() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch(`${API_URL}/get_teachers`);
+      const response = await fetch(`${API_URL}/get_teachers`, {
+        credentials: "include",
+      });
       let data = await response.json();
       if (!response.ok) {
         toast.error("Ustozlar ma'lumotlarini olishda xatolik yuz berdi!");
@@ -85,31 +90,31 @@ function Achievements() {
 
   const handleSearch = (term) => {
     setSearchTerm(term);
-    
+
     if (!term.trim()) {
       setFilteredAchievements(achievements);
       return;
     }
-    
+
     const filtered = achievements.filter(ach => {
-      const entity = ach.achiever_type === "student" 
-        ? students.find(s => s.id === ach.achiever_id) 
+      const entity = ach.achiever_type === "student"
+        ? students.find(s => s.id === ach.achiever_id)
         : teachers.find(t => t.id === ach.achiever_id);
-      
+
       if (!entity) return false;
-      
+
       const entityName = `${entity.first_name} ${entity.last_name}`.toLowerCase();
       const achievementTitle = ach.achievement_title.toLowerCase();
       const description = ach.description.toLowerCase();
       const searchLower = term.toLowerCase();
-      
-      return entityName.includes(searchLower) || 
-             achievementTitle.includes(searchLower) || 
-             description.includes(searchLower);
+
+      return entityName.includes(searchLower) ||
+        achievementTitle.includes(searchLower) ||
+        description.includes(searchLower);
     });
-    
     setFilteredAchievements(filtered);
   };
+  console.log(filteredAchievements);
 
   useEffect(() => {
     handleSearch(searchTerm);
@@ -117,30 +122,29 @@ function Achievements() {
 
   const addAchievement = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch(`${API_URL}/create_achievement`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
-          ...formData,
-          type: selectedType,
+          achiever_id: formData.achiever_id,
+          achiever_type: selectedType, // "student" | "teacher"
+          achievement_title: formData.achievement_title,
+          description: formData.description,
+          date: formData.date,
         }),
       });
-      if (!response.ok) {
-        toast.error("Yutuq qo'shishda xatolik yuz berdi!");
-        throw new Error("Yutuq qo'shishda xatolik!");
-      }
+
+      if (!response.ok) throw new Error("create failed");
+
       await fetchAchievements();
       setAddModal(false);
-      setFormData({
-        entity_id: "",
-        achievement_title: "",
-        description: "",
-        date: "",
-      });
-      toast.success("Yutuq muvaffaqiyatli qo'shildi!");
-    } catch (error) {
-      toast.error("Yutuq qo'shishda xatolik yuz berdi!");
+      setFormData({ achiever_id: "", achievement_title: "", description: "", date: "" });
+      toast.success("Yutuq qo'shildi!");
+    } catch (e) {
+      toast.error("Yutuq qo'shishda xatolik!");
     }
   };
 
@@ -194,20 +198,21 @@ function Achievements() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            entity_id: formData.entity_id,
-            type: selectedType,
+            achiever_id: formData.achiever_id,
+            achiever_type: selectedType,
             achievement_title: formData.achievement_title,
             description: formData.description,
             date: formData.date,
-          }),          
+          }),
+          credentials: "include",
         }
       );
-  
+
       if (!response.ok) {
         toast.error("Yutuq yangilashda xatolik yuz berdi!");
         throw new Error("Yutuq yangilashda xatolik!");
       }
-  
+
       await fetchAchievements();
       setEditModal(false);
       toast.success("Yutuq muvaffaqiyatli yangilandi!");
@@ -216,10 +221,11 @@ function Achievements() {
     }
   };
 
-  const deleteAchievement = async (id) => {    
+  const deleteAchievement = async (id) => {
     try {
       const response = await fetch(`${API_URL}/delete_achievement/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!response.ok) throw new Error("Yutuq o'chirishda xatolik!");
       await fetchAchievements();
@@ -230,10 +236,10 @@ function Achievements() {
   };
 
   const groupedAchievements = filteredAchievements?.reduce((acc, ach) => {
-    const entity = ach.achiever_type === "student" 
-      ? students.find(s => s.id === ach.achiever_id) 
+    const entity = ach.achiever_type === "student"
+      ? students.find(s => s.id === ach.achiever_id)
       : teachers.find(t => t.id === ach.achiever_id);
-    
+
     if (entity) {
       if (!acc[entity.id]) {
         acc[entity.id] = { entity, achievements: [] };
@@ -259,7 +265,7 @@ function Achievements() {
             <h1 className="text-2xl font-bold text-gray-800">Yutuqlar</h1>
           </div>
         </div>
-        
+
         <button
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg"
           onClick={() => setAddModal(true)}
@@ -287,14 +293,14 @@ function Achievements() {
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yutuq turi</label>
         <div className="flex bg-gray-100 p-1 rounded-lg dark:bg-gray-800 w-fit">
           <button
-            className={`px-4 py-2 rounded-md transition-colors ${selectedType === "students" ? "bg-white shadow-sm dark:bg-gray-700" : "text-gray-500 dark:text-gray-400"}`}
-            onClick={() => setSelectedType("students")}
+            className={`px-4 py-2 rounded-md transition-colors ${selectedType === "student" ? "bg-white shadow-sm dark:bg-gray-700" : "text-gray-500 dark:text-gray-400"}`}
+            onClick={() => setSelectedType("student")}
           >
             O'quvchilar yutuqlari
           </button>
           <button
-            className={`px-4 py-2 rounded-md transition-colors ${selectedType === "teachers" ? "bg-white shadow-sm dark:bg-gray-700" : "text-gray-500 dark:text-gray-400"}`}
-            onClick={() => setSelectedType("teachers")}
+            className={`px-4 py-2 rounded-md transition-colors ${selectedType === "teacher" ? "bg-white shadow-sm dark:bg-gray-700" : "text-gray-500 dark:text-gray-400"}`}
+            onClick={() => setSelectedType("teacher")}
           >
             Ustozlar yutuqlari
           </button>
@@ -306,7 +312,7 @@ function Achievements() {
         {sortedEntities.filter(({ entity }) => {
           // Ensure we're filtering by the correct type
           const isStudent = students.some(s => s.id === entity.id);
-          return selectedType === "students" ? isStudent : !isStudent;
+          return selectedType === "student" ? isStudent : !isStudent;
         }).map(({ entity, achievements }) => (
           <div key={entity.id} className="bg-white rounded-xl shadow-sm p-6 dark:bg-gray-800">
             <div className="flex items-start gap-4 mb-4">
@@ -325,7 +331,7 @@ function Achievements() {
                 </div>
               </div>
             </div>
-            
+
             <div className="grid gap-3">
               {achievements?.map(ach => (
                 <div key={ach.id} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-r">
@@ -348,7 +354,7 @@ function Achievements() {
                             description: ach.description,
                             date: ach.date.split('T')[0],
                             achiever_type: ach.achiever_type,
-                          });                          
+                          });
                           setEditModal(true);
                         }}
                         className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors dark:text-blue-400 dark:hover:bg-blue-900/30"
@@ -370,17 +376,17 @@ function Achievements() {
             </div>
           </div>
         ))}
-        
+
         {sortedEntities.filter(({ entity }) => {
           const isStudent = students.some(s => s.id === entity.id);
           return selectedType === "students" ? isStudent : !isStudent;
         }).length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm dark:bg-gray-800">
-            <Award size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-            <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Hozircha hech qanday yutuq mavjud emas</h3>
-            <p className="text-gray-400 dark:text-gray-500 mt-1">Yutuq qo'shish uchun yuqoridagi tugmadan foydalaning</p>
-          </div>
-        )}
+            <div className="text-center py-12 bg-white rounded-xl shadow-sm dark:bg-gray-800">
+              <Award size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+              <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Hozircha hech qanday yutuq mavjud emas</h3>
+              <p className="text-gray-400 dark:text-gray-500 mt-1">Yutuq qo'shish uchun yuqoridagi tugmadan foydalaning</p>
+            </div>
+          )}
       </div>
 
       {/* Yutuq qo'shish modali */}
@@ -405,26 +411,25 @@ function Achievements() {
             </button>
 
             <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Yangi yutuq qo'shish</h2>
-            
+
             <form onSubmit={addAchievement} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {selectedType === "students" ? "O'quvchi" : "Ustoz"}
+                  {selectedType === "student" ? "O'quvchi" : "Ustoz"}
                 </label>
                 <select
-                  value={formData.entity_id}
-                  onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  value={formData.achiever_id}
+                  onChange={(e) => setFormData({ ...formData, achiever_id: e.target.value })}
                   required
                 >
                   <option value="">Tanlang</option>
-                  {selectedType === "students" 
-                    ? students?.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>) 
-                    : teachers?.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)
+                  {selectedType === "student"
+                    ? students.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>)
+                    : teachers.map(t => <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>)
                   }
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yutuq nomi</label>
                 <input
@@ -436,7 +441,7 @@ function Achievements() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tavsif</label>
                 <textarea
@@ -448,7 +453,7 @@ function Achievements() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sana</label>
                 <input
@@ -459,7 +464,7 @@ function Achievements() {
                   required
                 />
               </div>
-              
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -500,7 +505,7 @@ function Achievements() {
             </button>
 
             <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Yutuqni tahrirlash</h2>
-            
+
             <form onSubmit={updateAchievement} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yutuq nomi</label>
@@ -513,7 +518,7 @@ function Achievements() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tavsif</label>
                 <textarea
@@ -525,7 +530,7 @@ function Achievements() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sana</label>
                 <input
@@ -536,7 +541,7 @@ function Achievements() {
                   required
                 />
               </div>
-              
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"

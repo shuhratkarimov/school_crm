@@ -76,6 +76,7 @@
     "recharts": "^3.1.2",
     "sass": "latest",
     "sass-embedded": "latest",
+    "socket.io-client": "^4.8.3",
     "sonner": "^1.7.1",
     "stylus": "latest",
     "sugarss": "latest",

@@ -15,8 +15,11 @@ function AdminDashboard() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/get_attendance_stats`);
+      const res = await fetch(`${API_URL}/get_attendance_stats`, {
+        credentials: "include",
+      });
       const data = await res.json();
+      if (!res.ok) throw new Error("Statistikani yuklashda xatolik!");
       setStats(data);
     } catch (err) {
       toast.error("Statistikani yuklashda xatolik");

@@ -50,10 +50,14 @@ const RoomManagement = () => {
       setError("");
 
       const [roomsResponse, schedulesResponse] = await Promise.all([
-        fetch(`${API_URL}/get_rooms`).catch(() => ({
+        fetch(`${API_URL}/get_rooms`, {
+          credentials: "include",
+        }).catch(() => ({
           ok: false,
         })),
-        fetch(`${API_URL}/get_schedules`).catch(() => ({
+        fetch(`${API_URL}/get_schedules`, {
+          credentials: "include",
+        }).catch(() => ({
           ok: false,
         })),
       ]);
@@ -91,6 +95,7 @@ const RoomManagement = () => {
             name: formData.name,
             capacity: formData.capacity ? Number(formData.capacity) : null,
           }),
+          credentials: "include",
         }
       );
 
@@ -121,6 +126,7 @@ const RoomManagement = () => {
               ? Number(editFormData.capacity)
               : null,
           }),
+          credentials: "include",
         }
       );
 
@@ -145,6 +151,7 @@ const RoomManagement = () => {
         `${API_URL}/delete_room/${id}`,
         {
           method: "DELETE",
+          credentials: "include",
         }
       );
 
@@ -312,7 +319,6 @@ const RoomManagement = () => {
 
         const groupColor = getColorForGroup(schedule.group?.id);
         const textColor = getContrastColor(groupColor);
-
         cells.push(
           <td
             key={`${day}-${startHour}-${schedule.id}`}
@@ -333,7 +339,7 @@ const RoomManagement = () => {
               padding: '4px',
               wordBreak: 'break-word'
             }}>
-              <p><strong>Guruh:</strong> {schedule.group?.group_subject || 'Noma\'lum'}</p>
+              <p><strong>Guruh:</strong> {schedule.scheduleGroup?.group_subject || 'Noma\'lum'}</p>
               <p><strong>O'qituvchi:</strong> {
                 schedule.teacher ?
                   `${schedule.teacher.first_name} ${schedule.teacher.last_name}` :
@@ -451,11 +457,11 @@ const RoomManagement = () => {
                     {room.name}
                   </p>
                   <p style={{ marginBottom: "10px" }}>
-                    <strong>Sig‘im:</strong>{" "}
+                    <strong>Sig‘im:</strong>
                     {`${room.capacity} o'quvchi sig'adi` || "Belgilanmagan"}
                   </p>
                   <p style={{ marginBottom: "10px" }}>
-                    <strong>Asosan bo'sh:</strong>{" "}
+                    <strong>Asosan bo'sh:</strong>
                     {room?.busiestFreePeriod || "Kun bo'yi"}
                   </p>
                   <p style={{ marginBottom: "30px" }}>
@@ -518,7 +524,7 @@ const RoomManagement = () => {
                     const hour = 5 + i;
                     return (
                       <th key={hour}>
-                        {hour.toString().padStart(2, "0")}:00 -{" "}
+                        {hour.toString().padStart(2, "0")}:00-
                         {(hour + 1).toString().padStart(2, "0")}:00
                       </th>
                     );

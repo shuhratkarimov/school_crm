@@ -19,7 +19,9 @@ export default function Notes() {
   // --- Backenddan ma’lumot olish ---
   const fetchNotes = async () => {
     try {
-      const res = await fetch(`${API_URL}/get_notes`);
+      const res = await fetch(`${API_URL}/get_notes`, {
+        credentials: "include"
+      });
       if (!res.ok) throw new Error("Qaydlarni olishda xatolik yuz berdi");
       const data = await res.json();
       setRecords(data);
@@ -84,11 +86,13 @@ export default function Notes() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newRecord),
+          credentials: "include",
         })
         : await fetch(`${API_URL}/create_note`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newRecord),
+          credentials: "include",
         });
 
       if (!res.ok) throw new Error("Saqlashda xatolik");
@@ -113,8 +117,9 @@ export default function Notes() {
   // --- O‘chirish ---
   const deleteNote = async (id) => {
     try {
-      const res = await fetch(`${i}/delete_note/${id}`, {
+      const res = await fetch(`${API_URL}/delete_note/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("O‘chirishda xatolik");
       toast.success("Qayd o‘chirildi");

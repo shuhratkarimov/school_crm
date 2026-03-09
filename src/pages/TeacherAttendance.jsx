@@ -92,12 +92,14 @@ function TeacherAttendance() {
   const fetchGroup = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/get_one_group/${groupId}`);
+      const res = await fetch(`${API_URL}/get_one_teacher_group/${groupId}`, {
+        credentials: "include"
+      });
+
       const data = await res.json();
       if (!data.group) throw new Error("Guruh topilmadi");
       setGroup(data.group);
     } catch (err) {
-      console.error("Error fetching group:", err);
       toast.error("Guruh olinmadi");
     } finally {
       setLoading(false);
@@ -108,14 +110,16 @@ function TeacherAttendance() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${API_URL}/get_one_group_students?group_id=${groupId}`
+        `${API_URL}/get_one_group_students_for_teacher?group_id=${groupId}`,
+        {
+          credentials: "include"
+        }
       );
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("O'quvchilar ro'yxati noto'g'ri");
       const filteredStudents = data.filter((s) => s.id);
       setStudents(filteredStudents);
     } catch (err) {
-      console.error("Error fetching students:", err);
       toast.error("O'quvchilar olinmadi");
     } finally {
       setLoading(false);
@@ -138,7 +142,10 @@ function TeacherAttendance() {
       }
 
       const res = await fetch(
-        `${API_URL}/get_attendance_by_date/${groupId}?date=${date}`
+        `${API_URL}/get_attendance_by_teacher/${groupId}?date=${date}`,
+        {
+          credentials: "include"
+        }
       );
       const data = await res.json();
 
@@ -149,6 +156,7 @@ function TeacherAttendance() {
       }
 
       const dayOfWeek = selectedDate.getDay();
+
       if (!classDays.includes(dayOfWeek)) {
         toast.error("Bu kuni dars mavjud emas!");
         setHistory(null);
@@ -197,40 +205,25 @@ function TeacherAttendance() {
     }
   }, [history]);
 
-  const toggleAttendance = (student_id) => {
+  const setAttendanceStatus = (student_id, isPresent) => {
     setAttendance((prev) => {
-      const current = prev[student_id] || { present: null, reason: null, note: null };
+      const current = prev[student_id] || { present: true, reason: null, note: "" };
 
-      // Agar yo'q qilinsa, sababni avtomatik ravishda "sababsiz" qilib qo'yamiz
-      if (current.present) {
-        return {
-          ...prev,
-          [student_id]: {
-            ...current,
-            present: false,
-            reason: "unexcused",
-            note: ""
-          },
-        };
-      } else {
-        // Agar bor qilinsa, sabab va izohni tozalaymiz
-        return {
-          ...prev,
-          [student_id]: {
-            ...current,
-            present: true,
-            reason: null,
-            note: ""
-          },
-        };
-      }
+      const next = {
+        ...current,
+        present: isPresent,
+        reason: isPresent ? null : (current.reason || "unexcused"),
+        note: isPresent ? "" : (current.note || ""),
+      };
+
+      return { ...prev, [student_id]: next };
     });
 
-    // Agar yo'q qilinsa, qatorni kengaytiramiz
-    if (attendance[student_id]?.present) {
-      setExpandedStudent(student_id);
-    } else {
+    // expand/collapse ni ham statusga qarab aniq qiling
+    if (isPresent) {
       setExpandedStudent(null);
+    } else {
+      setExpandedStudent(student_id);
     }
   };
 
@@ -259,7 +252,10 @@ function TeacherAttendance() {
       }
 
       const checkRes = await fetch(
-        `${API_URL}/get_attendance_by_date/${groupId}?date=${date}`
+        `${API_URL}/get_attendance_by_teacher/${groupId}?date=${date}`,
+        {
+          credentials: "include"
+        }
       );
       const checkData = await checkRes.json();
       if (checkData.records && Array.isArray(checkData.records) && checkData.records.length > 0) {
@@ -291,6 +287,7 @@ function TeacherAttendance() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ date, records }),
         }
       );
@@ -336,6 +333,7 @@ function TeacherAttendance() {
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ date, records }),
         }
       );
@@ -578,13 +576,14 @@ function TeacherAttendance() {
                                 <td className="py-3 px-4 text-center">
                                   <div className="flex justify-center gap-1">
                                     <button
-                                      onClick={() => toggleAttendance(student_id)}
+                                      onClick={() => setAttendanceStatus(student_id, true)}
                                       className={`p-1 ${studentData.present ? "text-green-600 bg-green-100 rounded-full" : "text-gray-400"} hover:scale-110 transition`}
                                     >
                                       <CheckCircle2 className="w-8 h-8" />
                                     </button>
+
                                     <button
-                                      onClick={() => toggleAttendance(student_id)}
+                                      onClick={() => setAttendanceStatus(student_id, false)}
                                       className={`p-1 ${studentData.present === false ? "text-red-600 bg-red-100 rounded-full" : "text-gray-400"} hover:scale-110 transition`}
                                     >
                                       <XCircle className="w-8 h-8" />
@@ -611,22 +610,6 @@ function TeacherAttendance() {
                                           exit={{ opacity: 0, y: -5 }}
                                           transition={{ duration: 0.2 }}
                                         >
-                                          <select
-                                            value={studentData.reason || "unexcused"}
-                                            onChange={(e) =>
-                                              setAttendance((prev) => ({
-                                                ...prev,
-                                                [student_id]: {
-                                                  ...prev[student_id],
-                                                  reason: e.target.value,
-                                                },
-                                              }))
-                                            }
-                                            className="border rounded-md py-1 px-2 text-sm focus:ring-1 focus:ring-blue-500"
-                                          >
-                                            <option value="excused">Sababli</option>
-                                            <option value="unexcused">Sababsiz</option>
-                                          </select>
                                         </motion.div>
                                       )}
                                     </AnimatePresence>

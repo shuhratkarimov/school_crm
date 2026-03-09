@@ -52,7 +52,7 @@ function Payments() {
     comment: "",
     shouldBeConsideredAsPaid: false,
     came_in_school: "",
-    for_which_group: "",
+    group_id: "",
   });
 
   const [selectedGroups, setSelectedGroups] = useState([]);
@@ -66,7 +66,7 @@ function Payments() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [isLoadingUnpaid, setIsLoadingUnpaid] = useState(false);
   const [formData, setFormData] = useState({
-    for_which_group: "", // "group_id" o'rniga "for_which_group"
+    group_id: "",
     pupil_id: "",
     payment_amount: "",
     payment_type: "",
@@ -97,11 +97,12 @@ function Payments() {
     }
     // Agar "all" tanlangan bo'lsa — hech qanday month qo'shmaymiz (backendda barchasi qaytadi)
 
-    console.log("Yangi so'rov yuborildi:", url);
     setIsLoadingUnpaid(true);
     setUnpaid([]);
 
-    fetch(url)
+    fetch(url, {
+      credentials: "include"
+    })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP xato: ${res.status}`);
         return res.json();
@@ -109,10 +110,8 @@ function Payments() {
       .then(data => {
         const list = Array.isArray(data) ? data : (data?.data || []);
         setUnpaid(list);
-        console.log("Yuklandi:", list.length, "ta qarzdor");
       })
       .catch(err => {
-        console.error("Fetch xatosi:", err);
         toast.error("Qarzdorlar yuklanmadi");
       })
       .finally(() => {
@@ -126,14 +125,15 @@ function Payments() {
         const url = `${API_URL}/get_unpaid_payments?year=${new Date().getFullYear()}&month=${encodeURIComponent(currentMonth)}`;
         // ↑ Bu yerda month parametrini qo‘shdik — endi faqat joriy oy!
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          credentials: "include"
+        });
         if (!res.ok) throw new Error("Initial count yuklanmadi");
 
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data?.data || []);
         setCurrentYearUnpaidCount(list.length);
       } catch (err) {
-        console.error("Initial unpaid count xatosi:", err);
         setCurrentYearUnpaidCount(0);
       }
     };
@@ -152,7 +152,7 @@ function Payments() {
   const handleChange = (value) => {
     setFormData(prev => {
       // Yangi oy uchun to'lov miqdorini qayta hisoblaymiz
-      const selectedGroup = groups.find(group => group.id === prev.for_which_group);
+      const selectedGroup = groups.find(group => group.id === prev.group_id);
       const calculatedAmount = calculatePaymentAmount(
         selectedGroup,
         value,
@@ -170,7 +170,7 @@ function Payments() {
   const handleEditChange = (value) => {
     setEditFormData(prev => {
       // Yangi oy uchun to'lov miqdorini qayta hisoblaymiz
-      const selectedGroup = groups.find(group => group.id === prev.for_which_group);
+      const selectedGroup = groups.find(group => group.id === prev.group_id);
       const calculatedAmount = calculatePaymentAmount(
         selectedGroup,
         value,
@@ -194,13 +194,19 @@ function Payments() {
 
       const [groupsResponse, studentsResponse, paymentsResponse] =
         await Promise.all([
-          fetch(`${API_URL}/get_groups`).catch(() => ({
+          fetch(`${API_URL}/get_groups`, {
+            credentials: "include"
+          }).catch(() => ({
             ok: false,
           })),
-          fetch(`${API_URL}/get_students`).catch(() => ({
+          fetch(`${API_URL}/get_students`, {
+            credentials: "include"
+          }).catch(() => ({
             ok: false,
           })),
-          fetch(`${API_URL}/get_payments`).catch(() => ({
+          fetch(`${API_URL}/get_payments`, {
+            credentials: "include"
+          }).catch(() => ({
             ok: false,
           })),
         ]);
@@ -252,7 +258,9 @@ function Payments() {
           url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
         }
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          credentials: "include"
+        });
         if (!res.ok) return;
 
         const data = await res.json();
@@ -312,16 +320,21 @@ function Payments() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               pupil_id: formData.pupil_id,
-              for_which_group: groupId,
-              payment_amount: paymentAmount,
               payment_type: formData.payment_type,
               received: formData.received,
               for_which_month: formData.for_which_month,
               comment: formData.comment ?
                 `${formData.comment} (Guruh: ${group?.group_subject}${discountInfo})` :
                 `Guruh: ${group?.group_subject}${discountInfo}`,
-              shouldBeConsideredAsPaid: formData.shouldBeConsideredAsPaid,
+              payments: [
+                {
+                  group_id: groupId,
+                  payment_amount: Number(paymentAmount),
+                  shouldBeConsideredAsPaid: formData.shouldBeConsideredAsPaid,
+                }
+              ]
             }),
+            credentials: "include"
           }
         );
 
@@ -348,7 +361,7 @@ function Payments() {
 
         // Formani tozalash
         setFormData({
-          for_which_group: "",
+          group_id: "",
           pupil_id: "",
           payment_amount: "",
           payment_type: "",
@@ -392,6 +405,7 @@ function Payments() {
             comment: editFormData.comment,
             shouldBeConsideredAsPaid: editFormData.shouldBeConsideredAsPaid,
           }),
+          credentials: "include"
         }
       );
 
@@ -437,6 +451,7 @@ function Payments() {
         `${API_URL}/delete_payment/${id}`,
         {
           method: "DELETE",
+          credentials: "include"
         }
       );
 
@@ -462,7 +477,7 @@ function Payments() {
       for_which_month: payment.for_which_month,
       comment: payment.comment,
       came_in_school: student?.came_in_school || "",
-      for_which_group: payment.for_which_group,
+      group_id: payment.group_id,
       shouldBeConsideredAsPaid: payment.shouldBeConsideredAsPaid,
     });
     setIsEditModalOpen(true);
@@ -585,18 +600,25 @@ function Payments() {
   };
 
   const calculateTotalAmount = () => {
-    let total = 0;
-    selectedGroups.forEach((groupId) => {
-      const group = groups.find((g) => g.id === groupId);
-      if (!group) return;
-      const amount = calculatePaymentAmount(
+    return selectedGroups.reduce((sum, groupId) => {
+      const group = groups.find(g => g.id === groupId);
+      if (!group) return sum;
+
+      // 1. Asl summani hisoblaymiz
+      const rawAmount = calculatePaymentAmount(
         group,
         formData.for_which_month,
         formData.came_in_school
       );
-      total += amount;
-    });
-    return total;
+      let amount = Number(rawAmount) || 0;
+
+      // 2. Agar ushbu guruh uchun chegirma bor bo'lsa → finalAmount ni olamiz
+      if (groupDiscounts[groupId] && groupDiscounts[groupId].finalAmount !== undefined) {
+        amount = Number(groupDiscounts[groupId].finalAmount) || amount;
+      }
+
+      return sum + amount;
+    }, 0);
   };
 
   useEffect(() => {
@@ -615,6 +637,7 @@ function Payments() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include"
         }
       );
 
@@ -647,7 +670,7 @@ function Payments() {
     if (formData.pupil_id && groups.length > 0) {
       const studentGroups = getStudentGroups(formData.pupil_id);
       const selectedGroup = groups.find(
-        (group) => group.id === formData.for_which_group
+        (group) => group.id === formData.group_id
       );
 
       if (selectedGroup && studentGroups.includes(selectedGroup.id)) {
@@ -665,11 +688,11 @@ function Payments() {
         setFormData((prev) => ({
           ...prev,
           payment_amount: "",
-          for_which_group: "",
+          group_id: "",
         }));
       }
     }
-  }, [formData.pupil_id, formData.for_which_group, formData.for_which_month, groups, formData.shouldBeConsideredAsPaid]);
+  }, [formData.pupil_id, formData.group_id, formData.for_which_month, groups, formData.shouldBeConsideredAsPaid]);
 
   useEffect(() => {
     fetchData();
@@ -1086,7 +1109,7 @@ function Payments() {
                 <div className="relative">
                   <select
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
-                    value={editFormData.for_which_group}
+                    value={editFormData.group_id}
                     onChange={(e) => {
                       const groupId = e.target.value;
                       const selectedGroup = groups.find(g => g.id === groupId);
@@ -1098,7 +1121,7 @@ function Payments() {
 
                       setEditFormData(prev => ({
                         ...prev,
-                        for_which_group: groupId,
+                        group_id: groupId,
                         payment_amount: calculatedAmount || prev.payment_amount
                       }));
                     }}
@@ -1191,7 +1214,7 @@ function Payments() {
       {isDetailModalOpen && selectedPayment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-xl flex justify-between items-center">
+            <div className="bg-[#104292] text-white p-5 rounded-t-xl flex justify-between items-center">
               <h3 className="text-xl font-semibold">To'lov tafsilotlari</h3>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
@@ -1265,7 +1288,7 @@ function Payments() {
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">Guruh</p>
                   <p className="font-medium">
-                    {groups.find(g => g.id === selectedPayment.for_which_group)?.group_subject || "N/A"}
+                    {groups.find(g => g.id === selectedPayment.group_id)?.group_subject || "N/A"}
                   </p>
                 </div>
               </div>
@@ -1299,7 +1322,7 @@ function Payments() {
 
             <div className="flex justify-end p-5 border-t border-gray-200">
               <button
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-5 py-2.5 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
                 onClick={() => setIsDetailModalOpen(false)}
               >
                 Yopish
@@ -1324,7 +1347,7 @@ function Payments() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal header */}
-            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
+            <div className="bg-[#104292] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Yangi to'lov qo'shish</h3>
               <button
                 onClick={() => {
@@ -1498,6 +1521,7 @@ function Payments() {
                         type="number"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
                         value={totalAmount}
+                        onChange={(e) => setTotalAmount(e.target.value)}
                         readOnly
                         placeholder="0"
                       />
@@ -1506,11 +1530,35 @@ function Payments() {
                       </span>
                     </div>
                     {selectedGroups.length > 0 && (
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-gray-500 mt-1 space-y-1">
                         {selectedGroups.map(gId => {
-                          const g = groups.find(g => g.id === gId);
-                          return g ? `${g.group_subject}: ${g.payment_amount?.toLocaleString()} so'm` : '';
-                        }).join(' + ')}
+                          const group = groups.find(g => g.id === gId);
+                          if (!group) return null;
+
+                          const original = Number(calculatePaymentAmount(
+                            group,
+                            formData.for_which_month,
+                            formData.came_in_school
+                          )) || 0;
+
+                          let final = original;
+                          let discountText = '';
+
+                          if (groupDiscounts[gId]) {
+                            final = Number(groupDiscounts[gId].finalAmount) || original;
+                            const percent = groupDiscounts[gId].percent;
+                            if (percent > 0) {
+                              discountText = ` (-${percent}%)`;
+                            }
+                          }
+
+                          return (
+                            <div key={gId}>
+                              {group.group_subject}: {final.toLocaleString('uz-UZ')} so'm
+                              {discountText && <span className="text-amber-600">{discountText}</span>}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1622,7 +1670,7 @@ function Payments() {
                       }))
                     }
                     className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${formData.shouldBeConsideredAsPaid
-                      ? "bg-blue-600"
+                      ? "bg-[#104292]"
                       : "bg-gray-300"
                       }`}
                   >
@@ -1652,7 +1700,7 @@ function Payments() {
               <button
                 type="submit"
                 form="add-payment-form"
-                className="px-5 py-2.5 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:opacity-90 transition"
+                className="px-5 py-2.5 btn btn-primary text-white rounded-lg font-semibold hover:opacity-90 transition"
               >
                 To'lovni qo'shish
               </button>
@@ -1737,8 +1785,9 @@ function Payments() {
             ) : (
               filteredPayments.map((payment, index) => {
                 const group = groups.find(
-                  (g) => g.id === payment.for_which_group
+                  (g) => g.id === payment.group_id
                 );
+
                 const groupName = group ? group.group_subject : "N/A";
                 return (
                   <tr
@@ -1761,7 +1810,9 @@ function Payments() {
                         : "N/A"}
                     </td>
                     <td style={{ textAlign: "center" }}>{payment.for_which_month || "N/A"}</td>
-                    <td style={{ textAlign: "center" }}>{groupName}</td>
+                    <td style={{ textAlign: "center" }}>
+                      {payment.paymentGroup?.group_subject ?? "N/A"}
+                    </td>
                     <td style={{ textAlign: "center" }}>
                       {payment.created_at
                         ? new Date(payment.created_at).toLocaleDateString("ru-RU")

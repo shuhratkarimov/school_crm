@@ -3,33 +3,24 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { User, Phone, Send, CheckCircle, Sparkles } from "lucide-react"
 import { toast } from "react-hot-toast"
-import { useSearchParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import API_URL from "../conf/api"
 import { TypewriterText } from "../components/TypeWriter"
 
 export default function StudentRegistration() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const subject = searchParams.get('subject') || ''
+  const { token } = useParams()
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     phone: "",
     subject: "",
   })
+  const [subject, setSubject] = useState("")
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [isGlowing, setIsGlowing] = useState(false)
   const [focusedField, setFocusedField] = useState("")
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    if (subject) {
-      setFormData(prev => ({ ...prev, subject }))
-    } else {
-      setErrors(prev => ({ ...prev, subject: "Fan nomi mavjud emas" }))
-    }
-  }, [subject])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,6 +28,36 @@ export default function StudentRegistration() {
     }, 3000)
     return () => clearInterval(interval)
   }, [])
+
+  const [loadingSubject, setLoadingSubject] = useState(true);
+
+  useEffect(() => {
+    const loadSubject = async () => {
+      if (!token) {
+        setErrors((p) => ({ ...p, subject: "Token mavjud emas" }));
+        setLoadingSubject(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/get-registration-link-by-token/${token}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setErrors((p) => ({ ...p, subject: data.message || "Link topilmadi" }));
+          return;
+        }
+        setSubject(data.subject)
+        setFormData((prev) => ({ ...prev, subject: data.subject }));
+      } catch (e) {
+        setErrors((p) => ({ ...p, subject: "Server bilan ulanishda xatolik" }));
+      } finally {
+        setLoadingSubject(false);
+      }
+    };
+
+    loadSubject();
+  }, [token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -93,11 +114,12 @@ export default function StudentRegistration() {
         ...formData,
         phone: "+998" + formData.phone,
       }
-      const response = await fetch(`${API_URL}/register-new-student`, {
+      const response = await fetch(`${API_URL}/register-new-student/${token}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(dataToSend),
       })
       if (response.ok) {
@@ -261,7 +283,7 @@ export default function StudentRegistration() {
                     transition={{ delay: 0.2 }}
                   >
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-indigo-800 bg-clip-text text-transparent mb-3">
-                      {subject ? `${formatSubject(subject)} yo‘nalishi bo‘yicha o‘qish uchun ro‘yxatdan o‘tish` : "Ro‘yxatdan o‘tish"}
+                      {subject ? `${subject} yo‘nalishi bo‘yicha o‘qish uchun ro‘yxatdan o‘tish` : "Ro‘yxatdan o‘tish"}
                     </h1>
                     <p className="text-slate-600">O‘quvchilar uchun onlayn ariza topshirish</p>
                     {errors.subject && (
@@ -419,7 +441,7 @@ export default function StudentRegistration() {
                     </motion.div>
                     <motion.button
                       type="submit"
-                      disabled={isSubmitting || !!errors.subject}
+                      disabled={isSubmitting || !!errors.subject || loadingSubject}
                       className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800 transition-all duration-300 disabled:opacity-50 relative overflow-hidden shadow-lg hover:shadow-xl"
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}

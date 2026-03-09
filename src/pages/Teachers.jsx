@@ -46,7 +46,10 @@ function Teachers() {
     setIsDetailModalOpen(true);
     try {
       const res = await fetch(
-        `${API_URL}/get_teacher_payments/${teacher.id}`
+        `${API_URL}/get_teacher_payments/${teacher.id}`,
+        {
+          credentials: "include"
+        }
       );
       if (res.ok) {
         const data = await res.json();
@@ -99,7 +102,10 @@ function Teachers() {
   const fetchTeacherBalance = async (teacherId) => {
     try {
       const response = await fetch(
-        `${API_URL}/get_teacher_balance/${teacherId}`
+        `${API_URL}/get_teacher_balance/${teacherId}`,
+        {
+          credentials: "include"
+        }
       );
       if (response.ok) {
         const balanceData = await response.json();
@@ -117,6 +123,9 @@ function Teachers() {
     }
   };
 
+  const formatMoney = (amount) =>
+    `${Number(amount).toLocaleString("ru-RU")} so'm`;
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -128,13 +137,19 @@ function Teachers() {
         teachersResponse,
         studentsResponse,
       ] = await Promise.all([
-        fetch(`${API_URL}/get_groups`).catch(() => ({
+        fetch(`${API_URL}/get_groups`, {
+          credentials: "include"
+        }).catch(() => ({
           ok: false,
         })),
-        fetch(`${API_URL}/get_teachers`).catch(() => ({
+        fetch(`${API_URL}/get_teachers`, {
+          credentials: "include"
+        }).catch(() => ({
           ok: false,
         })),
-        fetch(`${API_URL}/get_students`).catch(() => ({
+        fetch(`${API_URL}/get_students`, {
+          credentials: "include"
+        }).catch(() => ({
           ok: false,
         })),
       ]);
@@ -205,10 +220,11 @@ function Teachers() {
             salary_amount: Number(formData.salary_amount),
             got_salary_for_this_month: formData.got_salary_for_this_month,
             username: formData.username,
-            password: formData.password !== "********" && formData.password !== "O‘rnatilmagan"
+            password: formData.password !== "********" && formData.password !== ""
               ? formData.password
               : null
           }),
+          credentials: "include",
         }
       );
 
@@ -267,10 +283,11 @@ function Teachers() {
             password:
               editFormData.password &&
                 editFormData.password !== "********" &&
-                editFormData.password !== "O‘rnatilmagan"
+                editFormData.password !== ""
                 ? editFormData.password
                 : null,
           }),
+          credentials: "include",
         }
       );
 
@@ -294,6 +311,7 @@ function Teachers() {
         `${API_URL}/delete_teacher/${id}`,
         {
           method: "DELETE",
+          credentials: "include",
         }
       );
 
@@ -350,6 +368,7 @@ function Teachers() {
             payment_amount: Number(paymentFormData.payment_amount),
             given_date: new Date().toISOString(),
           }),
+          credentials: "include",
         }
       );
 
@@ -433,7 +452,7 @@ function Teachers() {
       salary_amount: teacher.salary_amount || 0,
       got_salary_for_this_month: teacher.got_salary_for_this_month || false,
       username: teacher.username || "",
-      password: teacher.password ? "********" : "O‘rnatilmagan",
+      password: teacher.password ? "********" : "",
       hashPassword: teacher.password || false,
     });
     setIsEditModalOpen(true);
@@ -1078,9 +1097,9 @@ function Teachers() {
                   <input
                     type="text"
                     className="input"
-                    value={editFormData.username || "O‘rnatilmagan"}
+                    value={editFormData.username || ""}
                     onFocus={(e) => {
-                      if (e.target.value === "O‘rnatilmagan") {
+                      if (e.target.value === "") {
                         setEditFormData({ ...editFormData, username: "" });
                       }
                     }}
@@ -1090,7 +1109,7 @@ function Teachers() {
                         username: e.target.value,
                       })
                     }
-                    placeholder="Foydalanuvchi nomini kiriting"
+                    placeholder="Foydalanuvchi nomi yo'q"
                   />
                 </div>
                 <div className="form-group">
@@ -1100,7 +1119,7 @@ function Teachers() {
                     className="input"
                     value={editFormData.password}
                     onFocus={(e) => {
-                      if (e.target.value === "********" || e.target.value === "O‘rnatilmagan") {
+                      if (e.target.value === "********" || e.target.value === "") {
                         setEditFormData({ ...editFormData, password: "" });
                       }
                     }}
@@ -1111,7 +1130,7 @@ function Teachers() {
                         hasPassword: true,
                       })
                     }
-                    placeholder="Yangi parol kiriting"
+                    placeholder="Parol o'rnatilmagan"
                   />
                 </div>
               </div>
@@ -1269,10 +1288,7 @@ function Teachers() {
                               : "Hisob"}
                           </td>
                           <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
-                            {Number(payment.payment_amount).toLocaleString(
-                              "ru-RU"
-                            )}{" "}
-                            so'm
+                            {formatMoney(payment.payment_amount)}
                           </td>
                           <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{payment.given_by}</td>
                           <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
@@ -1430,10 +1446,7 @@ function Teachers() {
                     <td style={{ textAlign: "center" }}>{teacher.subject || "N/A"}</td>
                     <td style={{ textAlign: "center" }}>{groupsCount} ta</td>
                     <td style={{ textAlign: "center" }}>
-                      {(teacherBalances[teacher.id] || 0).toLocaleString(
-                        "ru-RU"
-                      )}{" "}
-                      so'm
+                      {formatMoney(teacherBalances[teacher.id] || 0)}
                     </td>
                     <td style={{ textAlign: "center" }}>
                       <button

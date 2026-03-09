@@ -45,9 +45,16 @@ function Students() {
   const [addModal, setAddModal] = useState(false);
   const [monthFilter, setMonthFilter] = useState(getCurrentMonth());
   const [yearFilter, setYearFilter] = useState(getCurrentYear());
-
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [studentsPerPage] = useState(10);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -82,14 +89,17 @@ function Students() {
   const [editingPayment, setEditingPayment] = useState(null);
 
   const today = new Date().toLocaleDateString("en-CA");
-  const minDate = "1990-01-01";
-  const twentyYearsAgo = new Date();
-  twentyYearsAgo.setFullYear(twentyYearsAgo.getFullYear() - 20);
-  const defaultBirthDate = twentyYearsAgo.toISOString().split("T")[0];
-
   function getCurrentMonth() {
     return monthsInUzbek[new Date().getMonth() + 1];
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   function getCurrentYear() {
     return new Date().getFullYear();
@@ -101,11 +111,11 @@ function Students() {
   };
 
   const getPaymentRatio = (student) => {
-    const totalGroups = student.all_groups || 0
-    const paidGroups = student.studentGroups?.filter(
-      (sg) => sg.month === monthFilter && sg.year === yearFilter && sg.paid
-    ).length || 0;
-    return totalGroups ? `${paidGroups}/${totalGroups} (${Math.round((paidGroups / totalGroups) * 100)}%)` : "0/0";
+    const totalGroups = student.total_groups || 0;
+    const paidGroups = student.paid_groups || 0;
+    return totalGroups
+      ? `${paidGroups}/${totalGroups} (${Math.round((paidGroups / totalGroups) * 100)}%)`
+      : "0/0";
   };
 
   const FormattedDate = (isoDate) => {
@@ -116,15 +126,44 @@ function Students() {
     const year = date.getFullYear();
     return `${day}.${month}.${year}`;
   };
-  const fetchStudents = async () => {
+  const fetchStudents = async (
+    page = pagination.page,
+    search = searchTerm,
+    payment = paymentFilter,
+    month = monthFilter,
+    year = yearFilter
+  ) => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `${API_URL}/get_students?month=${monthFilter}&year=${yearFilter}`
-      );
-      if (!response.ok) throw new Error("O'quvchilarni olishda xatolik yuz berdi!");
-      const data = await response.json();
-      setStudents(data);
+
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(pagination.limit || 10),
+        month: month || getCurrentMonth(),
+        year: String(year || getCurrentYear()),
+        search: search || "",
+        paymentFilter: payment || "all",
+      });
+
+      const response = await fetch(`${API_URL}/get_students?${params.toString()}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("O'quvchilarni olishda xatolik yuz berdi!");
+      }
+
+      const result = await response.json();
+
+      setStudents(result.data || []);
+      setPagination(result.pagination || {
+        page: 1,
+        limit: 10,
+        totalItems: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      });
     } catch (err) {
       setError("O'quvchilarni olishda xatolik yuz berdi!");
       toast.error("O'quvchilarni olishda xatolik yuz berdi!");
@@ -135,7 +174,9 @@ function Students() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(`${API_URL}/get_groups`);
+      const response = await fetch(`${API_URL}/get_groups`, {
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("Guruhlar ma'lumotlarini olishda muammo yuzaga keldi!");
       const data = await response.json();
       setGroups(data);
@@ -147,7 +188,9 @@ function Students() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch(`${API_URL}/get_teachers`);
+      const response = await fetch(`${API_URL}/get_teachers`, {
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("Ustozlar ma'lumotlarini olishda muammo yuzaga keldi!");
       const data = await response.json();
       setTeachers(data);
@@ -185,12 +228,13 @@ function Students() {
     try {
       const response = await fetch(`${API_URL}/create_student`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("O'quvchini qo'shishda muammo yuzaga keldi!");
-      await fetchStudents();
+      await fetchStudents(currentPage, debouncedSearch, paymentFilter, monthFilter, yearFilter);
       await fetchGroups();
       await fetchTeachers();
       setSuccess("Yangi o'quvchi muvaffaqiyatli qo'shildi!");
@@ -216,9 +260,20 @@ function Students() {
 
   const deleteStudent = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/delete_student/${id}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}/delete_student/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+
       if (!response.ok) throw new Error("O'quvchini o'chirishda muammo yuzaga keldi!");
-      await fetchStudents();
+
+      const nextPage =
+        students.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+
+      setCurrentPage(nextPage);
+
+      await fetchStudents(nextPage, debouncedSearch, paymentFilter, monthFilter, yearFilter);
+
       setSuccess("O'quvchi muvaffaqiyatli o'chirib tashlandi!");
       toast.success("O'quvchi muvaffaqiyatli o'chirib tashlandi!");
       setSelectedStudent(null);
@@ -291,12 +346,13 @@ function Students() {
     try {
       const response = await fetch(`${API_URL}/update_student/${editingStudent.id}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("Failed to update student");
-      await fetchStudents();
+      await fetchStudents(currentPage, debouncedSearch, paymentFilter, monthFilter, yearFilter);
       await fetchGroups();
       await fetchTeachers();
       setSuccess("Student successfully updated");
@@ -329,13 +385,13 @@ function Students() {
     setLoadingPayments(true);
 
     try {
-      const res = await fetch(`${API_URL}/get_payments_by_student/${student.id}`);
+      const res = await fetch(`${API_URL}/get_payments_by_student/${student.id}`, {
+        credentials: "include"
+      });
       if (!res.ok) throw new Error("To'lovlarni yuklab bo'lmadi");
       const data = await res.json();
-      console.log(data);
       setStudentPayments(data || []);
     } catch (err) {
-      console.error(err);
       toast.error("O'quvchining to'lov tarixini yuklashda xatolik");
       setStudentPayments([]);
     } finally {
@@ -343,52 +399,23 @@ function Students() {
     }
   };
 
-  const filteredStudents =
-    students.length > 0
-      ? students.filter((student) => {
-        const matchesName = `${student.first_name} ${student.last_name}`
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-        const totalGroups = student.studentGroups?.filter(
-          (sg) => sg.month === monthFilter && sg.year === yearFilter
-        ).length || 0;
-        const paidGroups = student.studentGroups?.filter(
-          (sg) => sg.month === monthFilter && sg.year === yearFilter && sg.paid
-        ).length || 0;
-        const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
-        const isPartiallyPaid = totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
-        const isUnpaid = totalGroups > 0 && paidGroups === 0;
-
-        const matchesPayment =
-          paymentFilter === "all" ||
-          (paymentFilter === "fullyPaid" && isFullyPaid) ||
-          (paymentFilter === "partiallyPaid" && isPartiallyPaid) ||
-          (paymentFilter === "unpaid" && isUnpaid);
-        return matchesName && matchesPayment;
-      })
-      : [];
-
-  const indexOfLastStudent = currentPage * studentsPerPage;
-  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
-  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
-  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
   useEffect(() => {
     setMonthFilter(getCurrentMonth());
     setYearFilter(getCurrentYear());
   }, []);
 
   useEffect(() => {
-    fetchStudents();
     fetchGroups();
     fetchTeachers();
   }, []);
 
   useEffect(() => {
-    fetchStudents();
-  }, [monthFilter, yearFilter]);
+    fetchStudents(currentPage, debouncedSearch, paymentFilter, monthFilter, yearFilter);
+  }, [currentPage, debouncedSearch, paymentFilter, monthFilter, yearFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, paymentFilter, monthFilter, yearFilter]);
 
   useEffect(() => {
     if (success) {
@@ -403,10 +430,6 @@ function Students() {
       return () => clearTimeout(timer);
     }
   }, [error]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, paymentFilter]);
 
   if (loading) {
     return <LottieLoading />;
@@ -436,7 +459,7 @@ function Students() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-t-xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white rounded-t-xl">
               <h2 className="text-2xl font-bold">Yangi o'quvchi qo'shish</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
@@ -622,14 +645,14 @@ function Students() {
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  className="px-5 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-5 py-2 btn btn-secondary text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                   onClick={() => setAddModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="px-5 py-2 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
                   <Plus size={18} />
                   Saqlash
@@ -650,7 +673,9 @@ function Students() {
             gap: "20px",
           }}
         >
-          <h3 style={{ fontWeight: "bold", fontSize: "1.2rem" }}>Bizning o'quvchilar ({filteredStudents.length} nafar)</h3>
+          <h3 style={{ fontWeight: "bold", fontSize: "1.2rem" }}>
+            Bizning o'quvchilar ({pagination.totalItems} nafar)
+          </h3>
           <div style={{ display: "flex", gap: "10px" }}>
             <div style={{ display: "flex", gap: "10px", alignItems: "center", border: "1px solid #ccc", borderRadius: "5px", padding: "5px" }}>
               <Search size={22} color="#104292" style={{ marginLeft: "12px" }} />
@@ -719,20 +744,22 @@ function Students() {
             </tr>
           </thead>
           <tbody>
-            {filteredStudents.length === 0 ? (
+            {students.length === 0 ? (
               <tr>
                 <td colSpan="7" style={{ textAlign: "center", padding: "40px" }}>
                   {searchTerm || paymentFilter !== "all" ? "Ushbu qidiruv bo'yicha o'quvchi topilmadi..." : "O'quvchilar yo'q"}
                 </td>
               </tr>
             ) : (
-              currentStudents.map((student, index) => (
+              students.map((student, index) => (
                 <tr
                   key={student.id}
                   onClick={() => openDetailModal(student)}
                   style={{ cursor: "pointer" }}
                 >
-                  <td style={{ textAlign: "center" }}>{indexOfFirstStudent + index + 1}</td>
+                  <td style={{ textAlign: "center" }}>
+                    {(currentPage - 1) * pagination.limit + index + 1}
+                  </td>
                   <td style={{ textAlign: "center" }}>{`${student.first_name} ${student.last_name}`}</td>
                   <td style={{ textAlign: "center" }}>{student.phone_number}</td>
                   <td style={{ paddingLeft: "30px" }}>{student.groups?.map((group) => group.group_subject).map((g, i) => <p key={i}>{i + 1}. {g}</p>) || "N/A"}</td>
@@ -776,37 +803,52 @@ function Students() {
           </tbody>
         </table>
 
-        {filteredStudents.length > studentsPerPage && (
-          <div
-            className="pagination"
-            style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}
-          >
-            <button
-              onClick={() => paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="rounded-full"
-              style={{ margin: "0 5px", padding: "5px 10px" }}
-            >
-              « Oldingi
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+        {pagination.totalPages > 1 && (
+          <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
+            <div className="text-sm text-gray-600 text-center md:text-left">
+              Jami <span className="font-semibold text-[#104292]">{pagination.totalItems}</span> ta o‘quvchi,
+              <span className="mx-1 font-semibold text-[#104292]">{currentPage}</span>
+              / {pagination.totalPages} sahifa
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap justify-center">
               <button
-                key={number}
-                onClick={() => paginate(number)}
-                className={`rounded-full ${currentPage === number ? "bg-[#104292]" : "bg-[#104292]/10"}`}
-                style={{ margin: "0 5px", padding: "5px 10px" }}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${pagination.hasPrevPage
+                    ? "border-[#104292]/20 text-[#104292] bg-white hover:bg-[#104292] hover:text-white hover:border-[#104292]"
+                    : "border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed"
+                  }`}
               >
-                {number}
+                « Oldingi
               </button>
-            ))}
-            <button
-              onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="rounded-full"
-              style={{ margin: "0 5px", padding: "5px 10px" }}
-            >
-              Keyingi »
-            </button>
+
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((number) => (
+                  <button
+                    key={number}
+                    onClick={() => setCurrentPage(number)}
+                    className={`min-w-[40px] h-10 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${currentPage === number
+                        ? "bg-[#104292] text-white border-[#104292] shadow-md scale-105"
+                        : "bg-[#104292]/5 text-[#104292] border-[#104292]/10 hover:bg-[#104292]/10"
+                      }`}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${pagination.hasNextPage
+                    ? "border-[#104292]/20 text-[#104292] bg-white hover:bg-[#104292] hover:text-white hover:border-[#104292]"
+                    : "border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed"
+                  }`}
+              >
+                Keyingi »
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -815,7 +857,7 @@ function Students() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-t-xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white rounded-t-xl">
               <h2 className="text-2xl font-bold">O'quvchi ma'lumotlarini tahrirlash</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
@@ -1002,14 +1044,14 @@ function Students() {
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  className="px-5 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-5 py-2 btn btn-secondary text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                   onClick={() => setEditModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-5 py-2 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Saqlash
                 </button>
@@ -1048,16 +1090,17 @@ function Students() {
                       for_which_month: editingPayment.for_which_month,
                       comment: editingPayment.comment || "",
                       shouldBeConsideredAsPaid: editingPayment.shouldBeConsideredAsPaid,
-                      // agar backendda for_which_group yoki boshqa maydonlar talab qilinsa, qo'shing:
-                      // for_which_group: editingPayment.for_which_group,
                     }),
+                    credentials: "include",
                   });
 
                   if (res.ok) {
                     toast.success("To'lov muvaffaqiyatli yangilandi");
 
                     // Yangi ma'lumotlarni qayta yuklash
-                    const updatedRes = await fetch(`${API_URL}/get_payments_by_student/${selectedStudent.id}`);
+                    const updatedRes = await fetch(`${API_URL}/get_payments_by_student/${selectedStudent.id}`, {
+                      credentials: "include",
+                    });
                     if (updatedRes.ok) {
                       const updatedData = await updatedRes.json();
                       setStudentPayments(updatedData);
@@ -1224,7 +1267,7 @@ function Students() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedStudent(null)}>
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {/* Modal header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-t-xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white rounded-t-xl">
               <h2 className="text-2xl font-bold">O'quvchi ma'lumotlari</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
@@ -1322,7 +1365,6 @@ function Students() {
                             }`}>
                             {groupPayment?.paid ? "Toʻlangan" : "Toʻlanmagan"}
                           </span>
-                          {console.log(groupPayment)}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1434,13 +1476,13 @@ function Students() {
             {/* Modal footer */}
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
               <button
-                className="px-5 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                className="px-5 py-2 btn btn-secondary text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                 onClick={() => setSelectedStudent(null)}
               >
                 Yopish
               </button>
               <button
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-5 py-2 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 onClick={(e) => {
                   e.stopPropagation();
                   openEditModal(selectedStudent);

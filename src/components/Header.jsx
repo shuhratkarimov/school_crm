@@ -23,12 +23,6 @@ function Header({ setIsAuthenticated }) {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-    document.body.classList.toggle("dark", savedTheme === "dark");
-  }, []);
-
   const handleLogout = async () => {
     try {
       const response = await fetch(`${API_URL}/logout`, {
@@ -67,13 +61,15 @@ function Header({ setIsAuthenticated }) {
             setIsAuthenticated(false);
             navigate("/login");
           }
-          console.error("User not found");
+          toast.error("Tizimga kirishda xatolik!")
         }
       } catch (error) {
         console.error("Error fetching user:", error);
       }
     };
-    fetchUser();
+    setTimeout(() => {
+      fetchUser();
+    }, 1000);
   }, []);
 
   const handlePasswordUpdate = async (e) => {
@@ -151,7 +147,7 @@ function Header({ setIsAuthenticated }) {
           />
         </div>
         <div>
-          <h1 className="text-[1.50rem] text-gray-800 font-bold dark:text-white font-numans">
+          <h1 className="text-[1.50rem] text-gray-800 font-bold">
             "Intellectual Progress Star" o'quv markazi CRM tizimi
           </h1>
         </div>

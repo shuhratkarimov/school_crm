@@ -1,4 +1,3 @@
-"use client";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, Suspense, lazy } from "react";
 import Sidebar from "./components/Sidebar";
@@ -32,7 +31,17 @@ const TeacherTestResults = lazy(() => import("./pages/TeacherTestResults"));
 const StudentRegistration = lazy(() => import("./pages/StudentRegistration"));
 const NewStudentsAdmin = lazy(() => import("./pages/NewStudentsAdmin"));
 const LinkGenerator = lazy(() => import("./pages/LinkGenerator"));
-const Groups = lazy(() => import("./pages/Groups"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"))
+const CPanelLogin = lazy(() => import("./pages/CPanelLogin"));
+const DirectorLogin = lazy(() => import("./pages/DirectorLogin"));
+const DirectorDashboard = lazy(() => import("./pages/DirectorDashboard.jsx"));
+const DirectorPanelLayout = lazy(() => import("./pages/DirectorPanelLayout.jsx"));
+const DirectorBranches = lazy(() => import("./pages/director/Branches.jsx"));
+const DirectorGroups = lazy(() => import("./pages/director/Groups.jsx"));
+const DirectorDebts = lazy(() => import("./pages/director/Debts.jsx"));
+const DirectorTeachers = lazy(() => import("./pages/director/Teachers.jsx"));
+const DirectorRooms = lazy(() => import("./pages/director/Rooms.jsx"));
+const DirectorSettings = lazy(() => import("./pages/director/Settings.jsx"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -40,6 +49,14 @@ function PrivateRoute({ children, isAuthenticated }) {
 
 function TeacherRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/teacher/login" />;
+}
+
+function CPanelRoute({ children, isAuthenticated }) {
+  return isAuthenticated ? children : <Navigate to="/cpanel-login" />;
+}
+
+function DirectorRoute({ children, isAuthenticated }) {
+  return isAuthenticated ? children : <Navigate to="/director-panel/login" replace />;
 }
 
 function App() {
@@ -50,6 +67,68 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const hostname = window.location.hostname;
+  const [directorAuthenticated, setDirectorAuthenticated] = useState(false);
+
+  // Director panel uchun state'lar
+  const [darkMode, setDarkMode] = useState(false);
+  const [language, setLanguage] = useState('uz');
+  const [user, setUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Translations
+  const translations = {
+    uz: {
+      dashboard: "Boshqaruv paneli",
+      totalStudents: "Jami o'quvchilar",
+      totalTeachers: "Jami o'qituvchilar",
+      totalRevenue: "Jami daromad",
+      activeGroups: "Faol guruhlar",
+      monthlyRevenue: "Oylik daromad",
+      studentsGrowth: "O'quvchilar o'sishi",
+      branchPerformance: "Filiallar faoliyati",
+      debtMonitoring: "Qarz monitoringi",
+      teacherPerformance: "O'qituvchilar faoliyati",
+      roomsOccupancy: "Xonalar bandligi",
+      recentStudents: "Oxirgi o'quvchilar",
+      recentPayments: "Oxirgi to'lovlar",
+      settings: "Sozlamalar",
+      logout: "Chiqish",
+      search: "Qidirish",
+      allBranches: "Barcha filiallar",
+      viewAll: "Barchasini ko'rish",
+      markAllRead: "Hammasini o'qilgan deb belgilash",
+      noNotifications: "Bildirishnomalar yo'q",
+      profile: "Profil",
+      changePassword: "Parolni o'zgartirish",
+      editProfile: "Profilni tahrirlash"
+    },
+    en: {
+      dashboard: "Dashboard",
+      totalStudents: "Total Students",
+      totalTeachers: "Total Teachers",
+      totalRevenue: "Total Revenue",
+      activeGroups: "Active Groups",
+      monthlyRevenue: "Monthly Revenue",
+      studentsGrowth: "Students Growth",
+      branchPerformance: "Branch Performance",
+      debtMonitoring: "Debt Monitoring",
+      teacherPerformance: "Teacher Performance",
+      roomsOccupancy: "Rooms Occupancy",
+      recentStudents: "Recent Students",
+      recentPayments: "Recent Payments",
+      settings: "Settings",
+      logout: "Logout",
+      search: "Search",
+      allBranches: "All Branches",
+      viewAll: "View All",
+      markAllRead: "Mark all as read",
+      noNotifications: "No notifications",
+      profile: "Profile",
+      changePassword: "Change Password",
+      editProfile: "Edit Profile"
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,6 +136,8 @@ function App() {
         await checkAdminAuth();
       } else if (hostname === "teacher.intellectualprogress.uz") {
         await checkTeacherAuth();
+      } else if (hostname === "director.intellectualprogress.uz") {
+        await checkDirectorPanelAuth();
       } else if (hostname === "register.intellectualprogress.uz") {
         if (location.pathname.startsWith("/student-registration")) {
           navigate(`/student-registration${location.search}`);
@@ -69,7 +150,36 @@ function App() {
       }
     };
     checkAuth();
-  }, [hostname, location.pathname]);
+  }, [hostname, location.pathname, location.search]);
+
+  const checkCPanelAuth = async () => {
+    try {
+      const response = await fetch(`${API_URL}/superadmin/check-cpanel-auth`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (response.ok) {
+        setIsAuthenticated(true);
+        if (location.pathname === "/cpanel-login") {
+          navigate("/cpanel");
+        }
+      } else {
+        setIsAuthenticated(false);
+        if (location.pathname !== "/cpanel-login") {
+          navigate("/cpanel-login");
+        }
+      }
+    } catch (error) {
+      console.error("CPanel auth check error:", error);
+      setIsAuthenticated(false);
+      if (location.pathname !== "/cpanel-login") {
+        navigate("/cpanel-login");
+      }
+    } finally {
+      setLoading(false);
+      setAuthChecked(true);
+    }
+  };
 
   const checkAdminAuth = async () => {
     try {
@@ -129,6 +239,38 @@ function App() {
     }
   };
 
+  const checkDirectorPanelAuth = async () => {
+    try {
+      const response = await fetch(`${API_URL}/director-panel/check-director-panel-auth`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDirectorAuthenticated(true);
+        setUser(data.user);
+        if (location.pathname === "/director-panel/login") navigate("/director-panel");
+      } else {
+        setDirectorAuthenticated(false);
+        setUser(null);
+        if (location.pathname !== "/director-panel/login") navigate("/director-panel/login");
+      }
+    } catch (error) {
+      console.error("Director auth check error:", error);
+      setDirectorAuthenticated(false);
+    } finally {
+      setLoading(false);
+      setAuthChecked(true);
+    }
+  };
+
+  const handleDirectorLogin = (userData) => {
+    setDirectorAuthenticated(true);
+    setUser(userData);
+    navigate('/director-panel');
+  };
+
   if (loading) {
     return <LottieLoading />;
   }
@@ -182,7 +324,7 @@ function App() {
       <Suspense fallback={<LottieLoading />}>
         <ErrorBoundary>
           <Routes>
-            <Route path="/student-registration" element={<StudentRegistration />} />
+            <Route path="/student-registration/:token" element={<StudentRegistration />} />
             <Route
               path="/login"
               element={<Login setIsAuthenticated={setIsAuthenticated} checkAuth={checkAdminAuth} />}
@@ -195,7 +337,7 @@ function App() {
               path="/"
               element={
                 hostname === "register.intellectualprogress.uz" ? (
-                  <Navigate to="/student-registration" />
+                  <Navigate to="/student-registration/:token" />
                 ) : hostname === "admin.intellectualprogress.uz" ? (
                   <PrivateRoute isAuthenticated={isAuthenticated}>
                     <Navigate to="/dashboard" />
@@ -204,6 +346,10 @@ function App() {
                   <TeacherRoute isAuthenticated={teacherAuthenticated}>
                     <Navigate to="/teacher/dashboard" />
                   </TeacherRoute>
+                ) : hostname === "director.intellectualprogress.uz" ? (
+                  <DirectorRoute isAuthenticated={directorAuthenticated}>
+                    <Navigate to="/director-panel" />
+                  </DirectorRoute>
                 ) : (
                   hostname === 'localhost' ? (
                     <PrivateRoute isAuthenticated={isAuthenticated}>
@@ -275,6 +421,25 @@ function App() {
                 </PrivateRoute>
               }
             />
+
+            <Route path="/director-panel/login" element={<DirectorLogin onLogin={handleDirectorLogin} />} />
+
+            <Route
+              path="/director-panel"
+              element={
+                <DirectorRoute isAuthenticated={directorAuthenticated}>
+                  <DirectorPanelLayout />
+                </DirectorRoute>
+              }
+            >
+              <Route index element={<DirectorDashboard />} />
+              <Route path="branches" element={<DirectorBranches />} />
+              <Route path="groups" element={<DirectorGroups />} />
+              <Route path="debts" element={<DirectorDebts />} />
+              <Route path="teachers" element={<DirectorTeachers />} />
+              <Route path="rooms" element={<DirectorRooms />} />
+              <Route path="settings" element={<DirectorSettings />} />
+            </Route>
             <Route
               path="/achievements"
               element={
@@ -456,6 +621,18 @@ function App() {
                     </div>
                   </div>
                 </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cpanel-login"
+              element={<CPanelLogin setIsAuthenticated={setIsAuthenticated} checkAuth={checkCPanelAuth} />}
+            />
+            <Route
+              path="/cpanel"
+              element={
+                <CPanelRoute isAuthenticated={isAuthenticated}>
+                  <SuperAdmin />
+                </CPanelRoute>
               }
             />
             <Route path="*" element={<LottieNotFound />} />

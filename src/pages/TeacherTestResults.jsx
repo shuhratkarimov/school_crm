@@ -72,7 +72,7 @@ function TeacherTestResults() {
 
   const fetchGroupStudents = async (groupId) => {
     try {
-      const res = await fetch(`${API_URL}/get_one_group_students?group_id=${groupId}`, {
+      const res = await fetch(`${API_URL}/get_one_group_students_for_teacher?group_id=${groupId}`, {
         credentials: "include",
       });
       if (!res.ok) {

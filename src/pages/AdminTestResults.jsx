@@ -149,7 +149,7 @@ function AdminTestResults() {
 
   const fetchTestDetails = async (testId) => {
     try {
-      const res = await fetch(`${API_URL}/get_test_results/${testId}`, {
+      const res = await fetch(`${API_URL}/get_test_results_by_admin/${testId}`, {
         credentials: "include",
       });
       if (!res.ok) {
@@ -395,7 +395,7 @@ function AdminTestResults() {
           {/* Sozlamalar tugmasi */}
           <button
             onClick={() => setSettingsModal(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 btn btn-primary"
           >
             <Settings size={18} />
             Sozlamalar
