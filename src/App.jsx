@@ -353,9 +353,9 @@ function App() {
                     <Navigate to="/director-panel" />
                   </DirectorRoute>
                 ) : hostname === "cpanel.intellectualprogress.uz" ? (
-                  <CpanelRoute isAuthenticated={cpanelAuthenticated}>
+                  <CPanelRoute isAuthenticated={cpanelAuthenticated}>
                     <Navigate to="/cpanel" />
-                  </CpanelRoute>
+                  </CPanelRoute>
                 ) : (
                   hostname === 'localhost' ? (
                     <PrivateRoute isAuthenticated={isAuthenticated}>
