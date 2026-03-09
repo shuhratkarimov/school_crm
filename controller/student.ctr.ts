@@ -80,8 +80,6 @@ async function generateStudentId(transaction?: any): Promise<string> {
 
 async function getStudents(req: Request, res: Response, next: NextFunction) {
   try {
-    const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-
     const currentMonth = changeMonths(new Date().getMonth() + 1);
     const currentYear = new Date().getFullYear();
 
@@ -103,67 +101,100 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
       studentWhere[Op.or] = [
         { first_name: { [Op.iLike]: `%${search}%` } },
         { last_name: { [Op.iLike]: `%${search}%` } },
-        {
-          [Op.and]: [
-            Sequelize.where(
-              fn(
-                "concat",
-                col("Student.first_name"),
-                " ",
-                col("Student.last_name")
-              ),
-              { [Op.iLike]: `%${search}%` }
-            ),
-          ],
-        },
+        Sequelize.where(
+          fn("concat", col("Student.first_name"), " ", col("Student.last_name")),
+          { [Op.iLike]: `%${search}%` }
+        ),
         { phone_number: { [Op.iLike]: `%${search}%` } },
         { father_name: { [Op.iLike]: `%${search}%` } },
         { studental_id: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
-    const { rows: students, count: totalItems } = await Student.findAndCountAll({
-      where: studentWhere,
-      include: [
-        {
-          model: Group,
-          as: "groups",
-          attributes: ["id", "group_subject"],
-          through: { attributes: [] },
-          include: [
-            {
-              model: Teacher,
-              as: "teacher",
-              attributes: ["id", "first_name", "last_name", "phone_number"],
-              required: false,
-            },
-          ],
-          required: false,
-        },
-        {
-          model: StudentGroup,
-          as: "studentGroups",
-          attributes: ["group_id", "paid", "month", "year"],
-          required: false,
-          where: {
-            month,
-            year,
+    const baseInclude = [
+      {
+        model: Group,
+        as: "groups",
+        attributes: ["id", "group_subject"],
+        through: { attributes: [] },
+        include: [
+          {
+            model: Teacher,
+            as: "teacher",
+            attributes: ["id", "first_name", "last_name", "phone_number"],
+            required: false,
           },
-          include: [
-            {
-              model: Group,
-              as: "studentGroupParent",
-              attributes: [],
-              required: true,
-              where: withBranchScope(req),
-            },
-          ],
+        ],
+        required: false,
+      },
+      {
+        model: StudentGroup,
+        as: "studentGroups",
+        attributes: ["group_id", "paid", "month", "year"],
+        required: false,
+        where: {
+          month,
+          year,
         },
-      ],
-      distinct: true,
+        include: [
+          {
+            model: Group,
+            as: "studentGroupParent",
+            attributes: [],
+            required: true,
+            where: withBranchScope(req),
+          },
+        ],
+      },
+    ];
+
+    // 1) paymentFilter = all bo'lsa oddiy paginate
+    if (paymentFilter === "all") {
+      const { rows: students, count: totalItems } = await Student.findAndCountAll({
+        where: studentWhere,
+        include: baseInclude,
+        distinct: true,
+        order: [["created_at", "DESC"]],
+        limit,
+        offset,
+      });
+
+      const studentsWithGroups = students.map((student: any) => {
+        const plain = typeof student.get === "function"
+          ? student.get({ plain: true })
+          : student;
+
+        const allGroups = plain.groups?.length || 0;
+        const monthStudentGroups = plain.studentGroups || [];
+        const totalGroups = monthStudentGroups.length;
+        const paidGroups = monthStudentGroups.filter((sg: any) => sg.paid).length;
+
+        return {
+          ...plain,
+          total_groups: totalGroups,
+          paid_groups: paidGroups,
+          all_groups: allGroups,
+        };
+      });
+
+      return res.status(200).json({
+        data: studentsWithGroups,
+        pagination: {
+          page,
+          limit,
+          totalItems,
+          totalPages: Math.max(Math.ceil(totalItems / limit), 1),
+          hasNextPage: page < Math.ceil(totalItems / limit),
+          hasPrevPage: page > 1,
+        },
+      });
+    }
+
+    // 2) paymentFilter bo'lsa avval hammasini olib, filter qilib, keyin paginate qilamiz
+    const students = await Student.findAll({
+      where: studentWhere,
+      include: baseInclude,
       order: [["created_at", "DESC"]],
-      limit,
-      offset,
     });
 
     const studentsWithGroups = students.map((student: any) => {
@@ -184,36 +215,31 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
       };
     });
 
-    let filteredStudents = studentsWithGroups;
+    const filteredStudents = studentsWithGroups.filter((student: any) => {
+      const totalGroups = student.total_groups || 0;
+      const paidGroups = student.paid_groups || 0;
 
-    if (paymentFilter !== "all") {
-      filteredStudents = studentsWithGroups.filter((student: any) => {
-        const totalGroups = student.total_groups || 0;
-        const paidGroups = student.paid_groups || 0;
+      const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
+      const isPartiallyPaid = totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
+      const isUnpaid = totalGroups > 0 && paidGroups === 0;
 
-        const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
-        const isPartiallyPaid = totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
-        const isUnpaid = totalGroups > 0 && paidGroups === 0;
+      return (
+        (paymentFilter === "fullyPaid" && isFullyPaid) ||
+        (paymentFilter === "partiallyPaid" && isPartiallyPaid) ||
+        (paymentFilter === "unpaid" && isUnpaid)
+      );
+    });
 
-        return (
-          (paymentFilter === "fullyPaid" && isFullyPaid) ||
-          (paymentFilter === "partiallyPaid" && isPartiallyPaid) ||
-          (paymentFilter === "unpaid" && isUnpaid)
-        );
-      });
-    }
-
-    const totalFilteredItems =
-      paymentFilter === "all" ? totalItems : filteredStudents.length;
-
-    const totalPages = Math.max(Math.ceil(totalFilteredItems / limit), 1);
+    const totalItems = filteredStudents.length;
+    const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+    const paginatedStudents = filteredStudents.slice(offset, offset + limit);
 
     return res.status(200).json({
-      data: filteredStudents,
+      data: paginatedStudents,
       pagination: {
         page,
         limit,
-        totalItems: totalFilteredItems,
+        totalItems,
         totalPages,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
