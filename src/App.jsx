@@ -138,6 +138,8 @@ function App() {
         await checkTeacherAuth();
       } else if (hostname === "director.intellectualprogress.uz") {
         await checkDirectorPanelAuth();
+      } else if (hostname === "cpanel.intellectualprogress.uz") {
+        await checkCPanelAuth();
       } else if (hostname === "register.intellectualprogress.uz") {
         if (location.pathname.startsWith("/student-registration")) {
           navigate(`/student-registration${location.search}`);
@@ -350,6 +352,10 @@ function App() {
                   <DirectorRoute isAuthenticated={directorAuthenticated}>
                     <Navigate to="/director-panel" />
                   </DirectorRoute>
+                ) : hostname === "cpanel.intellectualprogress.uz" ? (
+                  <CpanelRoute isAuthenticated={cpanelAuthenticated}>
+                    <Navigate to="/cpanel" />
+                  </CpanelRoute>
                 ) : (
                   hostname === 'localhost' ? (
                     <PrivateRoute isAuthenticated={isAuthenticated}>
