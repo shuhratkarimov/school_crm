@@ -5,7 +5,7 @@ import i18next from "../Utils/lang";
 import Center from "../Models/center_model";
 import { ICreateCenterDto } from "../DTO/center/create_center_dto";
 import { IUpdateCenterDTO } from "../DTO/center/update_center_dto";
-import User from "../Models/user_model";
+import { User } from "../Models/user_model";
 import Teacher from "../Models/teacher_model";
 import Group from "../Models/group_model";
 
