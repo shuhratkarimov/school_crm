@@ -111,7 +111,7 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
       ];
     }
 
-    const baseInclude = [
+    const includeFull = [
       {
         model: Group,
         as: "groups",
@@ -132,10 +132,7 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
         as: "studentGroups",
         attributes: ["group_id", "paid", "month", "year"],
         required: false,
-        where: {
-          month,
-          year,
-        },
+        where: { month, year },
         include: [
           {
             model: Group,
@@ -148,59 +145,9 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
       },
     ];
 
-    // 1) paymentFilter = all bo'lsa oddiy paginate
-    if (paymentFilter === "all") {
-      const { rows: students, count: totalItems } = await Student.findAndCountAll({
-        where: studentWhere,
-        include: baseInclude,
-        distinct: true,
-        order: [["created_at", "DESC"]],
-        limit,
-        offset,
-      });
-
-      const studentsWithGroups = students.map((student: any) => {
-        const plain = typeof student.get === "function"
-          ? student.get({ plain: true })
-          : student;
-
-        const allGroups = plain.groups?.length || 0;
-        const monthStudentGroups = plain.studentGroups || [];
-        const totalGroups = monthStudentGroups.length;
-        const paidGroups = monthStudentGroups.filter((sg: any) => sg.paid).length;
-
-        return {
-          ...plain,
-          total_groups: totalGroups,
-          paid_groups: paidGroups,
-          all_groups: allGroups,
-        };
-      });
-
-      return res.status(200).json({
-        data: studentsWithGroups,
-        pagination: {
-          page,
-          limit,
-          totalItems,
-          totalPages: Math.max(Math.ceil(totalItems / limit), 1),
-          hasNextPage: page < Math.ceil(totalItems / limit),
-          hasPrevPage: page > 1,
-        },
-      });
-    }
-
-    // 2) paymentFilter bo'lsa avval hammasini olib, filter qilib, keyin paginate qilamiz
-    const students = await Student.findAll({
-      where: studentWhere,
-      include: baseInclude,
-      order: [["created_at", "DESC"]],
-    });
-
-    const studentsWithGroups = students.map((student: any) => {
-      const plain = typeof student.get === "function"
-        ? student.get({ plain: true })
-        : student;
+    const mapStudent = (student: any) => {
+      const plain =
+        typeof student.get === "function" ? student.get({ plain: true }) : student;
 
       const allGroups = plain.groups?.length || 0;
       const monthStudentGroups = plain.studentGroups || [];
@@ -213,7 +160,84 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
         paid_groups: paidGroups,
         all_groups: allGroups,
       };
+    };
+
+    // paymentFilter = all bo'lsa:
+    if (paymentFilter === "all") {
+      // 1) faqat Student jadvalidan count + ids olamiz
+      const totalItems = await Student.count({
+        where: studentWhere,
+        distinct: true,
+        col: "id",
+      });
+
+      const studentIdsRows = await Student.findAll({
+        where: studentWhere,
+        attributes: ["id"],
+        order: [["created_at", "DESC"]],
+        limit,
+        offset,
+        raw: true,
+      });
+
+      const studentIds = studentIdsRows.map((s: any) => s.id);
+
+      if (studentIds.length === 0) {
+        return res.status(200).json({
+          data: [],
+          pagination: {
+            page,
+            limit,
+            totalItems,
+            totalPages: Math.max(Math.ceil(totalItems / limit), 1),
+            hasNextPage: page < Math.ceil(totalItems / limit),
+            hasPrevPage: page > 1,
+          },
+        });
+      }
+
+      // 2) keyin to'liq ma'lumotni include bilan olamiz
+      const students = await Student.findAll({
+        where: {
+          id: { [Op.in]: studentIds },
+        },
+        include: includeFull,
+        order: [["created_at", "DESC"]],
+      });
+
+      // 3) id tartibini saqlab qolamiz
+      const studentsMap = new Map(
+        students.map((student: any) => [student.id, mapStudent(student)])
+      );
+
+      const orderedStudents = studentIds
+        .map((id: string) => studentsMap.get(id))
+        .filter(Boolean);
+
+      const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+
+      return res.status(200).json({
+        data: orderedStudents,
+        pagination: {
+          page,
+          limit,
+          totalItems,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      });
+    }
+
+    // paymentFilter != all bo'lsa:
+    // avval hamma studentni include bilan olamiz, keyin filter, keyin paginate
+    const students = await Student.findAll({
+      where: studentWhere,
+      include: includeFull,
+      order: [["created_at", "DESC"]],
     });
+
+    const studentsWithGroups = students.map(mapStudent);
 
     const filteredStudents = studentsWithGroups.filter((student: any) => {
       const totalGroups = student.total_groups || 0;
