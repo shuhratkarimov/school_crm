@@ -10,6 +10,12 @@ const getApiBaseUrl = () => {
   if (host === "register.intellectualprogress.uz") {
     return "https://register.intellectualprogress.uz/api";
   }
+  if (host === "director.intellectualprogress.uz") {
+    return "https://director.intellectualprogress.uz/api";
+  }
+  if (host === "cpanel.intellectualprogress.uz") {
+    return "https://cpanel.intellectualprogress.uz/api";
+  }
   if (host === "193.181.208.209") {
     return "http://193.181.208.209:8080/api";
   }
