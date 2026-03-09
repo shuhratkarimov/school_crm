@@ -30,7 +30,6 @@ export default function DirectorGroups() {
         credentials: "include"
       });
       const data = await res.json();
-      console.log(data.data.groups);
       setGroups(data.data.groups);
     } catch (error) {
       console.error("Guruhlarni yuklashda xatolik:", error);

@@ -40,7 +40,8 @@ export default function Expenses() {
     if (!newExpense.title || !newExpense.amount || !newExpense.date) return;
     try {
       const res = editingId
-        ? await fetch(`${API_URL}/update_expense/${editingId}`, { credentials: "include" }, {
+        ? await fetch(`${API_URL}/update_expense/${editingId}`, {
+          credentials: "include",
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...newExpense, amount: Number(newExpense.amount) }),

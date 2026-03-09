@@ -176,13 +176,13 @@ function Header({ setIsAuthenticated }) {
       {/* Profile Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => {
                 setShowProfileModal(false);
                 cancelEdit();
               }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-full hover:bg-gray-200"
             >
               <X size={24} />
             </button>
@@ -191,17 +191,17 @@ function Header({ setIsAuthenticated }) {
               <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold mb-3 shadow-md">
                 {user?.username?.charAt(0)?.toUpperCase() || "U"}
               </div>
-              <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
+              <h2 className="text-2xl font-bold text-center text-gray-800">
                 Sizning profilingiz
               </h2>
             </div>
 
             <div className="space-y-4 mb-6">
-              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-sm">
+              <div className="p-3 bg-gray-100 rounded-xl shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <User size={24} className="text-gray-500 mr-3" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Foydalanuvchi nomi</span>
+                    <span className="text-sm text-gray-500">Foydalanuvchi nomi</span>
                   </div>
                   {!isEditingUsername ? (
                     <button
@@ -232,25 +232,25 @@ function Header({ setIsAuthenticated }) {
                     type="text"
                     value={tempUsername}
                     onChange={(e) => setTempUsername(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     autoFocus
                   />
                 ) : (
-                  <p className="font-medium text-gray-800 dark:text-white ml-8">{user?.username || "Ma'lumot yo'q"}</p>
+                  <p className="font-medium text-gray-800 ml-8">{user?.username || "Ma'lumot yo'q"}</p>
                 )}
               </div>
 
-              <div className="flex items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-sm">
+              <div className="flex items-center p-3 bg-gray-100 rounded-xl shadow-sm">
                 <Mail size={24} className="text-gray-500 mr-3" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                  <p className="font-medium text-gray-800 dark:text-white">{user?.email || "Ma'lumot yo'q"}</p>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="font-medium text-gray-800">{user?.email || "Ma'lumot yo'q"}</p>
                 </div>
               </div>
             </div>
 
             <button
-              className="w-full flex justify-center items-center py-3 px-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-medium rounded-lg shadow-md hover:shadow-lg"
+              className="w-full flex justify-center items-center py-3 px-4 bg-[#104292] transition-colors text-white font-medium rounded-xl shadow-md hover:shadow-lg"
               onClick={() => {
                 setShowProfileModal(false);
                 setShowPasswordModal(true);
@@ -266,10 +266,10 @@ function Header({ setIsAuthenticated }) {
       {/* Password Update Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => setShowPasswordModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-full hover:bg-gray-200"
             >
               <X size={24} />
             </button>
@@ -278,29 +278,29 @@ function Header({ setIsAuthenticated }) {
               <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center text-white mb-3 shadow-md">
                 <KeyRound size={28} />
               </div>
-              <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
+              <h2 className="text-2xl font-bold text-center text-gray-800">
                 Parolni yangilash
               </h2>
-              <p className="text-gray-500 dark:text-gray-400 text-center mt-2">
+              <p className="text-gray-500 text-center mt-2">
                 Xavfsiz parol yaratish uchun kamida 8 ta belgi kiriting
               </p>
             </div>
 
             <form onSubmit={handlePasswordUpdate} className="space-y-4">
               <div>
-                <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Eski parol</label>
+                <label className="block mb-2 font-medium text-gray-700">Eski parol</label>
                 <div className="relative">
                   <input
                     type={showOldPassword ? "text" : "password"}
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 pr-10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-colors"
+                    className="w-full border border-gray-300 px-4 py-3 pr-10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     required
                     placeholder="Hozirgi parolingizni kiriting"
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 transition-colors"
                     onClick={() => setShowOldPassword(!showOldPassword)}
                   >
                     {showOldPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -309,19 +309,19 @@ function Header({ setIsAuthenticated }) {
               </div>
 
               <div>
-                <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Yangi parol</label>
+                <label className="block mb-2 font-medium text-gray-700">Yangi parol</label>
                 <div className="relative">
                   <input
                     type={showNewPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 pr-10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-colors"
+                    className="w-full border border-gray-300 px-4 py-3 pr-10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     required
                     placeholder="Yangi parolni kiriting"
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 transition-colors"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
                     {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -332,14 +332,14 @@ function Header({ setIsAuthenticated }) {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm"
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-100 transition-colors shadow-sm"
                   onClick={() => setShowPasswordModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 transition-colors text-white font-medium rounded-lg shadow-md hover:shadow-lg"
+                  className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 transition-colors text-white font-medium rounded-xl shadow-md hover:shadow-lg"
                 >
                   Saqlash
                 </button>

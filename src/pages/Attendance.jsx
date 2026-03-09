@@ -357,7 +357,9 @@ export default function Attendance() {
       }
 
       if (studentsResponse.ok) {
-        setStudents(await studentsResponse.json());
+        const studentsData = await studentsResponse.json();
+        setStudents(studentsData.data);
+        
       } else {
         setStudents([]);
         setErrors((prev) => ({ ...prev, students: "O'quvchilar mavjud emas" }));
@@ -1509,8 +1511,8 @@ export default function Attendance() {
                       <label
                         key={day}
                         className={`min-w-0 flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.days.includes(day)
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-300 hover:border-gray-400"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-300 hover:border-gray-400"
                           }`}
                       >
                         <input
@@ -1522,8 +1524,8 @@ export default function Attendance() {
 
                         <div
                           className={`shrink-0 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.days.includes(day)
-                              ? "border-blue-500 bg-blue-500 text-white"
-                              : "border-gray-400"
+                            ? "border-blue-500 bg-blue-500 text-white"
+                            : "border-gray-400"
                             }`}
                         >
                           {formData.days.includes(day) && <Check size={14} />}

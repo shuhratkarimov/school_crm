@@ -114,7 +114,6 @@ function Achievements() {
     });
     setFilteredAchievements(filtered);
   };
-  console.log(filteredAchievements);
 
   useEffect(() => {
     handleSearch(searchTerm);
@@ -254,7 +253,7 @@ function Achievements() {
   if (loading) return <LottieLoading />;
 
   return (
-    <div className="bg-gray-50 min-h-screen dark:bg-gray-900">
+    <div className="bg-gray-50 min-h-screen">
       {/* Sarlavha va qo'shish tugmasi */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
@@ -267,7 +266,7 @@ function Achievements() {
         </div>
 
         <button
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 bg-[#104292] hover:bg-blue-700 text-white px-4 py-3 rounded-xl transition-colors shadow-md hover:shadow-lg"
           onClick={() => setAddModal(true)}
         >
           <Plus size={20} />
@@ -283,23 +282,23 @@ function Achievements() {
             placeholder="Yutuq yoki ism bo'yicha qidirish..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white dark:border-gray-700"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
 
       {/* Tur selector */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yutuq turi</label>
-        <div className="flex bg-gray-100 p-1 rounded-lg dark:bg-gray-800 w-fit">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Yutuq turi</label>
+        <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
           <button
-            className={`px-4 py-2 rounded-md transition-colors ${selectedType === "student" ? "bg-white shadow-sm dark:bg-gray-700" : "text-gray-500 dark:text-gray-400"}`}
+            className={`px-4 py-2 rounded-xl transition-colors ${selectedType === "student" ? "bg-white shadow-sm" : "text-gray-500"}`}
             onClick={() => setSelectedType("student")}
           >
             O'quvchilar yutuqlari
           </button>
           <button
-            className={`px-4 py-2 rounded-md transition-colors ${selectedType === "teacher" ? "bg-white shadow-sm dark:bg-gray-700" : "text-gray-500 dark:text-gray-400"}`}
+            className={`px-4 py-2 rounded-xl transition-colors ${selectedType === "teacher" ? "bg-white shadow-sm" : "text-gray-500"}`}
             onClick={() => setSelectedType("teacher")}
           >
             Ustozlar yutuqlari
@@ -314,18 +313,18 @@ function Achievements() {
           const isStudent = students.some(s => s.id === entity.id);
           return selectedType === "student" ? isStudent : !isStudent;
         }).map(({ entity, achievements }) => (
-          <div key={entity.id} className="bg-white rounded-xl shadow-sm p-6 dark:bg-gray-800">
+          <div key={entity.id} className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-start gap-4 mb-4">
               <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
                 {entity.first_name?.charAt(0)}{entity.last_name?.charAt(0)}
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                <h3 className="text-xl font-semibold text-gray-800">
                   {entity.first_name} {entity.last_name}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
                   <Award size={16} className="text-amber-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-medium text-gray-700">
                     {achievements?.length} ta yutuq
                   </span>
                 </div>
@@ -334,12 +333,12 @@ function Achievements() {
 
             <div className="grid gap-3">
               {achievements?.map(ach => (
-                <div key={ach.id} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-r">
+                <div key={ach.id} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50 rounded-r">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-medium text-gray-800 dark:text-white">{ach.achievement_title}</h4>
-                      <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">{ach.description}</p>
-                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs mt-2">
+                      <h4 className="font-medium text-gray-800">{ach.achievement_title}</h4>
+                      <p className="text-gray-600 text-sm mt-1">{ach.description}</p>
+                      <div className="flex items-center gap-1 text-gray-500 text-xs mt-2">
                         <Calendar size={14} />
                         {new Date(ach.date).toLocaleDateString('uz-UZ')}
                       </div>
@@ -357,14 +356,14 @@ function Achievements() {
                           });
                           setEditModal(true);
                         }}
-                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors dark:text-blue-400 dark:hover:bg-blue-900/30"
+                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"
                         title="Tahrirlash"
                       >
                         <Pen size={16} />
                       </button>
                       <button
                         onClick={() => showDeleteToast(ach.id)}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors dark:text-red-400 dark:hover:bg-red-900/30"
+                        className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"
                         title="O'chirish"
                       >
                         <Trash2 size={16} />
@@ -381,10 +380,10 @@ function Achievements() {
           const isStudent = students.some(s => s.id === entity.id);
           return selectedType === "students" ? isStudent : !isStudent;
         }).length === 0 && (
-            <div className="text-center py-12 bg-white rounded-xl shadow-sm dark:bg-gray-800">
-              <Award size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-              <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Hozircha hech qanday yutuq mavjud emas</h3>
-              <p className="text-gray-400 dark:text-gray-500 mt-1">Yutuq qo'shish uchun yuqoridagi tugmadan foydalaning</p>
+            <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+              <Award size={48} className="mx-auto text-gray-300 mb-3" />
+              <h3 className="text-lg font-medium text-gray-500">Hozircha hech qanday yutuq mavjud emas</h3>
+              <p className="text-gray-400 mt-1">Yutuq qo'shish uchun yuqoridagi tugmadan foydalaning</p>
             </div>
           )}
       </div>
@@ -392,7 +391,7 @@ function Achievements() {
       {/* Yutuq qo'shish modali */}
       {addModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => {
                 setAddModal(false);
@@ -405,16 +404,16 @@ function Achievements() {
                   achiever_id: "",
                 });
               }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-full hover:bg-gray-200"
             >
               <X size={24} />
             </button>
 
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Yangi yutuq qo'shish</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6">Yangi yutuq qo'shish</h2>
 
             <form onSubmit={addAchievement} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {selectedType === "student" ? "O'quvchi" : "Ustoz"}
                 </label>
                 <select
@@ -431,23 +430,23 @@ function Achievements() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yutuq nomi</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Yutuq nomi</label>
                 <input
                   type="text"
                   value={formData.achievement_title}
                   onChange={(e) => setFormData({ ...formData, achievement_title: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq nomi"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tavsif</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tavsif</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq haqida batafsil"
                   rows="3"
                   required
@@ -455,20 +454,20 @@ function Achievements() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sana</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sana</label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button
+                <button 
                   type="button"
-                  className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-100 transition-colors"
                   onClick={() => {
                     setAddModal(false);
                     setFormData({
@@ -483,7 +482,7 @@ function Achievements() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-medium rounded-lg"
+                  className="flex-1 py-3 px-4 bg-[#104292] hover:bg-[#104292]/80 transition-colors text-white font-medium rounded-xl"
                 >
                   Qo'shish
                 </button>
@@ -496,35 +495,35 @@ function Achievements() {
       {/* Yutuqni tahrirlash modali */}
       {editModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => setEditModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-full hover:bg-gray-200"
             >
               <X size={24} />
             </button>
 
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Yutuqni tahrirlash</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6">Yutuqni tahrirlash</h2>
 
             <form onSubmit={updateAchievement} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yutuq nomi</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Yutuq nomi</label>
                 <input
                   type="text"
                   value={formData.achievement_title}
                   onChange={(e) => setFormData({ ...formData, achievement_title: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq nomi"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tavsif</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tavsif</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq haqida batafsil"
                   rows="3"
                   required
@@ -532,12 +531,12 @@ function Achievements() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sana</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sana</label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -545,14 +544,14 @@ function Achievements() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-100 transition-colors"
                   onClick={() => setEditModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-medium rounded-lg"
+                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-medium rounded-xl"
                 >
                   Yangilash
                 </button>

@@ -199,7 +199,7 @@ export default function DirectorDashboard() {
           <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
             <span>So‘nggi 12 oy</span>
             <span>
-              Jami:{" "}
+              Jami:
               <span className="font-semibold text-gray-700 dark:text-gray-200">
                 {formatMoney(revenueData.reduce((sum, x) => sum + (x.amount || 0), 0))}
               </span>

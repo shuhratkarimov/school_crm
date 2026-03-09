@@ -225,7 +225,7 @@ function Payments() {
 
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
-        setStudents(studentsData);
+        setStudents(studentsData.data);
       } else {
         setStudents([]);
         toast.error("O'quvchilar mavjud emas");

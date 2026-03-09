@@ -185,7 +185,7 @@ function Teachers() {
 
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
-        setStudents(studentsData);
+        setStudents(studentsData.data);
       } else {
         setStudents([]);
         toast.error(`O'quvchilar yuklanmadi: ${studentsResponse.status}`);

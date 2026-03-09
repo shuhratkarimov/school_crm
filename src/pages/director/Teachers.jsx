@@ -54,7 +54,6 @@ export default function DirectorTeachers() {
     })
       .then(res => res.json())
       .then(res => {
-        console.log(res.data);
         setTeachers(res.data.teachers || []);
       })
       .catch(err => console.error(err));
