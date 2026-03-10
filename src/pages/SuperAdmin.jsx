@@ -12,7 +12,11 @@ import API_URL from "../conf/api";
 export default function SuperAdmin() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [isAssignDirectorModalOpen, setIsAssignDirectorModalOpen] = useState(false);
+  const [assignDirectorForm, setAssignDirectorForm] = useState({
+    center_id: "",
+    director_id: "",
+  });
   const [centers, setCenters] = useState([]);
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
@@ -70,6 +74,48 @@ export default function SuperAdmin() {
 
     } catch (err) {
       toast.error(err.message || "Server bilan bog'lanib bo'lmadi");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openAssignDirectorModal = () => {
+    setAssignDirectorForm({ center_id: "", director_id: "" });
+    setIsAssignDirectorModalOpen(true);
+  };
+
+  const closeAssignDirectorModal = () => {
+    setIsAssignDirectorModalOpen(false);
+    setAssignDirectorForm({ center_id: "", director_id: "" });
+  };
+
+  const assignDirectorToCenter = async () => {
+    if (!assignDirectorForm.center_id || !assignDirectorForm.director_id) {
+      toast.error("Markaz va director tanlanishi shart");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_URL}/superadmin/centers/${assignDirectorForm.center_id}/assign-director`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(assignDirectorForm),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Director tayinlanmadi");
+      }
+
+      toast.success(data.message || "Director markazga tayinlandi");
+      closeAssignDirectorModal();
+      fetchAllData();
+    } catch (err) {
+      toast.error(err.message || "Xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
@@ -208,7 +254,7 @@ export default function SuperAdmin() {
       const method = isEditMode ? "PUT" : "POST";
       const url = isEditMode
         ? `${API_URL}/superadmin/centers/${centerForm.id}`
-        : `${API_URL}/superadmin/centers`;
+        : `${API_URL}/superadmin/create_center`;
 
       const res = await fetch(url, {
         method,
@@ -372,10 +418,10 @@ export default function SuperAdmin() {
             <Plus size={20} /> Yangi markaz qo‘shish
           </button>
           <button
-            onClick={openAddUser}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95"
+            onClick={openAssignDirectorModal}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95"
           >
-            <Plus size={20} /> Yangi foydalanuvchi qo‘shish
+            <UserCog size={20} /> Director tayinlash
           </button>
         </div>
 
@@ -560,12 +606,12 @@ export default function SuperAdmin() {
               required
             />
             <Input
-                label="Parol"
-                type="password"
-                value={userForm.password}
-                onChange={v => setUserForm({ ...userForm, password: v })}
-                required
-              />
+              label="Parol"
+              type="password"
+              value={userForm.password}
+              onChange={v => setUserForm({ ...userForm, password: v })}
+              required
+            />
             <Select
               label="Rol"
               value={userForm.role}
@@ -817,6 +863,60 @@ export default function SuperAdmin() {
         </Modal>
       )}
 
+      {isAssignDirectorModalOpen && (
+        <Modal
+          title="Markazga director tayinlash"
+          isOpen={isAssignDirectorModalOpen}
+          onClose={closeAssignDirectorModal}
+        >
+          <div className="space-y-5">
+            <Select
+              label="Markaz"
+              value={assignDirectorForm.center_id}
+              onChange={(v) =>
+                setAssignDirectorForm({ ...assignDirectorForm, center_id: v })
+              }
+              options={centers.map((c) => ({
+                value: c.id,
+                label: `${c.name}${c.director?.username ? ` — hozirgi: ${c.director.username}` : ""}`,
+              }))}
+              required
+            />
+
+            <Select
+              label="Director"
+              value={assignDirectorForm.director_id}
+              onChange={(v) =>
+                setAssignDirectorForm({ ...assignDirectorForm, director_id: v })
+              }
+              options={directors.map((d) => ({
+                value: d.id,
+                label: d.username,
+              }))}
+              required
+            />
+
+            <div className="flex gap-4 pt-6">
+              <button
+                onClick={assignDirectorToCenter}
+                disabled={loading}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <Save size={18} />
+                {loading ? "Saqlanmoqda..." : "Tayinlash"}
+              </button>
+
+              <button
+                onClick={closeAssignDirectorModal}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 py-3.5 rounded-xl"
+              >
+                Bekor qilish
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Branch Detail Modal */}
       {selectedBranch && (
         <Modal
@@ -834,7 +934,7 @@ export default function SuperAdmin() {
 
             <div className="flex gap-4 pt-6 border-t">
               <button
-                onClick={() => {openEditBranch(selectedBranch), closeBranchModal()}}
+                onClick={() => { openEditBranch(selectedBranch), closeBranchModal() }}
                 className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl flex items-center justify-center gap-2"
               >
                 <Pencil size={18} /> Tahrirlash

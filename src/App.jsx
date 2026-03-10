@@ -69,7 +69,7 @@ function App() {
   const hostname = window.location.hostname;
   const [directorAuthenticated, setDirectorAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-
+  const [authChecked, setAuthChecked] = useState(false);
   useEffect(() => {
     const checkAuth = async () => {
       if (hostname === "admin.intellectualprogress.uz") {
