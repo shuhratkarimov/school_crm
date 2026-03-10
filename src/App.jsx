@@ -68,6 +68,7 @@ function App() {
   const location = useLocation();
   const hostname = window.location.hostname;
   const [directorAuthenticated, setDirectorAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
