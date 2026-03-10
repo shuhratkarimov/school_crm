@@ -181,7 +181,7 @@ function App() {
 
   const checkDirectorPanelAuth = async () => {
     try {
-      const response = await fetch(`${API_URL}/director-panel/check-director-panel-auth`, {
+      const response = await fetch(`${API_URL}/check-director-auth`, {
         method: "GET",
         credentials: "include",
       });
