@@ -92,6 +92,7 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
 
     const search = String(req.query.search || "").trim();
     const paymentFilter = String(req.query.paymentFilter || "all").trim();
+    const simple = String(req.query.simple || "false") === "true";
 
     const studentWhere: any = {
       ...withBranchScope(req),
@@ -109,6 +110,47 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
         { father_name: { [Op.iLike]: `%${search}%` } },
         { studental_id: { [Op.iLike]: `%${search}%` } },
       ];
+    }
+
+    if (simple) {
+      const { count, rows } = await Student.findAndCountAll({
+        where: studentWhere,
+        attributes: [
+          "id",
+          "first_name",
+          "last_name",
+          "phone_number",
+          "came_in_school",
+          "created_at",
+        ],
+        include: [
+          {
+            model: Group,
+            as: "groups",
+            attributes: ["id", "group_subject", "monthly_fee"],
+            through: { attributes: [] },
+            required: false,
+          },
+        ],
+        distinct: true,
+        order: [["created_at", "DESC"]],
+        limit,
+        offset,
+      });
+
+      const totalPages = Math.max(Math.ceil(count / limit), 1);
+
+      return res.status(200).json({
+        data: rows,
+        pagination: {
+          page,
+          limit,
+          totalItems: count,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      });
     }
 
     const includeFull = [
@@ -162,9 +204,7 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
       };
     };
 
-    // paymentFilter = all bo'lsa:
     if (paymentFilter === "all") {
-      // 1) faqat Student jadvalidan count + ids olamiz
       const totalItems = await Student.count({
         where: studentWhere,
         distinct: true,
@@ -196,7 +236,6 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
         });
       }
 
-      // 2) keyin to'liq ma'lumotni include bilan olamiz
       const students = await Student.findAll({
         where: {
           id: { [Op.in]: studentIds },
@@ -205,7 +244,6 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
         order: [["created_at", "DESC"]],
       });
 
-      // 3) id tartibini saqlab qolamiz
       const studentsMap = new Map(
         students.map((student: any) => [student.id, mapStudent(student)])
       );
@@ -228,16 +266,24 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
         },
       });
     }
-
-    // paymentFilter != all bo'lsa:
-    // avval hamma studentni include bilan olamiz, keyin filter, keyin paginate
-    const students = await Student.findAll({
+    const { count, rows } = await Student.findAndCountAll({
       where: studentWhere,
-      include: includeFull,
+      attributes: ["id", "first_name", "last_name", "phone_number", "came_in_school"],
+      include: [
+        {
+          model: Group,
+          as: "groups",
+          attributes: ["id", "group_subject", "monthly_fee"],
+          through: { attributes: [] },
+          required: false,
+        },
+      ],
       order: [["created_at", "DESC"]],
+      limit,
+      offset,
     });
 
-    const studentsWithGroups = students.map(mapStudent);
+    const studentsWithGroups = rows.map(mapStudent);
 
     const filteredStudents = studentsWithGroups.filter((student: any) => {
       const totalGroups = student.total_groups || 0;

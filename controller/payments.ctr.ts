@@ -78,29 +78,89 @@ function getMonthsInWord(monthNumber?: number): string {
 
 async function getPayments(req: any, res: Response, next: NextFunction) {
   try {
-    const where = withBranchScope(req);
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const offset = (page - 1) * limit;
 
-    const payments = await Payment.findAll({
+    const search = String(req.query.search || "").trim();
+    const year = String(req.query.year || "all").trim();
+    const month = String(req.query.month || "all").trim();
+
+    const where: any = {
+      ...withBranchScope(req),
+    };
+
+    if (month !== "all") {
+      where.for_which_month = month;
+    }
+
+    if (year !== "all") {
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        Sequelize.where(
+          Sequelize.fn("DATE_PART", "year", Sequelize.col("Payment.created_at")),
+          Number(year)
+        ),
+      ];
+    }
+
+    const studentInclude: any = {
+      model: Student,
+      as: "student",
+      attributes: ["id", "first_name", "last_name", "phone_number"],
+      required: false,
+    };
+
+    if (search) {
+      studentInclude.required = true;
+      studentInclude.where = {
+        [Op.or]: [
+          { first_name: { [Op.iLike]: `%${search}%` } },
+          { last_name: { [Op.iLike]: `%${search}%` } },
+          Sequelize.where(
+            Sequelize.fn(
+              "concat",
+              Sequelize.col("student.first_name"),
+              " ",
+              Sequelize.col("student.last_name")
+            ),
+            { [Op.iLike]: `%${search}%` }
+          ),
+          { phone_number: { [Op.iLike]: `%${search}%` } },
+        ],
+      };
+    }
+
+    const { count, rows } = await Payment.findAndCountAll({
       where,
       include: [
-        {
-          model: Student,
-          as: "student",
-          attributes: ["first_name", "last_name", "phone_number"],
-        },
+        studentInclude,
         {
           model: Group,
           as: "paymentGroup",
           attributes: ["id", "group_subject"],
+          required: false,
         },
       ],
       order: [["created_at", "DESC"]],
+      limit,
+      offset,
+      distinct: true,
     });
 
-    if (payments.length === 0) {
-      return next(BaseError.BadRequest(404, i18next.t("payment_notFound")));
-    }
-    res.status(200).json(payments);
+    const totalPages = Math.max(Math.ceil(count / limit), 1);
+
+    return res.status(200).json({
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        totalItems: count,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (e) {
     next(e);
   }
@@ -138,58 +198,46 @@ async function getGroupMonthlyPaymentSummary(req: Request, res: Response, next: 
     const monthNum = now.getMonth() + 1;
     const monthName = monthsInUzbek[monthNum] || "Yanvar";
 
-    // Guruhdagi o'quvchilar
-    const students = await Student.findAll({
-      attributes: ['id'],
-      include: [{
-        model: StudentGroup,
-        as: "studentGroups",
-        where: { group_id: groupId },
-        required: true,
-        attributes: [],
-      }],
+    const studentGroups = await StudentGroup.findAll({
+      where: { group_id: groupId },
+      attributes: ["student_id"],
       raw: true,
     });
 
-    const studentIds = students.map((s: any) => s.id);
+    const uniqueStudentIds = [...new Set(studentGroups.map((sg: any) => sg.student_id))];
 
-    let summaryResult = {
-      month: monthName,
-      year,
-      total_paid: 0,
-      paid_count: 0,
-      total_students: studentIds.length,
-      monthly_fee: null,
-    };
+    const group = await Group.findByPk(groupId, {
+      attributes: ["monthly_fee"],
+      raw: true,
+    }) as any;
 
-    if (studentIds.length === 0) {
-      return res.json({ success: true, ...summaryResult });
-    }
-
-    // Guruh ma'lumotini olish (monthly_fee uchun)
-    const group = await Group.findByPk(groupId, { attributes: ['monthly_fee'], raw: true }) as any;
-    if (group) {
-      summaryResult.monthly_fee = group.monthly_fee;
-    }
-
-    // To'lovlar summasi va soni
-    const summary = await Payment.findOne({
+    const totalPaid = await Payment.sum("payment_amount", {
       where: {
         group_id: groupId,
         for_which_month: monthName,
-        pupil_id: { [Op.in]: studentIds },
+        pupil_id: { [Op.in]: uniqueStudentIds },
       },
-      attributes: [
-        [Sequelize.fn('SUM', Sequelize.col('payment_amount')), 'total'],
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'count'],
-      ],
-      raw: true,
-    }) as AggregateResult | null;
+    });
 
-    summaryResult.total_paid = summary?.total ? Math.round(Number(summary.total)) : 0;
-    summaryResult.paid_count = summary?.count ? Number(summary.count) : 0;
+    const paidCount = await Payment.count({
+      where: {
+        group_id: groupId,
+        for_which_month: monthName,
+        pupil_id: { [Op.in]: uniqueStudentIds },
+      },
+      distinct: true,
+      col: "pupil_id",
+    });
 
-    return res.json({ success: true, ...summaryResult });
+    return res.json({
+      success: true,
+      month: monthName,
+      year,
+      total_paid: totalPaid ? Math.round(Number(totalPaid)) : 0,
+      paid_count: paidCount || 0,
+      total_students: uniqueStudentIds.length,
+      monthly_fee: group?.monthly_fee ?? null,
+    });
   } catch (err) {
     console.error("getGroupMonthlyPaymentSummary xatosi:", err);
     next(err);
