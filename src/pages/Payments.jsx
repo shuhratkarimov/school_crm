@@ -30,7 +30,8 @@ function Payments() {
   const radioMonths = [currentMonth, nextMonth];
   const selectMonths = allMonths.filter(m => !radioMonths.includes(m));
   const [payments, setPayments] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [studentResults, setStudentResults] = useState([]);
+  const [studentLoading, setStudentLoading] = useState(false);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState("");
@@ -54,7 +55,27 @@ function Payments() {
     came_in_school: "",
     group_id: "",
   });
+  const [paymentsPagination, setPaymentsPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
+  const [unpaidPagination, setUnpaidPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
+
+  const [unpaidSearch, setUnpaidSearch] = useState("");
+  const [paymentSearchInput, setPaymentSearchInput] = useState("");
+  const [unpaidSearchInput, setUnpaidSearchInput] = useState("");
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [addModal, setAddModal] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -82,6 +103,42 @@ function Payments() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const years = Array.from({ length: 6 }, (_, i) => (new Date().getFullYear() - i).toString());
 
+  const loadInitialStudents = async () => {
+    try {
+      setStudentLoading(true);
+
+      const res = await fetch(
+        `${API_URL}/get_students?page=1&limit=10&simple=true`,
+        { credentials: "include" }
+      );
+
+      const data = await res.json();
+      setStudentResults(data.data || []);
+    } catch {
+      setStudentResults([]);
+    } finally {
+      setStudentLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(paymentSearchInput);
+      setPaymentsPagination((prev) => ({ ...prev, page: 1 }));
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [paymentSearchInput]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setUnpaidSearch(unpaidSearchInput);
+      setUnpaidPagination((prev) => ({ ...prev, page: 1 }));
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [unpaidSearchInput]);
+
   useEffect(() => {
     if (!showUnpaid) {
       setUnpaid([]);
@@ -89,35 +146,37 @@ function Payments() {
       return;
     }
 
-    let url = `${API_URL}/get_unpaid_payments?year=${selectedYear}`;
+    let url = `${API_URL}/get_unpaid_payments?year=${selectedYear}&page=${unpaidPagination.page}&limit=${unpaidPagination.limit}&search=${encodeURIComponent(unpaidSearch)}`;
 
-    // Agar "all" tanlanmagan bo'lsa — faqat tanlangan oy uchun
     if (selectedMonth !== "all") {
       url += `&month=${encodeURIComponent(selectedMonth)}`;
     }
-    // Agar "all" tanlangan bo'lsa — hech qanday month qo'shmaymiz (backendda barchasi qaytadi)
 
     setIsLoadingUnpaid(true);
     setUnpaid([]);
 
     fetch(url, {
-      credentials: "include"
+      credentials: "include",
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error(`HTTP xato: ${res.status}`);
         return res.json();
       })
-      .then(data => {
+      .then((data) => {
         const list = Array.isArray(data) ? data : (data?.data || []);
         setUnpaid(list);
+        setUnpaidPagination((prev) => ({
+          ...prev,
+          ...(data?.pagination || {}),
+        }));
       })
-      .catch(err => {
+      .catch(() => {
         toast.error("Qarzdorlar yuklanmadi");
       })
       .finally(() => {
         setIsLoadingUnpaid(false);
       });
-  }, [showUnpaid, selectedYear, selectedMonth]);
+  }, [showUnpaid, selectedYear, selectedMonth, unpaidPagination.page, unpaidSearch]);
 
   useEffect(() => {
     const loadInitialUnpaidCount = async () => {
@@ -131,8 +190,7 @@ function Payments() {
         if (!res.ok) throw new Error("Initial count yuklanmadi");
 
         const data = await res.json();
-        const list = Array.isArray(data) ? data : (data?.data || []);
-        setCurrentYearUnpaidCount(list.length);
+        setCurrentYearUnpaidCount(data?.count || 0);
       } catch (err) {
         setCurrentYearUnpaidCount(0);
       }
@@ -192,24 +250,16 @@ function Payments() {
       setStudentsError("");
       setPaymentsError("");
 
-      const [groupsResponse, studentsResponse, paymentsResponse] =
-        await Promise.all([
-          fetch(`${API_URL}/get_groups`, {
-            credentials: "include"
-          }).catch(() => ({
-            ok: false,
-          })),
-          fetch(`${API_URL}/get_students`, {
-            credentials: "include"
-          }).catch(() => ({
-            ok: false,
-          })),
-          fetch(`${API_URL}/get_payments`, {
-            credentials: "include"
-          }).catch(() => ({
-            ok: false,
-          })),
-        ]);
+      const paymentsUrl = `${API_URL}/get_payments?page=${paymentsPagination.page}&limit=${paymentsPagination.limit}&search=${encodeURIComponent(searchTerm)}&year=${selectedPaymentYear}&month=${monthFilter}`;
+
+      const [groupsResponse, paymentsResponse] = await Promise.all([
+        fetch(`${API_URL}/get_groups`, {
+          credentials: "include",
+        }).catch(() => ({ ok: false })),
+        fetch(paymentsUrl, {
+          credentials: "include",
+        }).catch(() => ({ ok: false })),
+      ]);
 
       if (groupsResponse.ok) {
         const groupsData = await groupsResponse.json();
@@ -220,33 +270,74 @@ function Payments() {
         setGroups(groupsWithAmount);
       } else {
         setGroups([]);
-        toast.error("To'lovlar mavjud emas");
-      }
-
-      if (studentsResponse.ok) {
-        const studentsData = await studentsResponse.json();
-        setStudents(studentsData.data);
-      } else {
-        setStudents([]);
-        toast.error("O'quvchilar mavjud emas");
+        toast.error("Guruhlar mavjud emas");
       }
 
       if (paymentsResponse.ok) {
         const paymentsData = await paymentsResponse.json();
-        setPayments(paymentsData);
+        setPayments(paymentsData.data || []);
+        setPaymentsPagination((prev) => ({
+          ...prev,
+          ...(paymentsData.pagination || {}),
+        }));
       } else {
         setPayments([]);
         toast.error("To'lovlar mavjud emas");
       }
     } catch (err) {
       setGroups([]);
-      setStudents([]);
       setPayments([]);
       toast.error("Ma'lumotlarni yuklashda umumiy xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const q = studentSearch.trim();
+
+      if (q.length < 2) {
+        setStudentResults([]);
+        return;
+      }
+
+      try {
+        setStudentLoading(true);
+
+        const res = await fetch(
+          `${API_URL}/get_students?search=${encodeURIComponent(q)}&page=1&limit=10&paymentFilter=all&simple=true`,
+          { credentials: "include" }
+        );
+
+        if (!res.ok) throw new Error("Studentlarni qidirishda xatolik");
+
+        const data = await res.json();
+        console.log(data);
+        setStudentResults(data.data || []);
+      } catch (err) {
+        setStudentResults([]);
+      } finally {
+        setStudentLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [studentSearch]);
+
+  useEffect(() => {
+    setPaymentsPagination((prev) => ({ ...prev, page: 1 }));
+  }, [selectedPaymentYear, monthFilter]);
+
+  useEffect(() => {
+    setUnpaidPagination((prev) => ({ ...prev, page: 1 }));
+  }, [selectedYear, selectedMonth, unpaidSearch]);
+
+  useEffect(() => {
+    if (!addModal) return;
+    loadInitialStudents();
+  }, [addModal]);
+
   useEffect(() => {
     const updateCount = async () => {
       try {
@@ -264,8 +355,7 @@ function Payments() {
         if (!res.ok) return;
 
         const data = await res.json();
-        const list = Array.isArray(data) ? data : (data?.data || []);
-        setCurrentYearUnpaidCount(list.length);
+        setCurrentYearUnpaidCount(data?.count || 0);
       } catch (err) {
         setCurrentYearUnpaidCount(0);
       }
@@ -411,7 +501,7 @@ function Payments() {
 
       if (response.ok) {
         const updatedPayment = await response.json();
-        const student = students.find((s) => s.id === editFormData.pupil_id);
+        const student = studentResults.find((s) => s.id === editFormData.pupil_id);
         const paymentWithStudent = {
           ...updatedPayment,
           student: student || {
@@ -437,7 +527,7 @@ function Payments() {
   };
 
   const getStudentGroups = (studentId) => {
-    const student = students.find((s) => s.id === studentId);
+    const student = studentResults.find((s) => s.id === studentId);
     // student?.groups mavjudligini tekshirish
     if (student?.groups && Array.isArray(student.groups)) {
       return student.groups.map((group) => group.id);
@@ -466,7 +556,7 @@ function Payments() {
 
   const openEditModal = (payment) => {
     // Student ma'lumotlarini topamiz
-    const student = students.find(s => s.id === payment.pupil_id);
+    const student = studentResults.find(s => s.id === payment.pupil_id);
 
     setEditFormData({
       id: payment.id,
@@ -483,7 +573,7 @@ function Payments() {
     setIsEditModalOpen(true);
   };
 
-  const filteredStudents = students.filter((student) =>
+  const filteredStudents = studentResults.filter((student) =>
     `${student.first_name} ${student.last_name}`
       .toLowerCase()
       .includes(studentSearch.toLowerCase())
@@ -596,7 +686,7 @@ function Payments() {
         new Date(p.created_at) >=
         new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1) // new Date() ishlatildi
     );
-    return !currentOrNextMonthPaid && students.find((s) => s.id === studentId);
+    return !currentOrNextMonthPaid && studentResults.find((s) => s.id === studentId);
   };
 
   const calculateTotalAmount = () => {
@@ -654,17 +744,7 @@ function Payments() {
     }
   };
 
-  const filteredPayments = payments.filter((payment) => {
-    const matchesSearch = `${payment.student?.first_name || ""} ${payment.student?.last_name || ""}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-
-    const matchesMonth = monthFilter === "all" || payment.for_which_month === monthFilter;
-    const matchesYear = selectedPaymentYear === "all" ||
-      new Date(payment.created_at).getFullYear().toString() === selectedPaymentYear;
-
-    return matchesSearch && matchesMonth && matchesYear;
-  });
+  const filteredPayments = payments
 
   useEffect(() => {
     if (formData.pupil_id && groups.length > 0) {
@@ -696,7 +776,7 @@ function Payments() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [paymentsPagination.page, searchTerm, selectedPaymentYear, monthFilter]);
 
   useEffect(() => {
     if (studentSearch) {
@@ -886,6 +966,19 @@ function Payments() {
                 {/* <option value="all">Barcha oylar (sekin yuklanadi)</option> */}
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">O'quvchi qidirish</label>
+              <input
+                type="text"
+                value={unpaidSearchInput}
+                onChange={(e) => {
+                  setUnpaidSearchInput(e.target.value);
+                  setUnpaidPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                placeholder="Ism yoki telefon..."
+                className="w-64 px-3 py-2 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+              />
+            </div>
           </div>
 
           {/* ← Jadval shu yerdan boshlanadi */}
@@ -1009,6 +1102,33 @@ function Payments() {
                     ))}
                   </tbody>
                 </table>
+                {unpaidPagination.totalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() =>
+                        setUnpaidPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+                      }
+                      disabled={!unpaidPagination.hasPrevPage}
+                      className="px-4 py-2 rounded-lg border disabled:opacity-50 bg-white"
+                    >
+                      Oldingi
+                    </button>
+
+                    <span className="text-sm text-gray-700">
+                      {unpaidPagination.page} / {unpaidPagination.totalPages}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        setUnpaidPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                      }
+                      disabled={!unpaidPagination.hasNextPage}
+                      className="px-4 py-2 rounded-lg border disabled:opacity-50 bg-white"
+                    >
+                      Keyingi
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1373,30 +1493,28 @@ function Payments() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                    onFocus={() => setShowDropdown(true)}
-                    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                    className="input"
+                    style={{ width: "300px" }}
                     placeholder="O'quvchi ismini kiriting..."
-                    disabled={students.length === 0}
+                    value={paymentSearchInput}
+                    onChange={(e) => setPaymentSearchInput(e.target.value)}
                   />
                   {showDropdown && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-md max-h-56 overflow-y-auto z-10">
-                      {filteredStudents.length > 0 ? (
-                        filteredStudents.map((student) => (
+                      {studentLoading ? (
+                        <div className="px-3 py-2 text-gray-500">Yuklanmoqda...</div>
+                      ) : studentResults.length > 0 ? (
+                        studentResults.map((student) => (
                           <div
                             key={student.id}
                             className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                             onMouseDown={() => handleStudentSelect(student)}
                           >
-                            {`${student.first_name} ${student.last_name}`}
+                            {student.first_name} {student.last_name}
                           </div>
                         ))
                       ) : (
-                        <div className="px-3 py-2 text-gray-500">
-                          O'quvchi topilmadi
-                        </div>
+                        <div className="px-3 py-2 text-gray-500">O'quvchi topilmadi</div>
                       )}
                     </div>
                   )}
@@ -1731,8 +1849,8 @@ function Payments() {
               className="input"
               style={{ width: "300px" }}
               placeholder="O'quvchi ismini kiriting..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={paymentSearchInput}
+              onChange={(e) => setPaymentSearchInput(e.target.value)}
             />
 
             <select
@@ -1846,6 +1964,33 @@ function Payments() {
             )}
           </tbody>
         </table>
+        {paymentsPagination.totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <button
+              onClick={() =>
+                setPaymentsPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+              }
+              disabled={!paymentsPagination.hasPrevPage}
+              className="px-4 py-2 rounded-lg border disabled:opacity-50"
+            >
+              Oldingi
+            </button>
+
+            <span className="text-sm text-gray-600">
+              {paymentsPagination.page} / {paymentsPagination.totalPages}
+            </span>
+
+            <button
+              onClick={() =>
+                setPaymentsPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+              }
+              disabled={!paymentsPagination.hasNextPage}
+              className="px-4 py-2 rounded-lg border disabled:opacity-50"
+            >
+              Keyingi
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
