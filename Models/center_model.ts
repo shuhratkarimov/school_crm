@@ -11,9 +11,6 @@ Center.init(
     address: { type: DataTypes.STRING, allowNull: false },
     owner: { type: DataTypes.STRING, allowNull: false },
     phone: { type: DataTypes.STRING, allowNull: false },
-    login: { type: DataTypes.STRING, allowNull: false },
-    password: { type: DataTypes.STRING, allowNull: false },
-
     paymentDate: { type: DataTypes.DATE, allowNull: true },
     status: { type: DataTypes.ENUM("blocked", "active"), allowNull: true },
 

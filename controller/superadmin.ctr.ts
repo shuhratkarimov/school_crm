@@ -156,9 +156,9 @@ async function assignDirector(req: Request, res: Response, next: NextFunction) {
 
     try {
         const { centerId } = req.params;
-        const { directorId } = req.body;
+        const { director_id } = req.body;
 
-        const user = await User.findByPk(directorId, { transaction: t });
+        const user = await User.findByPk(director_id, { transaction: t });
         if (!user) {
             await t.rollback();
             return next(BaseError.BadRequest(404, "User not found"));
@@ -166,16 +166,16 @@ async function assignDirector(req: Request, res: Response, next: NextFunction) {
 
         await User.update(
             { role: "director", branch_id: null },
-            { where: { id: directorId }, transaction: t }
+            { where: { id: director_id }, transaction: t }
         );
 
         const [updated] = await Center.update(
-            { director_id: directorId },
+            { director_id: director_id },
             { where: { id: centerId }, transaction: t }
         );
 
         await UserSettings.findOrCreate({
-            where: { user_id: directorId },
+            where: { user_id: director_id },
             defaults: {
                 email_notifications: true,
                 push_notifications: true,
@@ -381,8 +381,8 @@ async function fastRegisterUserBySuperadmin(req: Request, res: Response, next: N
             verification_code: 0
         });
         res.status(201).json({ message: "User created successfully", user });
-    } catch (error) {
-        return next(BaseError.BadRequest(400, "User not created"))
+    } catch (error: any) {
+        return next(BaseError.BadRequest(400, error.message))
     }
 }
 async function updateUserBySuperadmin(req: Request, res: Response, next: NextFunction) {
