@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import TeacherSidebar from "../components/TeacherSidebar";
 import TeacherBottomNav from "../components/TeacherBottomNav";
-import FeedBackModal from "../components/FeedBackModal";
+import FeedbackModal from "../components/FeedbackModal";
 
 function TeacherLayout() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -86,7 +86,7 @@ function TeacherLayout() {
 
       <TeacherBottomNav onSupportClick={() => setFeedbackOpen(true)} />
 
-      <FeedBackModal
+      <FeedbackModal
         open={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}
         senderType="teacher"
