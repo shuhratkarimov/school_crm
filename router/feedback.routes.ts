@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createFeedbackByAdmin, createFeedbackByTeacher, getFeedbacksBySuperadmin, markFeedbackAsResolved, markFeedbackAsViewed, getMyTeacherFeedbacks } from "../controller/feedback.ctr";
+import { createFeedbackByAdmin, createFeedbackByTeacher, getFeedbacksBySuperadmin, markFeedbackAsResolved, markFeedbackAsViewed, getMyTeacherFeedbacks, getMyAdminFeedbacks } from "../controller/feedback.ctr";
 import { authMiddleware } from "../middlewares/auth-guard.middleware";
 import { teacherAuthMiddleware } from "../middlewares/teacher-auth.middleware";
 import { superadminMiddleware } from "../middlewares/admin.middleware";
@@ -12,10 +12,16 @@ router.get("/get_feedbacks", authMiddleware, superadminMiddleware, getFeedbacksB
 router.put("/set_feedback_viewed", authMiddleware, superadminMiddleware, markFeedbackAsViewed)
 router.put("/set_feedback_resolved", authMiddleware, superadminMiddleware, markFeedbackAsResolved)
 router.get(
-    "/feedbacks/teacher/my",
-    teacherAuthMiddleware,
-    getMyTeacherFeedbacks
-  );
+  "/feedbacks/teacher/my",
+  teacherAuthMiddleware,
+  getMyTeacherFeedbacks
+);
+
+router.get(
+  "/feedbacks/admin/my",
+  authMiddleware,
+  getMyAdminFeedbacks
+);
 export {
-    router
-};  
+  router
+}; 

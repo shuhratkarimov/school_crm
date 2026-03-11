@@ -206,6 +206,36 @@ async function getMyTeacherFeedbacks(
     }
 }
 
+
+async function getMyAdminFeedbacks(
+    req: any,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    try {
+        if (!req.user?.id) {
+            res.status(401).json({
+                message: "User aniqlanmadi",
+            });
+            return;
+        }
+
+        const feedbacks = await Feedback.findAll({
+            where: {
+                sender_id: req.user.id,
+                sender_type: "user",
+            },
+            order: [["created_at", "DESC"]],
+        });
+
+        res.status(200).json({
+            feedbacks,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 async function markFeedbackAsResolved(
     req: Request,
     res: Response,
@@ -253,4 +283,5 @@ export {
     markFeedbackAsViewed,
     getFeedbacksBySuperadmin,
     getMyTeacherFeedbacks,
+    getMyAdminFeedbacks,
 };

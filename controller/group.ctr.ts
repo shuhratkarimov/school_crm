@@ -356,6 +356,11 @@ async function getOneTeacherGroup(
           as: "groupSchedules", // Yangi alias
           include: [{ model: Room, as: "room", attributes: ["id", "name"] }],
         },
+        {
+          model: Room,
+          as: "room",
+          attributes: ["id", "name", "capacity"],
+        },
       ],
     });
 

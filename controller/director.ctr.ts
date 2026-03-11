@@ -515,14 +515,11 @@ async function getDashboardStats(req: Request, res: Response, next: NextFunction
             },
         });
 
-        console.log(uzMonth);
-        
-
         const totalRevenuePromise = Payment.sum("payment_amount", {
             where: {
                 ...whereScope,
                 // shouldBeConsideredAsPaid: true,
-                for_which_month: uzMonth,
+                // for_which_month: uzMonth,
                 created_at: {
                     [Op.gte]: currentRange.start,
                     [Op.lt]: currentRange.end,
@@ -534,7 +531,7 @@ async function getDashboardStats(req: Request, res: Response, next: NextFunction
             where: {
                 ...whereScope,
                 // shouldBeConsideredAsPaid: true,
-                for_which_month: prevUzMonth,
+                // for_which_month: prevUzMonth,
                 created_at: {
                     [Op.gte]: prevRange.start,
                     [Op.lt]: prevRange.end,
@@ -558,8 +555,8 @@ async function getDashboardStats(req: Request, res: Response, next: NextFunction
         const prevPaidCountPromise = Payment.count({
             where: {
                 ...whereScope,
-                shouldBeConsideredAsPaid: true,
-                for_which_month: prevUzMonth,
+                // shouldBeConsideredAsPaid: true,
+                // for_which_month: prevUzMonth,
             },
         });
 
