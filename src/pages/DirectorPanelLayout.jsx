@@ -18,9 +18,7 @@ import {
   Moon,
   Globe,
   Bell,
-  UserCircle,
   Search,
-  Home,
   BookOpen,
   DollarSign,
   TrendingUp,
@@ -28,7 +26,7 @@ import {
   CheckCheck,
   TestTube
 } from "lucide-react";
-import API_URL from "../conf/api";
+import API_URL, { SOCKET_URL } from "../conf/api";
 import { io } from "socket.io-client";
 
 export default function DirectorPanelLayout() {
@@ -110,9 +108,10 @@ export default function DirectorPanelLayout() {
     if (!context?.user?.id) return;
 
     if (!socketRef.current) {
-      socketRef.current = io(API_URL, {
+      socketRef.current = io(SOCKET_URL, {
         withCredentials: true,
         transports: ["websocket", "polling"],
+        path: "/socket.io/",
       });
     }
 

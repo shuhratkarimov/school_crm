@@ -26,7 +26,8 @@ import {
   X,
   Send,
   Loader2,
-  Headphones
+  Headphones,
+  Book
 } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import API_URL from "../conf/api";
@@ -56,7 +57,7 @@ function TeacherDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
   const [showSupportModal, setShowSupportModal] = useState(false);
-  
+
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) setGreeting("Xayrli tong");
@@ -166,9 +167,9 @@ function TeacherDashboard() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 rounded-2xl shadow-lg">
                 {greeting.includes("tong") ? (
@@ -189,13 +190,6 @@ function TeacherDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-300">
-                <Clock className="w-5 h-5 text-indigo-600" />
-                <span className="text-lg font-semibold text-gray-800">
-                  {currentTime.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-              </div>
-
               <button
                 onClick={() => setShowSupportModal(true)}
                 className="hidden md:flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-white shadow hover:shadow-lg transition"
@@ -209,90 +203,76 @@ function TeacherDashboard() {
 
         {/* Welcome Banner */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl p-6 mb-8 relative overflow-hidden"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-5 text-white mb-6 shadow-lg"
         >
-          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 translate-y-16"></div>
+          {/* Background blur shapes */}
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-white/10 blur-xl"></div>
+          <div className="absolute -bottom-12 -left-12 h-28 w-28 rounded-full bg-white/10 blur-xl"></div>
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="relative z-10 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">📚 Bugungi darslar</h2>
-              <p className="opacity-90 flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                Sizda {sortedGroups.filter(group => getTodayStatus(group)).length} ta dars bor
+              <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <Book className="w-5 h-5 text-white" /> Bugungi darslar
+              </h2>
+
+              <p className="mt-1 flex items-center gap-2 text-sm opacity-90">
+                Sizda{" "}
+                <span className="font-semibold">
+                  {sortedGroups.filter((group) => getTodayStatus(group)).length}
+                </span>{" "}
+                ta dars bor
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 bg-white rounded-full animate-pulse"
-                  style={{ animationDelay: `${i * 0.2}s` }}
-                />
-              ))}
+
+            {/* Animated dots */}
+            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-300">
+              <Clock className="w-5 h-5 text-indigo-600" />
+              <span className="text-lg font-semibold text-gray-800">
+                {currentTime.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+              </span>
             </div>
           </div>
         </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-2 mb-5">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-300"
+            transition={{ duration: 0.25, delay: 0.1 }}
+            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-3 rounded-xl">
-                <GraduationCap className="w-6 h-6 text-blue-600" />
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <GraduationCap className="h-5 w-5 text-blue-600" />
               </div>
-              <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
-                Faol
-              </span>
+
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{stats.activeGroups}</h3>
+                <p className="text-sm text-gray-500">Guruhlar</p>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-1">{stats.activeGroups}</h3>
-            <p className="text-gray-600 flex items-center gap-1">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              Jami guruhlar
-            </p>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-300"
+            transition={{ duration: 0.25, delay: 0.15 }}
+            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-gradient-to-br from-green-100 to-green-200 p-3 rounded-xl">
-                <Users className="w-6 h-6 text-green-600" />
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50">
+                <Users className="h-5 w-5 text-green-600" />
               </div>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-1">{stats.totalStudents}</h3>
-            <p className="text-gray-600">Jami o'quvchilar</p>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-300 sm:col-span-2 lg:col-span-1"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-gradient-to-br from-purple-100 to-purple-200 p-3 rounded-xl">
-                <Star className="w-6 h-6 text-purple-600" />
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{stats.totalStudents}</h3>
+                <p className="text-sm text-gray-500">O‘quvchilar</p>
               </div>
-              <span className="text-xs font-medium px-2 py-1 bg-purple-100 text-purple-600 rounded-full">
-                Bugun
-              </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-1">
-              {sortedGroups.filter(group => getTodayStatus(group)).length}
-            </h3>
-            <p className="text-gray-600">Bugungi darslar</p>
           </motion.div>
         </div>
 

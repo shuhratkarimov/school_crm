@@ -153,14 +153,14 @@ function Login({ setIsAuthenticated }) {
         <form onSubmit={handleSubmit} className="space-y-4 w-full">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              Elektron pochta
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
-              placeholder="Email kiriting"
+              className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+              placeholder="Elektron pochta kiriting"
               autoComplete="username"
               required
             />
@@ -176,7 +176,7 @@ function Login({ setIsAuthenticated }) {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
                 placeholder="Parolni kiriting"
                 autoComplete="current-password"
                 required
@@ -195,7 +195,7 @@ function Login({ setIsAuthenticated }) {
           <motion.button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center disabled:opacity-60"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center disabled:opacity-60"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
           >

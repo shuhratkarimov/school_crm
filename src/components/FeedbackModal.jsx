@@ -44,12 +44,15 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
   };
 
   const fetchMyFeedbacks = async () => {
-    if (senderType !== "teacher") return;
-
     try {
       setHistoryLoading(true);
 
-      const response = await fetch(`${API_URL}/feedbacks/teacher/my`, {
+      const endpoint =
+        senderType === "teacher"
+          ? `${API_URL}/feedbacks/teacher/my`
+          : `${API_URL}/feedbacks/admin/my`;
+
+      const response = await fetch(endpoint, {
         method: "GET",
         credentials: "include",
       });
@@ -69,7 +72,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
   };
 
   useEffect(() => {
-    if (open && senderType === "teacher") {
+    if (open) {
       fetchMyFeedbacks();
     }
   }, [open, senderType]);
@@ -125,12 +128,8 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
       toast.success("Xabaringiz muvaffaqiyatli yuborildi");
       resetForm();
 
-      if (senderType === "teacher") {
-        await fetchMyFeedbacks();
-        setActiveTab("history");
-      } else {
-        onClose?.();
-      }
+      await fetchMyFeedbacks();
+      setActiveTab("history");
     } catch (err) {
       toast.error(err?.message || "Feedback yuborishda xatolik yuz berdi");
     } finally {
@@ -212,35 +211,31 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
           </button>
         </div>
 
-        {senderType === "teacher" && (
-          <div className="px-5 pt-4">
-            <div className="grid grid-cols-2 gap-2 bg-gray-100 rounded-2xl p-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab("create")}
-                className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
-                  activeTab === "create"
-                    ? "bg-white text-indigo-700 shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
+        <div className="px-5 pt-4">
+          <div className="grid grid-cols-2 gap-2 bg-gray-100 rounded-2xl p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("create")}
+              className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${activeTab === "create"
+                ? "bg-white text-indigo-700 shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
                 }`}
-              >
-                Yangi murojaat
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("history")}
-                className={`rounded-xl px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2 ${
-                  activeTab === "history"
-                    ? "bg-white text-indigo-700 shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
+            >
+              Yangi murojaat
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("history")}
+              className={`rounded-xl px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2 ${activeTab === "history"
+                ? "bg-white text-indigo-700 shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
                 }`}
-              >
-                <History size={16} />
-                Mening murojaatlarim
-              </button>
-            </div>
+            >
+              <History size={16} />
+              Mening murojaatlarim
+            </button>
           </div>
-        )}
+        </div>
 
         {activeTab === "create" ? (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -254,11 +249,10 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   onClick={() =>
                     setFormData((prev) => ({ ...prev, type: "feedback" }))
                   }
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 transition ${
-                    formData.type === "feedback"
-                      ? "border-blue-600 bg-blue-50 text-blue-700"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
+                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 transition ${formData.type === "feedback"
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-gray-200 hover:bg-gray-50"
+                    }`}
                 >
                   <MessageSquareWarning size={18} />
                   Taklif
@@ -267,11 +261,10 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, type: "bug" }))}
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 transition ${
-                    formData.type === "bug"
-                      ? "border-red-600 bg-red-50 text-red-700"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
+                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 transition ${formData.type === "bug"
+                    ? "border-red-600 bg-red-50 text-red-700"
+                    : "border-gray-200 hover:bg-gray-50"
+                    }`}
                 >
                   <Bug size={18} />
                   Xatolik
@@ -347,44 +340,40 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 <button
                   type="button"
                   onClick={() => setStatusFilter("all")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${
-                    statusFilter === "all"
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
+                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "all"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-700"
+                    }`}
                 >
                   Barchasi
                 </button>
                 <button
                   type="button"
                   onClick={() => setStatusFilter("new")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${
-                    statusFilter === "new"
-                      ? "bg-blue-600 text-white"
-                      : "bg-blue-50 text-blue-700"
-                  }`}
+                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "new"
+                    ? "bg-blue-600 text-white"
+                    : "bg-blue-50 text-blue-700"
+                    }`}
                 >
                   Yangi
                 </button>
                 <button
                   type="button"
                   onClick={() => setStatusFilter("reviewed")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${
-                    statusFilter === "reviewed"
-                      ? "bg-amber-600 text-white"
-                      : "bg-amber-50 text-amber-700"
-                  }`}
+                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "reviewed"
+                    ? "bg-amber-600 text-white"
+                    : "bg-amber-50 text-amber-700"
+                    }`}
                 >
                   Ko‘rilgan
                 </button>
                 <button
                   type="button"
                   onClick={() => setStatusFilter("resolved")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${
-                    statusFilter === "resolved"
-                      ? "bg-green-600 text-white"
-                      : "bg-green-50 text-green-700"
-                  }`}
+                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "resolved"
+                    ? "bg-green-600 text-white"
+                    : "bg-green-50 text-green-700"
+                    }`}
                 >
                   Hal qilingan
                 </button>

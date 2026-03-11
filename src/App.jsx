@@ -83,9 +83,8 @@ function App() {
         await checkCPanelAuth();
       } else if (hostname === "register.intellectualprogress.uz") {
         if (location.pathname.startsWith("/student-registration")) {
-          navigate(`/student-registration${location.search}`);
+          setLoading(false)
         }
-        setLoading(false);
       } else {
         setLoading(false);
       }
@@ -278,7 +277,7 @@ function App() {
               path="/"
               element={
                 hostname === "register.intellectualprogress.uz" ? (
-                  <Navigate to="/student-registration/:token" />
+                  <LottieNotFound />
                 ) : hostname === "admin.intellectualprogress.uz" ? (
                   <PrivateRoute isAuthenticated={isAuthenticated}>
                     <Navigate to="/dashboard" />
