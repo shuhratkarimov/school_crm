@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Shield, Building2, Users, Pencil, Trash, Plus, KeyRound,
   UserCog, School, Briefcase, ChevronDown, ChevronUp,
-  X, Save, Search, AlertTriangle, UserPlus
+  X, Save, Search, AlertTriangle, UserPlus,
+  MessageSquare, Bug, Eye, CheckCircle2, Clock3
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import API_URL from "../conf/api";
@@ -20,6 +21,10 @@ export default function SuperAdmin() {
   const [centers, setCenters] = useState([]);
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState("all");
 
   // Modals
   const [isEditMode, setIsEditMode] = useState(false);
@@ -76,6 +81,28 @@ export default function SuperAdmin() {
       toast.error(err.message || "Server bilan bog'lanib bo'lmadi");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFeedbacks = async () => {
+    try {
+      setFeedbackLoading(true);
+
+      const res = await fetch(`${API_URL}/get_feedbacks`, {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Feedbacklarni yuklab bo'lmadi");
+      }
+
+      const data = await res.json();
+      console.log(data);
+      setFeedbacks(data.feedbacks || data || []);
+    } catch (err) {
+      toast.error(err.message || "Feedbacklarni yuklashda xato");
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -238,6 +265,7 @@ export default function SuperAdmin() {
 
   useEffect(() => {
     fetchAllData();
+    fetchFeedbacks();
   }, []);
   // ─────────────────────────────────────────────
   //              CRUD OPERATIONS
@@ -392,6 +420,97 @@ export default function SuperAdmin() {
       c.owner?.toLowerCase().includes(q)
     );
   }, [centers, searchQuery]);
+
+  const filteredFeedbacks = useMemo(() => {
+    let result = [...feedbacks];
+
+    if (feedbackStatusFilter !== "all") {
+      result = result.filter((f) => f.status === feedbackStatusFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (f) =>
+          f.subject?.toLowerCase().includes(q) ||
+          f.message?.toLowerCase().includes(q) ||
+          f.type?.toLowerCase().includes(q) ||
+          f.sender_type?.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [feedbacks, feedbackStatusFilter, searchQuery]);
+
+  const markFeedbackViewed = async (id) => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_URL}/set_feedback_viewed`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || "Feedback ko'rildi qilib bo'lmadi");
+      }
+
+      toast.success(data.message || "Feedback ko'rildi deb belgilandi");
+
+      setFeedbacks((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: "reviewed" } : item
+        )
+      );
+
+      if (selectedFeedback?.id === id) {
+        setSelectedFeedback((prev) => ({ ...prev, status: "reviewed" }));
+      }
+    } catch (err) {
+      toast.error(err.message || "Xatolik yuz berdi");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markFeedbackResolved = async (id) => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_URL}/set_feedback_resolved`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || "Feedback hal qilindi qilib bo'lmadi");
+      }
+
+      toast.success(data.message || "Feedback hal qilindi deb belgilandi");
+
+      setFeedbacks((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: "resolved" } : item
+        )
+      );
+
+      if (selectedFeedback?.id === id) {
+        setSelectedFeedback((prev) => ({ ...prev, status: "resolved" }));
+      }
+    } catch (err) {
+      toast.error(err.message || "Xatolik yuz berdi");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ─────────────────────────────────────────────
   //              RENDER
@@ -582,7 +701,238 @@ export default function SuperAdmin() {
             </div>
           )}
         </div>
+        <div className="bg-white rounded-2xl shadow mt-10 mb-10 overflow-hidden">
+          <div className="p-6 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <MessageSquare size={22} className="text-emerald-600" />
+              <h2 className="text-xl font-semibold">Feedbacklar</h2>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFeedbackStatusFilter("all")}
+                className={`px-4 py-2 rounded-lg text-sm ${feedbackStatusFilter === "all"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-700"
+                  }`}
+              >
+                Barchasi
+              </button>
+              <button
+                onClick={() => setFeedbackStatusFilter("new")}
+                className={`px-4 py-2 rounded-lg text-sm ${feedbackStatusFilter === "new"
+                  ? "bg-blue-600 text-white"
+                  : "bg-blue-50 text-blue-700"
+                  }`}
+              >
+                Yangi
+              </button>
+              <button
+                onClick={() => setFeedbackStatusFilter("reviewed")}
+                className={`px-4 py-2 rounded-lg text-sm ${feedbackStatusFilter === "reviewed"
+                  ? "bg-amber-600 text-white"
+                  : "bg-amber-50 text-amber-700"
+                  }`}
+              >
+                Ko‘rilgan
+              </button>
+              <button
+                onClick={() => setFeedbackStatusFilter("resolved")}
+                className={`px-4 py-2 rounded-lg text-sm ${feedbackStatusFilter === "resolved"
+                  ? "bg-green-600 text-white"
+                  : "bg-green-50 text-green-700"
+                  }`}
+              >
+                Hal qilingan
+              </button>
+            </div>
+          </div>
+
+          {feedbackLoading ? (
+            <div className="p-10 text-center text-gray-500">Feedbacklar yuklanmoqda...</div>
+          ) : filteredFeedbacks.length === 0 ? (
+            <div className="p-10 text-center text-gray-500">
+              Hozircha feedbacklar yo‘q
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filteredFeedbacks.map((feedback) => (
+                <div
+                  key={feedback.id}
+                  className="p-5 hover:bg-gray-50 transition cursor-pointer"
+                  onClick={() => setSelectedFeedback(feedback)}
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${feedback.type === "bug"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-indigo-100 text-indigo-700"
+                            }`}
+                        >
+                          {feedback.type === "bug" ? <Bug size={14} /> : <MessageSquare size={14} />}
+                          {feedback.type === "bug" ? "Bug" : "Feedback"}
+                        </span>
+
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${feedback.status === "new"
+                            ? "bg-blue-100 text-blue-700"
+                            : feedback.status === "reviewed"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-green-100 text-green-700"
+                            }`}
+                        >
+                          {feedback.status === "new" ? (
+                            <Clock3 size={14} />
+                          ) : feedback.status === "reviewed" ? (
+                            <Eye size={14} />
+                          ) : (
+                            <CheckCircle2 size={14} />
+                          )}
+                          {feedback.status === "new"
+                            ? "Yangi"
+                            : feedback.status === "reviewed"
+                              ? "Ko‘rilgan"
+                              : "Hal qilingan"}
+                        </span>
+
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                          {feedback.sender_type === "teacher" ? "Teacher" : "User"}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-semibold text-gray-800 truncate">
+                        {feedback.subject}
+                      </h3>
+
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                        {feedback.message}
+                      </p>
+
+                      <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
+                        <span>ID: {feedback.id}</span>
+                        <span>
+                          Sana: {new Date(feedback.created_at).toLocaleString("ru-RU")}
+                        </span>
+                        <span>
+                          Filial: {feedback.branch.name || "—"}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {feedback.status === "new" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markFeedbackViewed(feedback.id);
+                          }}
+                          className="px-4 py-2 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 text-sm"
+                        >
+                          Ko‘rildi
+                        </button>
+                      )}
+
+                      {feedback.status !== "resolved" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markFeedbackResolved(feedback.id);
+                          }}
+                          className="px-4 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 text-sm"
+                        >
+                          Hal qilindi
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {selectedFeedback && (
+        <Modal
+          title="Feedback ma'lumotlari"
+          isOpen={!!selectedFeedback}
+          onClose={() => setSelectedFeedback(null)}
+        >
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-2">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${selectedFeedback.type === "bug"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-indigo-100 text-indigo-700"
+                  }`}
+              >
+                {selectedFeedback.type === "bug" ? "Bug" : "Feedback"}
+              </span>
+
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${selectedFeedback.status === "new"
+                  ? "bg-blue-100 text-blue-700"
+                  : selectedFeedback.status === "reviewed"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-green-100 text-green-700"
+                  }`}
+              >
+                {selectedFeedback.status === "new"
+                  ? "Yangi"
+                  : selectedFeedback.status === "reviewed"
+                    ? "Ko‘rilgan"
+                    : "Hal qilingan"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InfoItem label="Mavzu" value={selectedFeedback.subject} />
+              <InfoItem label="Yuboruvchi turi" value={selectedFeedback.sender_type} />
+              <InfoItem label="Filial" value={selectedFeedback.branch.name || "—"} />
+              <InfoItem label="Yuboruvchi ismi" value={selectedFeedback.sender_type === "user" ? selectedFeedback.userSender?.username : selectedFeedback.teacherSender?.username || "—"} />
+              <InfoItem
+                label="Sana"
+                value={new Date(selectedFeedback.created_at).toLocaleString("ru-RU")}
+              />
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-gray-500 mb-2">Xabar matni</p>
+              <p className="text-gray-800 whitespace-pre-wrap leading-7">
+                {selectedFeedback.message}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+              {selectedFeedback.status === "new" && (
+                <button
+                  onClick={() => markFeedbackViewed(selectedFeedback.id)}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl"
+                >
+                  Ko‘rildi deb belgilash
+                </button>
+              )}
+
+              {selectedFeedback.status !== "resolved" && (
+                <button
+                  onClick={() => markFeedbackResolved(selectedFeedback.id)}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl"
+                >
+                  Hal qilindi deb belgilash
+                </button>
+              )}
+
+              <button
+                onClick={() => setSelectedFeedback(null)}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 py-3 rounded-xl"
+              >
+                Yopish
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
 
       {/* Yangi User Modal */}

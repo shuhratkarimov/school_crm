@@ -8,11 +8,6 @@ import {
   Pen,
   Trash2,
   Search,
-  Calendar,
-  BookOpen,
-  FileText,
-  CreditCard,
-  LogOut,
   X,
   Users,
   BarChart3,
@@ -20,19 +15,15 @@ import {
   UserX,
   TestTubeDiagonal,
   Filter,
-  Download,
   Printer,
   Award,
-  TrendingUp,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
-  CheckCircle,
-  Clock
+  FileText,
+  Info,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import LottieLoading from "../components/Loading";
-import TeacherSidebar from "../components/TeacherSidebar";
 import API_URL from "../conf/api";
 
 const monthsInUzbek = {
@@ -45,7 +36,6 @@ function TeacherTestResults() {
   const [groups, setGroups] = useState([]);
   const [groupStudents, setGroupStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [detailModal, setDetailModal] = useState(false);
@@ -61,7 +51,6 @@ function TeacherTestResults() {
   const [searchTerm, setSearchTerm] = useState("");
   const [monthFilter, setMonthFilter] = useState(new Date().getMonth() + 1);
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
-  const [activeMenu, setActiveMenu] = useState("test-results");
   const [smsSending, setSmsSending] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [typeFilter, setTypeFilter] = useState("all");
@@ -99,7 +88,6 @@ function TeacherTestResults() {
         });
       }
     } catch (err) {
-      setError("Ma'lumotlarni olishda xatolik!");
       toast.error(`Ma'lumotlarni olishda xatolik: ${err.message}`);
     } finally {
       setLoading(false);
@@ -186,7 +174,7 @@ function TeacherTestResults() {
   const addTestResults = async (e) => {
     e.preventDefault();
     if (!selectedGroup) return toast.error("Guruh tanlanmagan!");
-    
+
     const totalStudents = groupStudents.length;
     const attendedStudents = Object.values(testFormData.scores).filter((score) => score !== "").length;
     const scores = Object.values(testFormData.scores).filter((score) => score !== "").map(Number);
@@ -313,7 +301,7 @@ function TeacherTestResults() {
         </p>
         <div className="flex gap-3">
           <button
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-xl transition-colors"
             onClick={() => {
               deleteTest(id);
               toast.dismiss();
@@ -322,7 +310,7 @@ function TeacherTestResults() {
             O'chirish
           </button>
           <button
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-xl transition-colors"
             onClick={() => toast.dismiss()}
           >
             Bekor qilish
@@ -363,10 +351,8 @@ function TeacherTestResults() {
   if (loading) return <LottieLoading />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col md:flex-row">
-      <TeacherSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-
-      <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+    <>
+      <div className="space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -391,7 +377,7 @@ function TeacherTestResults() {
             className="bg-white rounded-xl p-4 shadow-sm border border-blue-100"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-blue-100 p-2 rounded-lg">
+              <div className="bg-blue-100 p-2 rounded-xl">
                 <FileText className="w-5 h-5 text-blue-600" />
               </div>
               <div>
@@ -408,7 +394,7 @@ function TeacherTestResults() {
             className="bg-white rounded-xl p-4 shadow-sm border border-green-100"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-green-100 p-2 rounded-lg">
+              <div className="bg-green-100 p-2 rounded-xl">
                 <BarChart3 className="w-5 h-5 text-green-600" />
               </div>
               <div>
@@ -425,7 +411,7 @@ function TeacherTestResults() {
             className="bg-white rounded-xl p-4 shadow-sm border border-purple-100"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-purple-100 p-2 rounded-lg">
+              <div className="bg-purple-100 p-2 rounded-xl">
                 <Award className="w-5 h-5 text-purple-600" />
               </div>
               <div>
@@ -459,7 +445,7 @@ function TeacherTestResults() {
                       {tests.filter(t => t.group_id === group.id).length} ta test
                     </p>
                   </div>
-                  <div className="bg-green-100 p-2 rounded-lg">
+                  <div className="bg-green-100 p-2 rounded-xl">
                     <Plus className="w-5 h-5 text-green-600" />
                   </div>
                 </div>
@@ -537,7 +523,7 @@ function TeacherTestResults() {
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="text-sm border rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-indigo-500"
+                    className="text-sm border rounded-xl px-3 py-1.5 focus:ring-1 focus:ring-indigo-500"
                   >
                     <option value="all">Barchasi</option>
                     <option value="Yozma">Yozma</option>
@@ -592,11 +578,10 @@ function TeacherTestResults() {
                       <td className="px-6 py-4 font-medium text-gray-800">{test.group?.group_subject}</td>
                       <td className="px-6 py-4">#{test.test_number}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          test.test_type === 'Yozma' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-xl text-xs font-medium ${test.test_type === 'Yozma'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-green-100 text-green-800'
+                          }`}>
                           {test.test_type}
                         </span>
                       </td>
@@ -611,7 +596,7 @@ function TeacherTestResults() {
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                            className="p-2 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               openEditModal(test);
@@ -622,7 +607,7 @@ function TeacherTestResults() {
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                            className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               showDeleteToast(test.id);
@@ -654,11 +639,10 @@ function TeacherTestResults() {
                       <h3 className="font-semibold text-gray-800">{test.group?.group_subject}</h3>
                       <p className="text-sm text-gray-500">Test #{test.test_number}</p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      test.test_type === 'Yozma' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${test.test_type === 'Yozma'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-green-100 text-green-800'
+                      }`}>
                       {test.test_type}
                     </span>
                   </div>
@@ -678,7 +662,7 @@ function TeacherTestResults() {
 
                   <div className="flex gap-2 pt-2 border-t border-gray-100">
                     <button
-                      className="flex-1 flex items-center justify-center gap-1 text-blue-600 font-medium py-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1 text-blue-600 font-medium py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(test);
@@ -688,7 +672,7 @@ function TeacherTestResults() {
                       Tahrirlash
                     </button>
                     <button
-                      className="flex-1 flex items-center justify-center gap-1 text-red-600 font-medium py-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1 text-red-600 font-medium py-2 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         showDeleteToast(test.id);
@@ -795,9 +779,9 @@ function TeacherTestResults() {
                       O'quvchilar ballari
                     </h3>
 
-                    <div className="space-y-2 max-h-60 overflow-y-auto p-2 border rounded-lg">
+                    <div className="space-y-2 max-h-60 overflow-y-auto p-2 border rounded-xl">
                       {groupStudents.map((student) => (
-                        <div key={student.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div key={student.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-xl">
                           <span className="font-medium text-gray-700">
                             {student.first_name} {student.last_name}
                           </span>
@@ -806,7 +790,7 @@ function TeacherTestResults() {
                             min="0"
                             max="100"
                             placeholder="Ball"
-                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-xl text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             value={testFormData.scores[student.id] || ""}
                             onChange={(e) =>
                               setTestFormData({
@@ -922,9 +906,9 @@ function TeacherTestResults() {
                       O'quvchilar ballari
                     </h3>
 
-                    <div className="space-y-2 max-h-60 overflow-y-auto p-2 border rounded-lg">
+                    <div className="space-y-2 max-h-60 overflow-y-auto p-2 border rounded-xl">
                       {groupStudents.map((student) => (
-                        <div key={student.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div key={student.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-xl">
                           <span className="font-medium text-gray-700">
                             {student.first_name} {student.last_name}
                           </span>
@@ -933,7 +917,7 @@ function TeacherTestResults() {
                             min="0"
                             max="100"
                             placeholder="Ball"
-                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-xl text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             value={editFormData.scores[student.id] || ""}
                             onChange={(e) =>
                               setEditFormData({
@@ -973,13 +957,13 @@ function TeacherTestResults() {
       <AnimatePresence>
         {detailModal && selectedTest && (
           <motion.div
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 "
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[100vh] overflow-hidden"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -1018,11 +1002,10 @@ function TeacherTestResults() {
                       </p>
                       <p className="text-sm">
                         <span className="font-medium text-gray-600">Test turi:</span>{' '}
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${
-                          selectedTest.test_type === 'Yozma' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${selectedTest.test_type === 'Yozma'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-green-100 text-green-800'
+                          }`}>
                           {selectedTest.test_type}
                         </span>
                       </p>
@@ -1090,20 +1073,18 @@ function TeacherTestResults() {
                               {result.student?.first_name} {result.student?.last_name}
                             </td>
                             <td className="p-3">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                result.attended 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${result.attended
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                                }`}>
                                 {result.attended ? 'Qatnashdi' : 'Qatnashmadi'}
                               </span>
                             </td>
                             <td className="p-3">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                result.is_sent 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${result.is_sent
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                                }`}>
                                 {result.is_sent ? 'Yuborilgan' : 'Yuborilmagan'}
                               </span>
                             </td>
@@ -1128,65 +1109,21 @@ function TeacherTestResults() {
                   Yopish
                 </button>
                 <button
-                  className={`px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2 ${
-                    smsSending
-                      ? "bg-green-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-                  }`}
-                  onClick={sendTestSMS}
-                  disabled={smsSending}
+                  className="relative px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center gap-2 opacity-70"
+                  onClick={() => toast("SMS yuborish funksiyasi tez kunda qo‘shiladi 🚀")}
                 >
-                  {smsSending ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Yuborilmoqda...
-                    </>
-                  ) : (
-                    <>
-                      Ota-onalarga SMS yuborish
-                    </>
-                  )}
+                  Ota-onalarga SMS yuborish
+
+                  <span className="absolute -top-2 -right-2 text-[10px] px-2 py-0.5 bg-white text-green-900 rounded-full font-semibold shadow border border-green-700">
+                    Tez kunda!
+                  </span>
                 </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg shadow-lg border-t border-gray-200 p-2 z-40">
-        <div className="flex justify-around items-center">
-          {[
-            { id: "dashboard", label: "Bosh sahifa", icon: BookOpen, path: "/teacher/dashboard" },
-            { id: "test-results", label: "Test natijalari", icon: FileText, path: "/teacher/test-results" },
-            { id: "payments", label: "To'lovlar", icon: CreditCard, path: "/teacher/payments" },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveMenu(item.id);
-                navigate(item.path);
-              }}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
-                activeMenu === item.id
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
-                  : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
-              }`}
-            >
-              <item.icon size={20} />
-              <span className="text-xs">{item.label}</span>
-            </button>
-          ))}
-          <button
-            onClick={() => navigate("/teacher/login")}
-            className="flex flex-col items-center gap-1 p-2 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition"
-          >
-            <LogOut size={20} />
-            <span className="text-xs">Chiqish</span>
-          </button>
-        </div>
-      </nav>
-    </div>
+    </>
   );
 }
 

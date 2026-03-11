@@ -9,7 +9,6 @@ import {
   ChevronDown,
   ChevronUp,
   Home,
-  Calendar,
   User,
   Phone,
   BookOpen,
@@ -19,28 +18,17 @@ import {
   LogOut,
   Coins,
   Wallet,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
   Receipt,
   Printer,
-  Eye,
-  EyeOff,
   CheckCircle,
   XCircle,
-  Clock,
-  Award,
   Users,
-  PieChart,
-  ArrowUpRight,
-  ArrowDownRight,
   Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import LottieLoading from "./Loading";
 import * as XLSX from "xlsx";
-import TeacherSidebar from "./TeacherSidebar";
 import API_URL from "../conf/api";
 
 function PaymentReports() {
@@ -53,7 +41,6 @@ function PaymentReports() {
   const [expandedStudents, setExpandedStudents] = useState({});
   const [showFilters, setShowFilters] = useState(false);
   const [groupFilter, setGroupFilter] = useState("all");
-  const [activeMenu, setActiveMenu] = useState("payments");
   const [stats, setStats] = useState({ total: 0, paid: 0, unpaid: 0, totalAmount: 0 });
   const [viewMode, setViewMode] = useState("table"); // table or grid
 
@@ -281,10 +268,8 @@ function PaymentReports() {
   if (loading) return <LottieLoading />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col md:flex-row">
-      <TeacherSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-
-      <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+    <>
+      <div className="space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -314,7 +299,7 @@ function PaymentReports() {
             className="bg-white rounded-xl p-5 shadow-sm border border-blue-100"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="bg-blue-100 p-2 rounded-lg">
+              <div className="bg-blue-100 p-2 rounded-xl">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
               <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
@@ -332,7 +317,7 @@ function PaymentReports() {
             className="bg-white rounded-xl p-5 shadow-sm border border-green-100"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="bg-green-100 p-2 rounded-lg">
+              <div className="bg-green-100 p-2 rounded-xl">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-600 rounded-full">
@@ -350,7 +335,7 @@ function PaymentReports() {
             className="bg-white rounded-xl p-5 shadow-sm border border-red-100"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="bg-red-100 p-2 rounded-lg">
+              <div className="bg-red-100 p-2 rounded-xl">
                 <XCircle className="w-5 h-5 text-red-600" />
               </div>
               <span className="text-xs font-medium px-2 py-1 bg-red-100 text-red-600 rounded-full">
@@ -368,7 +353,7 @@ function PaymentReports() {
             className="bg-white rounded-xl p-5 shadow-sm border border-purple-100"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="bg-purple-100 p-2 rounded-lg">
+              <div className="bg-purple-100 p-2 rounded-xl">
                 <Wallet className="w-5 h-5 text-purple-600" />
               </div>
               <span className="text-xs font-medium px-2 py-1 bg-purple-100 text-purple-600 rounded-full">
@@ -427,7 +412,7 @@ function PaymentReports() {
           >
             <button
               onClick={() => setViewMode("table")}
-              className={`p-2 rounded-lg transition-all ${viewMode === "table"
+              className={`p-2 rounded-xl transition-all ${viewMode === "table"
                 ? "bg-indigo-100 text-indigo-600"
                 : "text-gray-400 hover:text-gray-600"
                 }`}
@@ -438,7 +423,7 @@ function PaymentReports() {
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-lg transition-all ${viewMode === "grid"
+              className={`p-2 rounded-xl transition-all ${viewMode === "grid"
                 ? "bg-indigo-100 text-indigo-600"
                 : "text-gray-400 hover:text-gray-600"
                 }`}
@@ -831,7 +816,7 @@ function PaymentReports() {
 
                         <button
                           onClick={() => toggleStudentExpansion(student.id)}
-                          className="w-full flex items-center justify-center gap-1 text-indigo-600 font-medium py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                          className="w-full flex items-center justify-center gap-1 text-indigo-600 font-medium py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors"
                         >
                           {expandedStudents[student.id] ? 'Yopish' : 'To\'lov ma\'lumotlari'}
                           {expandedStudents[student.id] ? <ChevronUp size={16} /> : <ChevronRight size={16} />}
@@ -848,7 +833,7 @@ function PaymentReports() {
                               {student.studentPayments?.length > 0 ? (
                                 <div className="space-y-3">
                                   {student.studentPayments.map((p) => (
-                                    <div key={p.id} className="bg-gray-50 p-3 rounded-lg">
+                                    <div key={p.id} className="bg-gray-50 p-3 rounded-xl">
                                       <div className="grid grid-cols-2 gap-2">
                                         <div>
                                           <p className="text-xs text-gray-500">Summa</p>
@@ -896,40 +881,7 @@ function PaymentReports() {
           </p>
         </footer>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg shadow-lg border-t border-gray-200 p-2 z-40">
-        <div className="flex justify-around items-center">
-          {[
-            { id: "dashboard", label: "Bosh sahifa", icon: BookOpen, path: "/teacher/dashboard" },
-            { id: "test-results", label: "Test natijalari", icon: BarChart3, path: "/teacher/test-results" },
-            { id: "payments", label: "To'lovlar", icon: CreditCard, path: "/teacher/payments" },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveMenu(item.id);
-                navigate(item.path);
-              }}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${activeMenu === item.id
-                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
-                : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
-                }`}
-            >
-              <item.icon size={20} />
-              <span className="text-xs">{item.label}</span>
-            </button>
-          ))}
-          <button
-            onClick={() => navigate("/teacher/login")}
-            className="flex flex-col items-center gap-1 p-2 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition"
-          >
-            <LogOut size={20} />
-            <span className="text-xs">Chiqish</span>
-          </button>
-        </div>
-      </nav>
-    </div>
+    </>
   );
 }
 

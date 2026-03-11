@@ -42,6 +42,7 @@ const DirectorDebts = lazy(() => import("./pages/director/Debts.jsx"));
 const DirectorTeachers = lazy(() => import("./pages/director/Teachers.jsx"));
 const DirectorRooms = lazy(() => import("./pages/director/Rooms.jsx"));
 const DirectorSettings = lazy(() => import("./pages/director/Settings.jsx"));
+const TeacherLayout = lazy(() => import("./components/TeacherLayout"));
 
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -322,14 +323,6 @@ function App() {
               }
             />
             <Route
-              path="/teacher/test-results"
-              element={
-                <TeacherRoute isAuthenticated={teacherAuthenticated}>
-                  <TeacherTestResults />
-                </TeacherRoute>
-              }
-            />
-            <Route
               path="/test-results"
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
@@ -341,14 +334,6 @@ function App() {
                     </div>
                   </div>
                 </PrivateRoute>
-              }
-            />
-            <Route
-              path="/teacher/payments"
-              element={
-                <TeacherRoute isAuthenticated={teacherAuthenticated}>
-                  <PaymentReports />
-                </TeacherRoute>
               }
             />
             <Route
@@ -483,22 +468,6 @@ function App() {
               }
             />
             <Route
-              path="/teacher/dashboard"
-              element={
-                <TeacherRoute isAuthenticated={teacherAuthenticated}>
-                  <TeacherDashboard />
-                </TeacherRoute>
-              }
-            />
-            <Route
-              path="/teacher/attendance/:groupId"
-              element={
-                <TeacherRoute isAuthenticated={teacherAuthenticated}>
-                  <TeacherAttendance />
-                </TeacherRoute>
-              }
-            />
-            <Route
               path="/expenses"
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
@@ -579,6 +548,20 @@ function App() {
                 </CPanelRoute>
               }
             />
+            <Route
+              path="/teacher"
+              element={
+                <TeacherRoute isAuthenticated={teacherAuthenticated}>
+                  <TeacherLayout />
+                </TeacherRoute>
+              }
+            >
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="attendance/:groupId" element={<TeacherAttendance />} />
+              <Route path="test-results" element={<TeacherTestResults />} />
+              <Route path="payments" element={<PaymentReports />} />
+            </Route>
             <Route path="*" element={<LottieNotFound />} />
           </Routes>
         </ErrorBoundary>

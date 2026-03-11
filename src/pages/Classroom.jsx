@@ -290,10 +290,10 @@ const RoomManagement = () => {
     ).sort((a, b) => a.start_time.localeCompare(b.start_time));
 
     const cells = [];
-    let currentHour = 5; // 05:00 dan boshlaymiz
+    let currentHour = 9; // 09:00 dan boshlaymiz
     let processedSchedules = new Set(); // Qayta ishlangan darslarni saqlash
 
-    while (currentHour < 21) { // 21:00 gacha
+    while (currentHour < 18) { // 18:00 gacha
       const startHour = currentHour;
       const endHour = startHour + 1;
       const slotStart = startHour * 60;
@@ -457,8 +457,8 @@ const RoomManagement = () => {
                     {room.name}
                   </p>
                   <p style={{ marginBottom: "10px" }}>
-                    <strong>Sig‘im:</strong>
-                    {`${room.capacity} o'quvchi sig'adi` || "Belgilanmagan"}
+                    <strong>Sig‘im:</strong>{" "}
+                    {room.capacity ? `${room.capacity} o'quvchi sig'adi` : "Belgilanmagan"}
                   </p>
                   <p style={{ marginBottom: "10px" }}>
                     <strong>Asosan bo'sh:</strong>
@@ -466,8 +466,8 @@ const RoomManagement = () => {
                   </p>
                   <p style={{ marginBottom: "30px" }}>
                     <strong>Bandlik foizi: </strong>
-                    {room?.occupancyPercentage
-                      ? `${room?.occupancyPercentage}%`
+                    {room?.occupancyPercentage != null
+                      ? `${room.occupancyPercentage}%`
                       : "0%"}
                   </p>
                   <div
@@ -520,8 +520,8 @@ const RoomManagement = () => {
               <thead>
                 <tr>
                   <th style={{ minWidth: "150px" }}>Kun/Soat</th>
-                  {Array.from({ length: 16 }, (_, i) => {
-                    const hour = 5 + i;
+                  {Array.from({ length: 9 }, (_, i) => {
+                    const hour = 9 + i;
                     return (
                       <th key={hour}>
                         {hour.toString().padStart(2, "0")}:00-

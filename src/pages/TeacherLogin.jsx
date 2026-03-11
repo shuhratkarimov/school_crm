@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, LogIn, User, Lock, Sparkles } from "lucide-react";
+import { Eye, EyeOff, LogIn, User, Lock, Sparkles, Book, BookOpenCheck } from "lucide-react";
 import LoginLoading from "../components/LoginLoading";
 import API_URL from "../conf/api";
 
@@ -30,7 +30,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
       if (data.status === "success") {
         setTeacherAuthenticated(true);
         setShowSuccess(true);
-        
+
         setTimeout(() => {
           navigate("/teacher/dashboard");
         }, 1000);
@@ -112,27 +112,19 @@ function TeacherLogin({ setTeacherAuthenticated }) {
         {/* Decorative Elements */}
         <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full opacity-20"></div>
         <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-pink-600 to-purple-600 rounded-full opacity-20"></div>
-
         {/* Logo */}
         <motion.div
-          className="flex justify-center mb-6"
+          className="flex justify-center relative h-[80px]"
           initial={{ scale: 0.7, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <div className="relative">
+          <div className="absolute top-1/2 -translate-y-1/2">
             <img
               src="/logo.png"
               alt="progress_logo"
-              className="h-32 w-auto"
+              className="h-60 w-auto"
             />
-            <motion.div
-              className="absolute -top-2 -right-2"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            >
-              <Sparkles className="w-6 h-6 text-yellow-500" />
-            </motion.div>
           </div>
         </motion.div>
 
@@ -143,11 +135,8 @@ function TeacherLogin({ setTeacherAuthenticated }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            "Intellectual Progress Star"
-          </h1>
-          <p className="text-gray-600 mt-2 flex items-center justify-center gap-1">
-            <User className="w-4 h-4" />
+          <p className="text-indigo-600 font-bold mt-2 flex items-center justify-center gap-1">
+            <BookOpenCheck className="w-5 h-5" />
             Ustozlar platformasi
           </p>
         </motion.div>
@@ -160,7 +149,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
             transition={{ delay: 0.3 }}
           >
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Foydalanuvchi nomi
+              Foydalanuvchi nomingiz
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -182,7 +171,7 @@ function TeacherLogin({ setTeacherAuthenticated }) {
             transition={{ delay: 0.4 }}
           >
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Parol
+              Parolingiz
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />

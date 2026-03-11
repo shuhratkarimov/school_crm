@@ -449,38 +449,39 @@ export default function Attendance() {
     });
   };
 
+  const getErrorMessage = async (response) => {
+    try {
+      const data = await response.json();
+
+      return (
+        data?.message ||
+        data?.error ||
+        data?.errors?.[0]?.message ||
+        "Xatolik yuz berdi"
+      );
+    } catch {
+      return response?.statusText || "Serverdan xatolik qaytdi";
+    }
+  };
+
   const addGroup = async (e) => {
     e.preventDefault();
-
+  
     if (formData.days.length === 0) {
       toast.error("Kamida bitta dars kuni tanlanishi kerak");
       return;
     }
-
+  
     if (formData.start_time >= formData.end_time) {
       toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak");
       return;
     }
-
+  
     if (!formData.teacher_id || !formData.room_id) {
       toast.error("O‘qituvchi va xona tanlanishi kerak");
       return;
     }
-
-    const hasConflict = checkScheduleConflict(
-      formData.room_id,
-      formData.days,
-      formData.start_time,
-      formData.end_time
-    );
-
-    if (hasConflict) {
-      toast.error(
-        "Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.",
-      );
-      return;
-    }
-
+  
     const groupData = {
       group_subject: formData.group_subject,
       teacher_id: formData.teacher_id,
@@ -490,7 +491,7 @@ export default function Attendance() {
       end_time: `${formData.end_time}:00`,
       monthly_fee: Number(formData.monthly_fee),
     };
-
+  
     try {
       const response = await fetch(`${API_URL}/create_group`, {
         method: "POST",
@@ -498,108 +499,99 @@ export default function Attendance() {
         body: JSON.stringify(groupData),
         credentials: "include",
       });
-
-      if (response.ok) {
-        const newGroup = await response.json();
-        setGroups([...groups, newGroup.group]);
-        setSuccess(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
-        toast.success(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
-        setFormData({
-          group_subject: "",
-          teacher_id: "",
-          room_id: "",
-          days: [],
-          start_time: "",
-          end_time: "",
-          monthly_fee: "",
-        });
-        setAddModal(false);
-        fetchGroups();
-      } else {
-        if (response.status === 400) {
-          toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.");
-          return;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Guruh qo'shishda xatolik yuz berdi");
+  
+      if (!response.ok) {
+        const errorMessage = await getErrorMessage(response);
+        toast.error(errorMessage);
+        return;
       }
+  
+      const newGroup = await response.json();
+  
+      setGroups([...groups, newGroup.group]);
+      setSuccess(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
+      toast.success(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
+  
+      setFormData({
+        group_subject: "",
+        teacher_id: "",
+        room_id: "",
+        days: [],
+        start_time: "",
+        end_time: "",
+        monthly_fee: "",
+      });
+  
+      setAddModal(false);
+      fetchGroups();
     } catch (err) {
-      toast.error(err.message || "Guruh qo'shishda xatolik: API mavjud emas");
+      toast.error(err?.message || "API bilan bog‘lanishda xatolik yuz berdi");
     }
   };
 
   const updateGroup = async (e) => {
     e.preventDefault();
-
+  
     if (editFormData.days.length === 0) {
       toast.error("Kamida bitta dars kuni tanlanishi kerak");
       return;
     }
-
+  
     if (editFormData.start_time >= editFormData.end_time) {
       toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak");
       return;
     }
-
-    const hasConflict = checkScheduleConflict(
-      editFormData.room_id,
-      editFormData.days,
-      editFormData.start_time,
-      editFormData.end_time,
-      editingGroup.id
-    );
-
-    if (hasConflict) {
-      toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.");
-      return;
-    }
-
+  
     try {
+      const payload = {
+        ...editFormData,
+        days: editFormData.days.join("-"),
+        start_time: `${editFormData.start_time}:00`,
+        end_time: `${editFormData.end_time}:00`,
+        monthly_fee: Number(editFormData.monthly_fee),
+      };
+  
       const response = await fetch(
         `${API_URL}/update_group/${editingGroup.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...editFormData,
-            days: editFormData.days.join("-"),
-            start_time: `${editFormData.start_time}:00`,
-            end_time: `${editFormData.end_time}:00`,
-            monthly_fee: Number(editFormData.monthly_fee),
-          }),
+          body: JSON.stringify(payload),
           credentials: "include",
         }
       );
-
-      if (response.ok) {
-        const updatedGroup = {
-          ...editingGroup,
-          ...editFormData,
-          days: editFormData.days.join("-"),
-          start_time: `${editFormData.start_time}:00`,
-          end_time: `${editFormData.end_time}:00`,
-          monthly_fee: Number(editFormData.monthly_fee),
-        };
-        setGroups(
-          groups.map((group) => (group.id === editingGroup.id ? updatedGroup : group))
-        );
-        toast.success(`${editFormData.group_subject} guruhi muvaffaqiyatli yangilandi`);
-        // setSuccess(`${editFormData.group_subject} guruhi muvaffaqiyatli yangilandi`);
-        setEditModal(false);
-        fetchGroups();
-        if (selectedGroup && selectedGroup.id === editingGroup.id) {
-          setSelectedGroup(updatedGroup);
-          fetchTeacher(updatedGroup.teacher_id);
-        }
-      } else {
-        if (response.status === 400) {
-          toast.error("Tanlangan xonada ushbu kunlar va vaqt oralig‘ida boshqa guruh mavjud. Iltimos, boshqa vaqt yoki xona tanlang.");
-          return;
-        }
-        throw new Error("Guruhni yangilashda xatolik yuz berdi");
+  
+      if (!response.ok) {
+        const errorMessage = await getErrorMessage(response);
+        toast.error(errorMessage);
+        return;
+      }
+  
+      const updatedGroup = {
+        ...editingGroup,
+        ...editFormData,
+        days: editFormData.days.join("-"),
+        start_time: `${editFormData.start_time}:00`,
+        end_time: `${editFormData.end_time}:00`,
+        monthly_fee: Number(editFormData.monthly_fee),
+      };
+  
+      setGroups(
+        groups.map((group) =>
+          group.id === editingGroup.id ? updatedGroup : group
+        )
+      );
+  
+      toast.success(`${editFormData.group_subject} guruhi muvaffaqiyatli yangilandi`);
+      setEditModal(false);
+      fetchGroups();
+  
+      if (selectedGroup && selectedGroup.id === editingGroup.id) {
+        setSelectedGroup(updatedGroup);
+        fetchTeacher(updatedGroup.teacher_id);
       }
     } catch (err) {
-      toast.error(`Xatolik yuz berdi: ${err.message}`);
+      toast.error(err?.message || "API bilan bog‘lanishda xatolik yuz berdi");
     }
   };
 
@@ -620,7 +612,7 @@ export default function Attendance() {
         setGroupStudents([]);
         fetchGroups();
       } else {
-        throw new Error("Guruhni o'chirishda xatolik yuz berdi");
+        throw new Error(`Guruhni o'chirishda xatolik yuz berdi: ${response.statusText}`);
       }
     } catch (err) {
       toast.error(`Xatolik yuz berdi: ${err.message}`);

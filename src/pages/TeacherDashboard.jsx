@@ -12,10 +12,8 @@ import {
   TrendingUp,
   CheckCircle,
   ChevronRight,
-  LogOut,
   GraduationCap,
   Sparkles,
-  Award,
   Target,
   Bookmark,
   Bell,
@@ -23,12 +21,16 @@ import {
   Coffee,
   Sun,
   Moon,
-  FileText,
-  CreditCard
+  Bug,
+  Lightbulb,
+  X,
+  Send,
+  Loader2,
+  Headphones
 } from "lucide-react";
 import LottieLoading from "../components/Loading";
-import TeacherSidebar from "../components/TeacherSidebar";
 import API_URL from "../conf/api";
+import FeedbackModal from "../components/FeedbackModal";
 
 const monthsUZ = [
   "yanvar", "fevral", "mart", "aprel", "may", "iyun",
@@ -50,13 +52,11 @@ function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [teacherData, setTeacherData] = useState(null);
   const [stats, setStats] = useState({ totalStudents: 0, activeGroups: 0 });
-  const [activeMenu, setActiveMenu] = useState("dashboard");
-  const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [greeting, setGreeting] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
-
   const navigate = useNavigate();
-
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) setGreeting("Xayrli tong");
@@ -134,10 +134,6 @@ function TeacherDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    navigate("/teacher/login");
-  };
-
   const daysInUzbek = {
     mon: "Dushanba",
     tue: "Seshanba",
@@ -160,19 +156,11 @@ function TeacherDashboard() {
     return aHasClass === bHasClass ? 0 : aHasClass ? -1 : 1;
   });
 
-  const menuItems = [
-    { id: "dashboard", label: "Bosh sahifa", icon: BookOpen, path: "/teacher/dashboard" },
-    { id: "test-results", label: "Test natijalari", icon: FileText, path: "/teacher/test-results" },
-    { id: "payments", label: "To'lovlar", icon: CreditCard, path: "/teacher/payments" },
-  ];
-
   if (loading) return <LottieLoading />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col md:flex-row">
-      <TeacherSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-
-      <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+    <>
+      <div className="space-y-8">
         {/* Header with time and greeting */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -200,11 +188,21 @@ function TeacherDashboard() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-sm">
-              <Clock className="w-5 h-5 text-indigo-600" />
-              <span className="text-lg font-semibold text-gray-800">
-                {currentTime.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
-              </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-300">
+                <Clock className="w-5 h-5 text-indigo-600" />
+                <span className="text-lg font-semibold text-gray-800">
+                  {currentTime.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </div>
+
+              <button
+                onClick={() => setShowSupportModal(true)}
+                className="hidden md:flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-white shadow hover:shadow-lg transition"
+              >
+                <Headphones size={18} />
+                Qo‘llab-quvvatlash
+              </button>
             </div>
           </div>
         </motion.div>
@@ -245,7 +243,7 @@ function TeacherDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100"
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-300"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-3 rounded-xl">
@@ -266,7 +264,7 @@ function TeacherDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.3 }}
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100"
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-300"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-gradient-to-br from-green-100 to-green-200 p-3 rounded-xl">
@@ -281,7 +279,7 @@ function TeacherDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.4 }}
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 sm:col-span-2 lg:col-span-1"
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-300 sm:col-span-2 lg:col-span-1"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-gradient-to-br from-purple-100 to-purple-200 p-3 rounded-xl">
@@ -326,12 +324,12 @@ function TeacherDashboard() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 hover:shadow-md transition-all cursor-pointer"
+                      className="rounded-xl p-4 border border-gray-300 hover:shadow-md transition-all cursor-pointer"
                       onClick={() => navigate(`/teacher/attendance/${group.id}`)}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="bg-white p-2 rounded-lg shadow-sm">
+                          <div className="bg-white p-2 rounded-xl shadow-sm">
                             <Bookmark className="w-5 h-5 text-indigo-600" />
                           </div>
                           <div>
@@ -342,7 +340,7 @@ function TeacherDashboard() {
                             </p>
                           </div>
                         </div>
-                        <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg transition-all flex items-center gap-2 justify-center">
+                        <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-4 rounded-xl text-sm font-medium hover:shadow-lg transition-all flex items-center gap-2 justify-center">
                           Davomatni belgilash
                           <ChevronRight className="w-4 h-4" />
                         </button>
@@ -398,8 +396,8 @@ function TeacherDashboard() {
                       <div className="flex justify-between items-start mb-3">
                         <h3 className="font-bold text-lg text-gray-800">{group.group_subject}</h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${hasClassToday
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
                           }`}>
                           {hasClassToday ? 'Bugun dars bor' : 'Dars yo\'q'}
                         </span>
@@ -464,36 +462,12 @@ function TeacherDashboard() {
           <p className="mt-1">Ustozlar uchun maxsus platforma</p>
         </footer>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg shadow-lg border-t border-gray-200 p-2 z-40">
-        <div className="flex justify-around items-center">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveMenu(item.id);
-                navigate(item.path);
-              }}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${activeMenu === item.id
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
-                  : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
-                }`}
-            >
-              <item.icon size={20} />
-              <span className="text-xs">{item.label}</span>
-            </button>
-          ))}
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center gap-1 p-2 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all"
-          >
-            <LogOut size={20} />
-            <span className="text-xs">Chiqish</span>
-          </button>
-        </div>
-      </nav>
-    </div>
+      <FeedbackModal
+        open={showSupportModal}
+        onClose={() => setShowSupportModal(false)}
+        senderType="teacher"
+      />
+    </>
   );
 }
 
