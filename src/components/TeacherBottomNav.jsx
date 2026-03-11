@@ -44,7 +44,6 @@ function TeacherBottomNav({ onSupportClick }) {
         location.pathname.startsWith("/teacher/attendance/")
       );
     }
-
     return location.pathname === path;
   };
 
@@ -70,14 +69,14 @@ function TeacherBottomNav({ onSupportClick }) {
 
   return (
     <nav
-      className="
-        md:hidden fixed bottom-0 left-0 right-0 z-40
-        border-t border-gray-200 bg-white/95 backdrop-blur-xl
-        shadow-[0_-8px_30px_rgba(0,0,0,0.06)]
-        pb-[max(env(safe-area-inset-bottom),6px)]
-      "
+      id="teacher-bottom-nav"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur-xl shadow-[0_-8px_30px_rgba(0,0,0,0.06)]"
+      style={{
+        height: "78px",
+        paddingBottom: "max(env(safe-area-inset-bottom), 0px)",
+      }}
     >
-      <div className="grid grid-cols-5 gap-1 px-2 pt-2">
+      <div className="grid h-full grid-cols-5 gap-1 px-2 py-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -86,7 +85,7 @@ function TeacherBottomNav({ onSupportClick }) {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className="relative flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 transition-colors"
+              className="relative flex h-full flex-col items-center justify-center gap-1 rounded-2xl px-2 transition-colors"
             >
               {active && (
                 <motion.div
@@ -101,8 +100,9 @@ function TeacherBottomNav({ onSupportClick }) {
               )}
 
               <motion.div
-                className={`relative z-10 flex flex-col items-center justify-center gap-1 ${active ? "text-white" : "text-blue-600"
-                  }`}
+                className={`relative z-10 flex flex-col items-center justify-center gap-1 ${
+                  active ? "text-white" : "text-blue-600"
+                }`}
                 animate={{
                   scale: active ? 1.05 : 1,
                   y: active ? -1 : 0,
@@ -120,13 +120,10 @@ function TeacherBottomNav({ onSupportClick }) {
 
         <button
           onClick={() => {
-            if (onSupportClick) {
-              onSupportClick();
-              return;
-            }
+            if (onSupportClick) return onSupportClick();
             navigate("/teacher/dashboard");
           }}
-          className="flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-blue-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
+          className="flex h-full flex-col items-center justify-center gap-1 rounded-2xl px-2 text-blue-600 transition-all"
         >
           <Headphones size={18} />
           <span className="text-[11px] leading-none font-medium text-center">
@@ -136,7 +133,7 @@ function TeacherBottomNav({ onSupportClick }) {
 
         <button
           onClick={handleLogout}
-          className="flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-red-600 hover:bg-red-50 hover:text-red-600 transition-all"
+          className="flex h-full flex-col items-center justify-center gap-1 rounded-2xl px-2 text-red-600 transition-all"
         >
           <LogOut size={18} />
           <span className="text-[11px] leading-none font-medium text-center">

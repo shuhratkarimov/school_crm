@@ -23,15 +23,8 @@ function TeacherLayout() {
       ) {
         return 0;
       }
-
-      if (pathname === "/teacher/test-results") {
-        return 1;
-      }
-
-      if (pathname === "/teacher/payments") {
-        return 2;
-      }
-
+      if (pathname === "/teacher/test-results") return 1;
+      if (pathname === "/teacher/payments") return 2;
       return 0;
     };
   }, []);
@@ -41,20 +34,17 @@ function TeacherLayout() {
     const prevRank = getRouteRank(prevPath);
     const currentRank = getRouteRank(location.pathname);
 
-    if (currentRank > prevRank) {
-      setDirection(1);
-    } else if (currentRank < prevRank) {
-      setDirection(-1);
-    }
+    if (currentRank > prevRank) setDirection(1);
+    else if (currentRank < prevRank) setDirection(-1);
 
     prevPathRef.current = location.pathname;
   }, [location.pathname, getRouteRank]);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-100">
+    <div className="min-h-screen min-h-dvh flex flex-col md:flex-row bg-gray-100">
       <TeacherSidebar />
 
-      <div className="flex-1 p-4 sm:p-6 md:p-8 pb-24 md:pb-8 overflow-x-hidden overflow-y-auto relative">
+      <div className="flex-1 p-4 sm:p-6 md:p-8 pb-[90px] md:pb-8 overflow-x-hidden relative">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.key}
