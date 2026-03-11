@@ -291,3 +291,29 @@ CREATE TABLE user_notifications (
 CREATE INDEX idx_user_notifications_user_id ON user_notifications(user_id);
 CREATE INDEX idx_user_notifications_is_read ON user_notifications(is_read);
 CREATE INDEX idx_user_notifications_created_at ON user_notifications(created_at DESC);
+
+
+
+-- ENUM turlarini yaratamiz
+CREATE TYPE enum_feedbacks_type AS ENUM ('feedback', 'bug');
+CREATE TYPE enum_feedbacks_status AS ENUM ('new', 'reviewed', 'resolved');
+CREATE TYPE enum_feedbacks_sender_type AS ENUM ('user', 'teacher');
+
+-- Table yaratish
+CREATE TABLE feedbacks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    type enum_feedbacks_type NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    status enum_feedbacks_status NOT NULL DEFAULT 'new',
+    sender_id UUID NOT NULL,
+    sender_type enum_feedbacks_sender_type NOT NULL,
+    branch_id UUID,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT fk_feedbacks_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE SET NULL
+);

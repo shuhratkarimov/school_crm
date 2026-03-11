@@ -23,6 +23,7 @@ import RegistrationLink from "./registration_link_model";
 import TeacherBalance from "./teacher-balance.model";
 import UserSettings from "./user_settings.model";
 import UserNotification from "./user_notification_model";
+import Feedback from "./feedback_model";
 
 // 1. Teacher ↔ Group
 Teacher.hasMany(Group, {
@@ -333,6 +334,43 @@ UserNotification.belongsTo(User, {
   as: "user",
 });
 
+// Feedback -> Branch
+Feedback.belongsTo(Branch, {
+  foreignKey: "branch_id",
+  as: "branch",
+});
+
+Branch.hasMany(Feedback, {
+  foreignKey: "branch_id",
+  as: "feedbacks",
+});
+
+// Feedback -> User
+Feedback.belongsTo(User, {
+  foreignKey: "sender_id",
+  as: "userSender",
+  constraints: false,
+});
+
+User.hasMany(Feedback, {
+  foreignKey: "sender_id",
+  as: "userFeedbacks",
+  constraints: false,
+});
+
+// Feedback -> Teacher
+Feedback.belongsTo(Teacher, {
+  foreignKey: "sender_id",
+  as: "teacherSender",
+  constraints: false,
+});
+
+Teacher.hasMany(Feedback, {
+  foreignKey: "sender_id",
+  as: "teacherFeedbacks",
+  constraints: false,
+});
+
 export {
   Teacher,
   Group,
@@ -360,4 +398,5 @@ export {
   TeacherBalance,
   UserNotification,
   UserSettings,
+  Feedback,
 };

@@ -452,6 +452,37 @@ async function getOneGroupForTeacherAttendance(
   }
 }
 
+function timeToMinutes(time: string): number {
+  const [hour, minute] = String(time).split(":").map(Number);
+  return hour * 60 + minute;
+}
+
+function isValidTimeFormat(time: string): boolean {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(time));
+}
+
+function validateGroupTimeRange(start_time: string, end_time: string): string | null {
+  if (!isValidTimeFormat(start_time.slice(0, 5)) || !isValidTimeFormat(end_time.slice(0, 5))) {
+    return "Vaqt formati noto'g'ri. HH:mm ko'rinishida yuboring";
+  }
+
+  const WORK_START = 9 * 60;   // 09:00
+  const WORK_END = 18 * 60;    // 18:00
+
+  const startMinutes = timeToMinutes(start_time);
+  const endMinutes = timeToMinutes(end_time);
+
+  if (startMinutes < WORK_START || endMinutes > WORK_END) {
+    return "Dars vaqti 09:00 dan 18:00 gacha bo'lishi kerak";
+  }
+
+  if (endMinutes <= startMinutes) {
+    return "Dars tugash vaqti boshlanish vaqtidan katta bo'lishi kerak";
+  }
+
+  return null;
+}
+
 async function createGroup(
   req: Request,
   res: Response,
@@ -495,6 +526,11 @@ async function createGroup(
           i18next.t("invalid_uuid_format", { lng: lang })
         )
       );
+    }
+
+    const timeValidationError = validateGroupTimeRange(start_time, end_time);
+    if (timeValidationError) {
+      return next(BaseError.BadRequest(400, timeValidationError));
     }
 
     const scope = (req as any).scope;
@@ -600,6 +636,11 @@ async function updateGroup(
             i18next.t("invalid_uuid_format", { lng: lang })
           )
         );
+      }
+
+      const timeValidationError = validateGroupTimeRange(start_time, end_time);
+      if (timeValidationError) {
+        return next(BaseError.BadRequest(400, timeValidationError));
       }
 
       const room = await Room.findByPk(room_id);

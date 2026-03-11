@@ -1255,7 +1255,7 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
         return next(
           BaseError.BadRequest(
             400,
-            `Dars tugagach bir soat qo'shimcha vaqtdan ${hours} soat ${minutes} daqiqa o'tdi. Yo'qlama qilish mumkin emas.`
+            `Dars tugagach bir soat qo'shimcha vaqtdan ${hours} soat ${minutes} daqiqa o'tdi. Yo'qlama qilish mumkin emas. Admin bilan bog'laning`
           )
         );
       }
