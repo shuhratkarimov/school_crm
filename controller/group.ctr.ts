@@ -18,6 +18,390 @@ import sequelize from '../config/database.config';
 import { ReserveStudent } from "../Models/reserve_student_model";
 import { generateStudentId, monthsInUzbek, updateStudentPaymentStatus } from "./student.ctr";
 import { withBranchScope } from "../Utils/branch_scope.helper";
+import { v4 as uuidv4 } from "uuid";
+import { createBulkJob, getBulkJob, updateBulkJob } from "../Utils/sse_jobs";
+
+export const streamBulkJobProgress = async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders?.();
+
+  const send = (data: any) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  const interval = setInterval(() => {
+    const job = getBulkJob(jobId);
+
+    if (!job) {
+      send({
+        status: "error",
+        message: "Job topilmadi",
+        done: true,
+      });
+      clearInterval(interval);
+      return res.end();
+    }
+
+    send({
+      ...job,
+      done: job.status === "done" || job.status === "error",
+    });
+
+    if (job.status === "done" || job.status === "error") {
+      clearInterval(interval);
+      return res.end();
+    }
+  }, 500);
+
+  req.on("close", () => {
+    clearInterval(interval);
+    res.end();
+  });
+};
+
+export const startDeleteReserveStudentsBulk = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return next(BaseError.BadRequest(400, "ids massiv bo'lishi kerak va bo'sh bo'lmasligi kerak"));
+    }
+
+    const scopedStudents = await ReserveStudent.findAll({
+      where: withBranchScope(req, {
+        id: { [Op.in]: ids },
+      }),
+      attributes: ["id"],
+    });
+
+    const allowedIds = scopedStudents.map((student: any) => String(student.get("id")));
+
+    if (allowedIds.length !== ids.length) {
+      return next(BaseError.BadRequest(403, "Ba'zi o'quvchilar topilmadi yoki ruxsat yo'q"));
+    }
+
+    const jobId = uuidv4();
+    createBulkJob(jobId, "delete_reserve_students_bulk", allowedIds.length);
+
+    res.status(202).json({
+      success: true,
+      jobId,
+      message: "Bulk delete boshlandi",
+    });
+
+    setImmediate(async () => {
+      try {
+        updateBulkJob(jobId, {
+          status: "running",
+          message: "O'chirish boshlandi",
+        });
+
+        let successCount = 0;
+        let failedCount = 0;
+
+        for (let i = 0; i < allowedIds.length; i++) {
+          const id = allowedIds[i];
+
+          try {
+            const student = await ReserveStudent.findOne({
+              where: withBranchScope(req, { id }),
+            });
+
+            if (student) {
+              await student.destroy();
+              successCount++;
+            } else {
+              failedCount++;
+            }
+          } catch (err: any) {
+            failedCount++;
+          }
+
+          const processed = i + 1;
+          const percent = Math.round((processed / allowedIds.length) * 100);
+
+          updateBulkJob(jobId, {
+            processed,
+            percent,
+            successCount,
+            failedCount,
+            message: `${processed}/${allowedIds.length} ta o'quvchi o'chirildi`,
+          });
+        }
+
+        updateBulkJob(jobId, {
+          status: "done",
+          percent: 100,
+          processed: allowedIds.length,
+          successCount,
+          failedCount,
+          message: `${successCount} ta o'quvchi o'chirildi`,
+        });
+      } catch (err: any) {
+        updateBulkJob(jobId, {
+          status: "error",
+          message: err?.message || "Bulk delete jarayonida xato",
+        });
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const startApproveReserveStudentsBulk = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { reserve_student_ids = [], group_ids = [] } = req.body;
+
+  try {
+    if (!Array.isArray(reserve_student_ids) || reserve_student_ids.length === 0) {
+      return next(BaseError.BadRequest(400, "reserve_student_ids massiv bo'lishi kerak"));
+    }
+
+    if (!Array.isArray(group_ids) || group_ids.length === 0) {
+      return next(BaseError.BadRequest(400, "group_ids massiv bo'lishi kerak"));
+    }
+
+    const reserves = await ReserveStudent.findAll({
+      where: withBranchScope(req, {
+        id: { [Op.in]: reserve_student_ids },
+      }),
+    });
+
+    if (reserves.length !== reserve_student_ids.length) {
+      return next(BaseError.BadRequest(404, "Ba'zi zaxiradagi o'quvchilar topilmadi yoki ruxsat yo'q"));
+    }
+
+    const allowedGroups = await Group.findAll({
+      where: withBranchScope(req, {
+        id: { [Op.in]: group_ids },
+      }),
+      attributes: ["id", "group_subject"],
+    });
+
+    if (allowedGroups.length !== group_ids.length) {
+      return next(BaseError.BadRequest(403, "Group ro'yxatida ruxsatsiz guruh bor"));
+    }
+
+    const safeGroupIds = allowedGroups.map((g: any) => String(g.get("id")));
+    const groupMap = new Map(allowedGroups.map((g: any) => [String(g.get("id")), g]));
+
+    const jobId = uuidv4();
+    createBulkJob(jobId, "approve_reserve_students_bulk", reserves.length);
+
+    res.status(202).json({
+      success: true,
+      jobId,
+      message: "Bulk approve boshlandi",
+    });
+
+    setImmediate(async () => {
+      try {
+        updateBulkJob(jobId, {
+          status: "running",
+          message: "O'quvchilarni o'tkazish boshlandi",
+        });
+
+        let successCount = 0;
+        let failedCount = 0;
+
+        const currentYear = new Date().getFullYear();
+        const currentMonthIndex = new Date().getMonth() + 1;
+
+        const monthsToCreate: string[] = [];
+        for (let m = currentMonthIndex; m <= 12; m++) {
+          monthsToCreate.push(monthsInUzbek[m]);
+        }
+
+        for (let i = 0; i < reserves.length; i++) {
+          const reserve = reserves[i];
+
+          try {
+            await sequelize.transaction(async (t) => {
+              const ReturnedId = await generateStudentId();
+
+              const newStudent = await Student.create(
+                {
+                  first_name: reserve.dataValues.first_name,
+                  last_name: reserve.dataValues.last_name,
+                  father_name: reserve.dataValues.father_name,
+                  mother_name: reserve.dataValues.mother_name,
+                  birth_date: reserve.dataValues.birth_date,
+                  phone_number: reserve.dataValues.phone_number,
+                  parents_phone_number: reserve.dataValues.parents_phone_number,
+                  came_in_school: reserve.dataValues.came_in_school,
+                  studental_id: ReturnedId,
+                  branch_id: reserve.dataValues.branch_id,
+                  total_groups: safeGroupIds.length,
+                  paid_groups: 0,
+                },
+                { transaction: t }
+              );
+
+              for (const gid of safeGroupIds) {
+                for (const month of monthsToCreate) {
+                  await StudentGroup.findOrCreate({
+                    where: {
+                      student_id: newStudent.dataValues.id,
+                      group_id: gid,
+                      month,
+                      year: currentYear,
+                    },
+                    defaults: { paid: false },
+                    transaction: t,
+                  });
+                }
+
+                const group = groupMap.get(String(gid)) as any;
+                if (group) {
+                  await group.increment("students_amount", { by: 1, transaction: t });
+                }
+              }
+
+              await reserve.destroy({ transaction: t });
+            });
+
+            successCount++;
+          } catch (err: any) {
+            failedCount++;
+          }
+
+          const processed = i + 1;
+          const percent = Math.round((processed / reserves.length) * 100);
+
+          updateBulkJob(jobId, {
+            processed,
+            percent,
+            successCount,
+            failedCount,
+            message: `${processed}/${reserves.length} ta o'quvchi o'tkazildi`,
+          });
+        }
+
+        updateBulkJob(jobId, {
+          status: "done",
+          percent: 100,
+          processed: reserves.length,
+          successCount,
+          failedCount,
+          message: `${successCount} ta o'quvchi students jadvaliga o'tkazildi`,
+        });
+      } catch (err: any) {
+        updateBulkJob(jobId, {
+          status: "error",
+          message: err?.message || "Bulk approve jarayonida xato",
+        });
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const startImportStudents = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const scope = (req as any).scope;
+    const branch_id = scope?.all ? req.body.branch_id : scope.branchIds?.[0];
+    if (!branch_id) return next(BaseError.BadRequest(400, "branch_id required"));
+
+    if (!req.body || !req.body.students) {
+      return next(BaseError.BadRequest(400, "students maydoni majburiy"));
+    }
+
+    if (!Array.isArray(req.body.students)) {
+      return next(BaseError.BadRequest(400, "students massiv bo'lishi kerak"));
+    }
+
+    const students = req.body.students;
+    const jobId = uuidv4();
+
+    createBulkJob(jobId, "import_students", students.length);
+
+    res.status(202).json({
+      success: true,
+      jobId,
+      message: "Import boshlandi",
+    });
+
+    setImmediate(async () => {
+      try {
+        updateBulkJob(jobId, {
+          status: "running",
+          message: "Import boshlandi",
+        });
+
+        let successCount = 0;
+        let failedCount = 0;
+        const errors: string[] = [];
+
+        for (let i = 0; i < students.length; i++) {
+          const data = students[i];
+
+          try {
+            await ReserveStudent.create({
+              first_name: data.first_name,
+              last_name: data.last_name,
+              father_name: data.father_name,
+              mother_name: data.mother_name,
+              birth_date: data.birth_date ? new Date(data.birth_date) : null,
+              phone_number: data.phone_number,
+              parents_phone_number: data.parents_phone_number,
+              came_in_school: data.came_in_school ? new Date(data.came_in_school) : null,
+              status: "new",
+              created_at: new Date(),
+              branch_id,
+            });
+
+            successCount++;
+          } catch (err: any) {
+            failedCount++;
+            errors.push(`${i + 1}-qator: ${err?.message || "Xato"}`);
+          }
+
+          const processed = i + 1;
+          const percent = Math.round((processed / students.length) * 100);
+
+          updateBulkJob(jobId, {
+            processed,
+            percent,
+            successCount,
+            failedCount,
+            errors,
+            message: `${processed}/${students.length} ta o'quvchi import qilindi`,
+          });
+        }
+
+        updateBulkJob(jobId, {
+          status: "done",
+          percent: 100,
+          processed: students.length,
+          successCount,
+          failedCount,
+          errors,
+          message: `${successCount} ta o'quvchi import qilindi`,
+        });
+      } catch (err: any) {
+        updateBulkJob(jobId, {
+          status: "error",
+          message: err?.message || "Import jarayonida xato",
+        });
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 async function approveReserveStudent(req: Request, res: Response, next: NextFunction) {
   const { id } = req.params;
@@ -174,6 +558,10 @@ const createReserveStudent = async (req: Request, res: Response, next: NextFunct
 
 export const importStudents = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const scope = (req as any).scope;
+    const branch_id = scope?.all ? req.body.branch_id : scope.branchIds?.[0];
+    if (!branch_id) return next(BaseError.BadRequest(400, "branch_id required"));
+
     if (!req.body || !req.body.students) {
       return next(BaseError.BadRequest(400, "students maydoni majburiy"));
     }
@@ -183,17 +571,10 @@ export const importStudents = async (req: Request, res: Response, next: NextFunc
     }
 
     const students = req.body.students;
-
     const created = [];
 
     await sequelize.transaction(async (t) => {
       for (const data of students) {
-        // Telefon unique tekshirish
-        const existing = await Promise.all([
-          ReserveStudent.findOne({ where: { phone_number: data.phone_number }, transaction: t }),
-          Student.findOne({ where: { phone_number: data.phone_number }, transaction: t }),
-        ]);
-
         const reserveStudent = await ReserveStudent.create(
           {
             first_name: data.first_name,
@@ -204,7 +585,9 @@ export const importStudents = async (req: Request, res: Response, next: NextFunc
             phone_number: data.phone_number,
             parents_phone_number: data.parents_phone_number,
             came_in_school: data.came_in_school ? new Date(data.came_in_school) : null,
-            status: 'new',
+            status: "new",
+            created_at: new Date(),
+            branch_id: branch_id,
           },
           { transaction: t }
         );
@@ -229,6 +612,7 @@ export const getReserveStudents = async (req: Request, res: Response, next: Next
       order: [["created_at", "DESC"]],
     });
     res.status(200).json(students);
+    return;
   } catch (err) {
     next(err);
   }
@@ -242,14 +626,9 @@ export const updateReserveStudent = async (req: Request, res: Response, next: Ne
     const student = await ReserveStudent.findOne({
       where: withBranchScope(req, { id }),
     });
-    if (!student) return next(BaseError.BadRequest(404, "Topilmadi (yoki ruxsat yo'q)"));
 
-    // Agar telefon o'zgartirilsa, unique tekshirish
-    if (data.phone_number && data.phone_number !== student.dataValues.phone_number) {
-      const existing = await ReserveStudent.findOne({ where: { phone_number: data.phone_number } });
-      if (existing) {
-        return next(BaseError.BadRequest(409, `Telefon allaqachon mavjud: ${data.phone_number}`));
-      }
+    if (!student) {
+      return next(BaseError.BadRequest(404, "Topilmadi (yoki ruxsat yo'q)"));
     }
 
     await student.update({
@@ -258,7 +637,7 @@ export const updateReserveStudent = async (req: Request, res: Response, next: Ne
       came_in_school: data.came_in_school ? new Date(data.came_in_school) : student.dataValues.came_in_school,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Ma'lumotlar yangilandi",
       student,
     });
@@ -279,6 +658,164 @@ export const deleteReserveStudent = async (req: Request, res: Response, next: Ne
     await student.destroy();
 
     res.status(200).json({ message: "O'quvchi zaxiradan o'chirildi" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteReserveStudentsBulk = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return next(BaseError.BadRequest(400, "ids massiv bo'lishi kerak va bo'sh bo'lmasligi kerak"));
+    }
+
+    const scopedStudents = await ReserveStudent.findAll({
+      where: withBranchScope(req, {
+        id: {
+          [Op.in]: ids,
+        },
+      }),
+      attributes: ["id"],
+    });
+
+    const allowedIds = scopedStudents.map((student: any) => String(student.get("id")));
+
+    if (allowedIds.length !== ids.length) {
+      return next(BaseError.BadRequest(403, "Ba'zi o'quvchilar topilmadi yoki ruxsat yo'q"));
+    }
+
+    const deletedCount = await ReserveStudent.destroy({
+      where: withBranchScope(req, {
+        id: {
+          [Op.in]: ids,
+        },
+      }),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `${deletedCount} ta o'quvchi zaxiradan o'chirildi`,
+      deletedCount,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const approveReserveStudentsBulk = async (req: Request, res: Response, next: NextFunction) => {
+  const { reserve_student_ids = [], group_ids = [] } = req.body;
+
+  try {
+    if (!Array.isArray(reserve_student_ids) || reserve_student_ids.length === 0) {
+      return next(BaseError.BadRequest(400, "reserve_student_ids massiv bo'lishi kerak"));
+    }
+
+    if (!Array.isArray(group_ids) || group_ids.length === 0) {
+      return next(BaseError.BadRequest(400, "group_ids massiv bo'lishi kerak"));
+    }
+
+    const reserves = await ReserveStudent.findAll({
+      where: withBranchScope(req, {
+        id: {
+          [Op.in]: reserve_student_ids,
+        },
+      }),
+    });
+
+    if (reserves.length !== reserve_student_ids.length) {
+      return next(
+        BaseError.BadRequest(404, "Ba'zi zaxiradagi o'quvchilar topilmadi yoki ruxsat yo'q")
+      );
+    }
+
+    const allowedGroups = await Group.findAll({
+      where: withBranchScope(req, {
+        id: {
+          [Op.in]: group_ids,
+        },
+      }),
+      attributes: ["id", "group_subject"],
+    });
+
+    if (allowedGroups.length !== group_ids.length) {
+      return next(BaseError.BadRequest(403, "Group ro'yxatida ruxsatsiz guruh bor"));
+    }
+
+    const safeGroupIds = allowedGroups.map((g: any) => String(g.get("id")));
+
+    let createdStudentsCount = 0;
+
+    await sequelize.transaction(async (t) => {
+      const currentYear = new Date().getFullYear();
+      const currentMonthIndex = new Date().getMonth() + 1;
+
+      const monthsToCreate: string[] = [];
+      for (let m = currentMonthIndex; m <= 12; m++) {
+        monthsToCreate.push(monthsInUzbek[m]);
+      }
+
+      for (const reserve of reserves) {
+        const ReturnedId = await generateStudentId();
+
+        const newStudent = await Student.create(
+          {
+            first_name: reserve.dataValues.first_name,
+            last_name: reserve.dataValues.last_name,
+            father_name: reserve.dataValues.father_name,
+            mother_name: reserve.dataValues.mother_name,
+            birth_date: reserve.dataValues.birth_date,
+            phone_number: reserve.dataValues.phone_number,
+            parents_phone_number: reserve.dataValues.parents_phone_number,
+            came_in_school: reserve.dataValues.came_in_school,
+            studental_id: ReturnedId,
+            branch_id: reserve.dataValues.branch_id,
+            total_groups: safeGroupIds.length,
+            paid_groups: 0,
+          },
+          { transaction: t }
+        );
+
+        for (const gid of safeGroupIds) {
+          for (const month of monthsToCreate) {
+            await StudentGroup.findOrCreate({
+              where: {
+                student_id: newStudent.dataValues.id,
+                group_id: gid,
+                month,
+                year: currentYear,
+              },
+              defaults: {
+                paid: false,
+              },
+              transaction: t,
+            });
+          }
+
+          const group = await Group.findOne({
+            where: withBranchScope(req, { id: gid }),
+            transaction: t,
+          });
+
+          if (group) {
+            await group.increment("students_amount", { by: 1, transaction: t });
+          }
+        }
+
+        await reserve.destroy({ transaction: t });
+
+        await updateStudentPaymentStatus(newStudent.dataValues.id);
+
+        createdStudentsCount++;
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `${createdStudentsCount} ta o'quvchi students jadvaliga o'tkazildi va guruhlarga biriktirildi`,
+      count: createdStudentsCount,
+    });
   } catch (err) {
     next(err);
   }
