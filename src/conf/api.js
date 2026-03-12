@@ -2,22 +2,22 @@ const getBaseOrigin = () => {
   const host = window.location.hostname;
 
   if (host === "admin.intellectualprogress.uz") {
-    return "https://admin.intellectualprogress.uz";
+    return "https://admin.intellectualprogress.uz/api";
   }
   if (host === "teacher.intellectualprogress.uz") {
-    return "https://teacher.intellectualprogress.uz";
+    return "https://teacher.intellectualprogress.uz/api";
   }
   if (host === "register.intellectualprogress.uz") {
-    return "https://register.intellectualprogress.uz";
+    return "https://register.intellectualprogress.uz/api";
   }
   if (host === "director.intellectualprogress.uz") {
-    return "https://director.intellectualprogress.uz";
+    return "https://director.intellectualprogress.uz/api";
   }
   if (host === "cpanel.intellectualprogress.uz") {
-    return "https://cpanel.intellectualprogress.uz";
+    return "https://cpanel.intellectualprogress.uz/api";
   }
   if (host === "193.181.208.209") {
-    return "http://193.181.208.209:8080";
+    return "http://193.181.208.209:8080/api";
   }
   if (host === "localhost") {
     return "http://localhost:3000";
@@ -27,7 +27,7 @@ const getBaseOrigin = () => {
 };
 
 export const BASE_ORIGIN = getBaseOrigin();
-export const API_URL = `${BASE_ORIGIN}/api`;
+export const API_URL = `${BASE_ORIGIN}`;
 export const SOCKET_URL = BASE_ORIGIN;
 
 export const directorEndpoints = {
