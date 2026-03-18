@@ -190,10 +190,10 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl  bg-white shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b bg-gradient-to-r from-indigo-600 to-purple-600">
+        <div className="flex items-center justify-between px-5 py-4 border-b bg-[#104292]">
           <div>
             <h2 className="text-xl font-bold text-white">
               Platforma yuzasidan o'z fikringizni bildiring
@@ -212,12 +212,12 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
         </div>
 
         <div className="px-5 pt-4">
-          <div className="grid grid-cols-2 gap-2 bg-gray-100 rounded-2xl p-1">
+          <div className="grid grid-cols-2 gap-2 bg-gray-100  p-1">
             <button
               type="button"
               onClick={() => setActiveTab("create")}
-              className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${activeTab === "create"
-                ? "bg-white text-indigo-700 shadow-sm"
+              className={` px-4 py-2.5 text-sm font-medium transition ${activeTab === "create"
+                ? "bg-white text-[#104292] shadow-sm"
                 : "text-gray-600 hover:text-gray-800"
                 }`}
             >
@@ -226,8 +226,8 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
             <button
               type="button"
               onClick={() => setActiveTab("history")}
-              className={`rounded-xl px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2 ${activeTab === "history"
-                ? "bg-white text-indigo-700 shadow-sm"
+              className={` px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2 ${activeTab === "history"
+                ? "bg-white text-[#104292] shadow-sm"
                 : "text-gray-600 hover:text-gray-800"
                 }`}
             >
@@ -249,8 +249,8 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   onClick={() =>
                     setFormData((prev) => ({ ...prev, type: "feedback" }))
                   }
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 transition ${formData.type === "feedback"
-                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                  className={`flex items-center justify-center gap-2  border px-4 py-3 transition ${formData.type === "feedback"
+                    ? "border-green-600 bg-green-50 text-green-700"
                     : "border-gray-200 hover:bg-gray-50"
                     }`}
                 >
@@ -261,7 +261,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, type: "bug" }))}
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 transition ${formData.type === "bug"
+                  className={`flex items-center justify-center gap-2  border px-4 py-3 transition ${formData.type === "bug"
                     ? "border-red-600 bg-red-50 text-red-700"
                     : "border-gray-200 hover:bg-gray-50"
                     }`}
@@ -284,7 +284,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   setFormData((prev) => ({ ...prev, subject: e.target.value }))
                 }
                 placeholder="Masalan: Dashboardda grafik noto‘g‘ri chiqyapti"
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full  border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-[#104292]"
               />
             </div>
 
@@ -300,7 +300,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   setFormData((prev) => ({ ...prev, message: e.target.value }))
                 }
                 placeholder="Muammoni yoki taklifingizni batafsil yozing..."
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-blue-500"
+                className="w-full  border border-gray-300 px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-[#104292]"
               />
             </div>
 
@@ -309,7 +309,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 type="button"
                 onClick={handleClose}
                 disabled={loading}
-                className="rounded-xl border border-gray-300 px-4 py-2.5 hover:bg-gray-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className=" border border-gray-300 px-4 py-2.5 hover:bg-gray-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Bekor qilish
               </button>
@@ -317,7 +317,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-xl bg-blue-600 text-white px-5 py-2.5 hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[140px]"
+                className=" bg-[#104292] text-white px-5 py-2.5 hover:bg-[#104292]/80 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[140px]"
               >
                 {loading ? (
                   <>
@@ -340,7 +340,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 <button
                   type="button"
                   onClick={() => setStatusFilter("all")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "all"
+                  className={`px-3 py-2  text-sm transition ${statusFilter === "all"
                     ? "bg-gray-900 text-white"
                     : "bg-gray-100 text-gray-700"
                     }`}
@@ -350,7 +350,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 <button
                   type="button"
                   onClick={() => setStatusFilter("new")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "new"
+                  className={`px-3 py-2  text-sm transition ${statusFilter === "new"
                     ? "bg-blue-600 text-white"
                     : "bg-blue-50 text-blue-700"
                     }`}
@@ -360,7 +360,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 <button
                   type="button"
                   onClick={() => setStatusFilter("reviewed")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "reviewed"
+                  className={`px-3 py-2  text-sm transition ${statusFilter === "reviewed"
                     ? "bg-amber-600 text-white"
                     : "bg-amber-50 text-amber-700"
                     }`}
@@ -370,7 +370,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 <button
                   type="button"
                   onClick={() => setStatusFilter("resolved")}
-                  className={`px-3 py-2 rounded-xl text-sm transition ${statusFilter === "resolved"
+                  className={`px-3 py-2  text-sm transition ${statusFilter === "resolved"
                     ? "bg-green-600 text-white"
                     : "bg-green-50 text-green-700"
                     }`}
@@ -383,7 +383,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                 type="button"
                 onClick={fetchMyFeedbacks}
                 disabled={historyLoading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-2.5 hover:bg-gray-50 transition disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2  border border-gray-300 px-4 py-2.5 hover:bg-gray-50 transition disabled:opacity-60"
               >
                 <RefreshCw size={16} className={historyLoading ? "animate-spin" : ""} />
                 Yangilash
@@ -396,7 +396,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   Yuklanmoqda...
                 </div>
               ) : filteredFeedbacks.length === 0 ? (
-                <div className="py-12 text-center text-gray-500 bg-gray-50 rounded-2xl">
+                <div className="py-12 text-center text-gray-500 bg-gray-50 ">
                   Hozircha murojaatlar topilmadi
                 </div>
               ) : (
@@ -407,7 +407,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-gray-200 p-4 hover:shadow-sm transition"
+                      className=" border border-gray-200 p-4 hover:shadow-sm transition"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">

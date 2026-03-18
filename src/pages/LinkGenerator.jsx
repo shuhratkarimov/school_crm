@@ -1,17 +1,17 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link, Copy, Trash2, Pen, X } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import API_URL from '../conf/api';
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link, Copy, Trash2, Pen, X, Plus } from "lucide-react";
+import { toast } from "react-hot-toast";
+import API_URL from "../conf/api";
 
 export default function LinkGenerator() {
   const [links, setLinks] = useState([]);
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState(null);
-  const [newSubject, setNewSubject] = useState('');
 
   useEffect(() => {
     fetchLinks();
@@ -20,105 +20,116 @@ export default function LinkGenerator() {
   const fetchLinks = async () => {
     try {
       const response = await fetch(`${API_URL}/get-registration-links`, {
-        method: 'GET',
-        credentials: 'include',
+        method: "GET",
+        credentials: "include",
       });
       const data = await response.json();
       setLinks(data);
     } catch (error) {
-      console.error('Error fetching links:', error);
-      toast.error('Havolalarni olishda xato yuz berdi');
+      console.error("Error fetching links:", error);
+      toast.error("Havolalarni olishda xato yuz berdi");
     }
   };
 
+  const resetModal = () => {
+    setSubject("");
+    setEditingLink(null);
+    setIsModalOpen(false);
+  };
+
+  const openCreateModal = () => {
+    setEditingLink(null);
+    setSubject("");
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (link) => {
+    setEditingLink(link);
+    setSubject(link.subject || "");
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+
     if (!subject.trim()) {
-      toast.error('Fan nomini kiriting');
+      toast.error("Fan nomini kiriting");
       return;
     }
+
     setIsSubmitting(true);
+
     try {
-      const response = await fetch(`${API_URL}/create-registration-link`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ subject }),
-      });
-      if (response.ok) {
-        toast.success('Havola muvaffaqiyatli yaratildi!');
-        setSubject('');
-        fetchLinks();
-      } else {
-        throw new Error('Link yaratishda xato');
+      const response = editingLink
+        ? await fetch(`${API_URL}/update-registration-link/${editingLink.id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({ subject: subject.trim() }),
+          })
+        : await fetch(`${API_URL}/create-registration-link`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({ subject: subject.trim() }),
+          });
+
+      if (!response.ok) {
+        throw new Error(
+          editingLink ? "Link yangilashda xato" : "Link yaratishda xato"
+        );
       }
+
+      await response.json();
+
+      toast.success(
+        editingLink
+          ? "Havola muvaffaqiyatli yangilandi!"
+          : "Havola muvaffaqiyatli yaratildi!"
+      );
+
+      resetModal();
+      fetchLinks();
     } catch (error) {
-      toast.error('Xato yuz berdi, qayta urinib ko‘ring');
+      console.error(error);
+      toast.error("Xato yuz berdi, qayta urinib ko‘ring");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const updateLink = async (id, updatedSubject) => {
-    if (!id || !updatedSubject.trim()) {
-      toast.error("Fan nomi bo'sh bo'lishi mumkin emas!");
-      return;
-    }
-    try {
-      const response = await fetch(`${API_URL}/update-registration-link/${id}`, {
-        method: 'PUT', // yoki PATCH, server qaysi metodni qabul qilsa
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ subject: updatedSubject.trim() }),
-      });
-      if (response.ok) {
-        toast.success('Havola yangilandi');
-        fetchLinks();
-        setIsModalOpen(false);
-        setEditingLink(null);
-        setNewSubject('');
-      } else {
-        const data = await response.json();
-        console.error("Server xatosi:", data);
-        throw new Error('Link yangilashda xato');
-      }
-    } catch (error) {
-      toast.error('Xato yuz berdi, qayta urinib ko‘ring');
-    }
-  };
-
   const copyToClipboard = (link) => {
     navigator.clipboard.writeText(link);
-    toast.success('Havola nusxalandi!');
+    toast.success("Havola nusxalandi!");
   };
 
   const deleteLink = async (id) => {
     try {
       const response = await fetch(`${API_URL}/delete-registration-link/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
+        method: "DELETE",
+        credentials: "include",
       });
+
       if (response.ok) {
-        toast.success('Havola o‘chirildi');
+        toast.success("Havola o‘chirildi");
         fetchLinks();
       } else {
-        throw new Error('Havola o‘chirishda xato');
+        throw new Error("Havola o‘chirishda xato");
       }
     } catch (error) {
-      toast.error('Xato yuz berdi, qayta urinib ko‘ring');
+      console.error(error);
+      toast.error("Xato yuz berdi, qayta urinib ko‘ring");
     }
   };
 
   const showDeleteToast = (id) => {
     toast(
       <div>
-        <p>
-          Diqqat! Ushbu yangi havolaga tegishli barcha ma'lumotlar o'chiriladi!
-        </p>
+        <p>Diqqat! Ushbu yangi havolaga tegishli barcha ma'lumotlar o'chiriladi!</p>
         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
           <button
             style={{
@@ -161,134 +172,152 @@ export default function LinkGenerator() {
     `http://localhost:5173/student-registration/${token}`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto">
-        <div className="mb-5 flex items-center gap-2">
-          <Link size={28} color="#104292" />
-          <h1 className="text-2xl font-bold text-gray-800">Ro‘yxatdan o‘tish havolalari</h1>
-        </div>
+    <>
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto">
+          <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Link size={28} color="#104292" />
+              <h1 className="text-2xl font-bold text-gray-800">
+                Ro‘yxatdan o‘tish havolalari
+              </h1>
+            </div>
 
-        {/* Link yaratish formasi */}
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
-          <form onSubmit={handleSubmit} className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-gray-600 mb-2">Fan nomi</label>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 bg-[#104292] text-white px-4 py-2 hover:bg-[#104292]/90 transition"
+            >
+              <Plus size={18} />
+              Yangi havola
+            </button>
+          </div>
+
+          <div className="bg-white shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Yaratilgan havolalar</h2>
+
+            <div className="space-y-4">
+              <AnimatePresence>
+                {links.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Link size={48} className="mx-auto mb-4 text-gray-300" />
+                    <p>Hech qanday havola mavjud emas</p>
+                  </div>
+                ) : (
+                  links.map((link) => (
+                    <motion.div
+                      key={link.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border border-gray-200 p-4 hover:shadow-md transition"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800">{link.subject}</p>
+                        <p
+                          className="text-gray-600 cursor-pointer hover:underline break-all mt-1"
+                          onClick={() =>
+                            link.token &&
+                            copyToClipboard(makePublicLink(link.token))
+                          }
+                        >
+                          {link.token
+                            ? makePublicLink(link.token)
+                            : "Token yo‘q (migration qiling)"}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() =>
+                            link.token &&
+                            copyToClipboard(makePublicLink(link.token))
+                          }
+                          className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 transition"
+                          title="Nusxalash"
+                        >
+                          <Copy size={18} />
+                        </button>
+
+                        <button
+                          onClick={() => openEditModal(link)}
+                          className="p-2 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition"
+                          title="Tahrirlash"
+                        >
+                          <Pen size={18} />
+                        </button>
+
+                        <button
+                          onClick={() => showDeleteToast(link.id)}
+                          className="p-2 bg-red-100 text-red-600 hover:bg-red-200 transition"
+                          title="O‘chirish"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center px-5 py-4 border-b">
+              <h3 className="text-lg font-semibold">
+                {editingLink ? "Fan nomini yangilash" : "Yangi havola yaratish"}
+              </h3>
+
+              <button
+                onClick={resetModal}
+                className="p-2 rounded-full hover:bg-gray-100 transition"
+              >
+                <X size={20} className="text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fan nomi
+              </label>
+
               <input
                 type="text"
                 required
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Masalan: Matematika"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent outline-none"
               />
-            </div>
-            <motion.button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isSubmitting ? 'Yuklanmoqda...' : 'Havola yaratish'}
-            </motion.button>
-          </form>
-        </div>
 
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Yaratilgan havolalar</h2>
-          <div className="space-y-4">
-            <AnimatePresence>
-              {links.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Link size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>Hech qanday havola mavjud emas</p>
-                </div>
-              ) : (
-                links.map((link) => (
-                  <motion.div
-                    key={link.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="flex items-center justify-between border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                  >
-                    <div>
-                      <p className="font-semibold">{link.subject}</p>
-                      <p
-                        className="text-gray-600 cursor-pointer hover:underline"
-                        onClick={() => copyToClipboard(makePublicLink(link.token))}
-                      >
-                        {link.token ? makePublicLink(link.token) : "Token yo‘q (migration qiling)"}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => copyToClipboard(makePublicLink(link.token))}
-                        className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition"
-                        title="Nusxalash"
-                      >
-                        <Copy size={18} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingLink(link);
-                          setNewSubject(link.subject);
-                          setIsModalOpen(true);
-                        }}
-                        className="p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition"
-                        title="Tahrirlash"
-                      >
-                        <Pen size={18} />
-                      </button>
-                      <button
-                        onClick={() => showDeleteToast(link.id)}
-                        className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
-                        title="O‘chirish"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
+              <div className="flex justify-end gap-3 mt-5">
+                <button
+                  type="button"
+                  onClick={resetModal}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 transition"
+                >
+                  Bekor qilish
+                </button>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Fan nomini yangilash</h3>
-              <button onClick={() => setIsModalOpen(false)}>
-                <X size={20} className="text-gray-500 hover:text-gray-700" />
-              </button>
-            </div>
-            <input
-              type="text"
-              value={newSubject}
-              onChange={(e) => setNewSubject(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500"
-              placeholder="Yangi fan nomi"
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-              >
-                Bekor qilish
-              </button>
-              <button
-                onClick={() => updateLink(editingLink.id, newSubject)}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                Saqlash
-              </button>
-            </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-[#104292] text-white hover:bg-[#104292]/90 transition disabled:opacity-50"
+                >
+                  {isSubmitting
+                    ? "Yuklanmoqda..."
+                    : editingLink
+                    ? "Saqlash"
+                    : "Yaratish"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

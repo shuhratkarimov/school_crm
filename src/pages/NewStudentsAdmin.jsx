@@ -149,7 +149,7 @@ export default function NewStudentsAdmin() {
           <h1 className="text-2xl font-bold text-gray-800">Yangi o'quvchilar</h1>
         </div>
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
+        <div className="bg-white shadow p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -158,7 +158,7 @@ export default function NewStudentsAdmin() {
               <input
                 type="text"
                 placeholder="Ism, familiya yoki fan bo‘yicha qidirish..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -168,7 +168,7 @@ export default function NewStudentsAdmin() {
                 <Filter size={20} className="text-blue-600" />
               </div>
               <select
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -187,7 +187,7 @@ export default function NewStudentsAdmin() {
                   format="dd.MM.yyyy"
                   endDate={dateFilter.end}
                   placeholderText="Dan"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                   popperClassName="z-50"
                   popperPlacement="bottom-start"
                 />
@@ -202,7 +202,7 @@ export default function NewStudentsAdmin() {
                   endDate={dateFilter.end}
                   minDate={dateFilter.start}
                   placeholderText="Gacha"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                   popperClassName="z-50"
                   popperPlacement="bottom-start"
                 />
@@ -212,18 +212,18 @@ export default function NewStudentsAdmin() {
         </div>
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="bg-white shadow p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600">Jami yangi o'quvchilar</p>
                 <p className="text-3xl font-bold text-gray-800">{students.length}</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-full">
+              <div className="p-3 bg-blue-100">
                 <UserCheck size={24} className="text-blue-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="bg-white shadow p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600">Suhbatlashilgan</p>
@@ -231,12 +231,12 @@ export default function NewStudentsAdmin() {
                   {filteredStudents.filter(s => s.interviewed).length}
                 </p>
               </div>
-              <div className="p-3 bg-green-100 rounded-full">
+              <div className="p-3 bg-green-100">
                 <CheckCircle size={24} className="text-green-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="bg-white shadow p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600">Suhbatlashilmagan</p>
@@ -244,21 +244,21 @@ export default function NewStudentsAdmin() {
                   {filteredStudents.filter(s => !s.interviewed).length}
                 </p>
               </div>
-              <div className="p-3 bg-orange-100 rounded-full">
+              <div className="p-3 bg-orange-100">
                 <UserX size={24} className="text-orange-600" />
               </div>
             </div>
           </div>
         </div>
         {/* Students List */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
+        <div className="bg-white shadow overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 divide-x-0 md:divide-x divide-y md:divide-y-0">
             {/* Not Interviewed */}
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <UserX size={20} className="text-orange-500" />
                 <h2 className="text-xl font-semibold">Suhbatlashilmagan o'quvchilar</h2>
-                <span className="bg-orange-100 text-orange-800 text-sm px-2 py-1 rounded-full">
+                <span className="bg-orange-100 text-orange-800 text-sm px-2 py-1">
                   {filteredStudents.filter(s => !s.interviewed).length}
                 </span>
               </div>
@@ -272,7 +272,7 @@ export default function NewStudentsAdmin() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                        className="border border-gray-200 p-4 hover:shadow-md transition"
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -286,14 +286,14 @@ export default function NewStudentsAdmin() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleInterviewStatus(student.id, student.interviewed)}
-                              className="p-2 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition"
+                              className="p-2 bg-green-100 text-green-600 hover:bg-green-200 transition"
                               title="Suhbatlashildi"
                             >
                               <CheckCircle size={18} />
                             </button>
                             <button
                               onClick={() => showDeleteToast(student.id)}
-                              className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
+                              className="p-2 bg-red-100 text-red-600 hover:bg-red-200 transition"
                               title="O‘chirish"
                             >
                               <Trash2 size={18} />
@@ -316,8 +316,8 @@ export default function NewStudentsAdmin() {
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <UserCheck size={20} className="text-green-500" />
-                <h2 className="text-xl font-semibold">Suhbatlashilgan O'quvchilar</h2>
-                <span className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">
+                <h2 className="text-xl font-semibold">Suhbatlashilgan o'quvchilar</h2>
+                <span className="bg-green-100 text-green-800 text-sm px-2 py-1">
                   {filteredStudents.filter(s => s.interviewed).length}
                 </span>
               </div>
@@ -331,7 +331,7 @@ export default function NewStudentsAdmin() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                        className="border border-gray-200 p-4 hover:shadow-md transition"
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -345,14 +345,14 @@ export default function NewStudentsAdmin() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleInterviewStatus(student.id, student.interviewed)}
-                              className="p-2 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition"
+                              className="p-2 bg-orange-100 text-orange-600 hover:bg-orange-200 transition"
                               title="Suhbatlashilmagan"
                             >
                               <XCircle size={18} />
                             </button>
                             <button
                               onClick={() => showDeleteToast(student.id)}
-                              className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
+                              className="p-2 bg-red-100 text-red-600 hover:bg-red-200 transition"
                               title="O‘chirish"
                             >
                               <Trash2 size={18} />

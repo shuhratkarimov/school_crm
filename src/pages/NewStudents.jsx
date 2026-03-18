@@ -423,7 +423,7 @@ export default function NewStudents() {
 
                 <div className="flex gap-3 mt-4">
                     <button
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                        className="px-4 py-2 bg-red-600 text-white  hover:bg-red-700 transition"
                         onClick={async () => {
                             try {
                                 await onConfirm?.();
@@ -436,7 +436,7 @@ export default function NewStudents() {
                     </button>
 
                     <button
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                        className="px-4 py-2 bg-gray-200 text-gray-700  hover:bg-gray-300 transition"
                         onClick={() => toast.dismiss(toastId)}
                     >
                         {cancelText}
@@ -592,198 +592,264 @@ export default function NewStudents() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="mb-6 flex items-center justify-between px-6 pt-6">
-                <h1 className="flex items-center gap-3 text-3xl font-bold text-gray-800">
-                    <AlertCircle className="text-blue-700" size={32} />
-                    Yangi o'quvchilar (zaxira)
-                </h1>
-                <div className="flex gap-4">
-                    <button
-                        onClick={() => setImportModal(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition"
-                    >
-                        <Plus size={18} /> Excel import
-                    </button>
-                    <button
-                        onClick={() => setAddModal(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition"
-                    >
-                        <Plus size={18} /> Qo'lda qo'shish
-                    </button>
-                </div>
-            </div>
+            <div>
+                {/* Header */}
+                <div className="flex flex-col gap-3 px-6 pt-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="text-blue-700" size={30} />
+                        <h1 className="text-2xl font-bold text-gray-800">
+                            Yangi o'quvchilar (zaxira)
+                        </h1>
+                    </div>
 
-            {/* Search */}
-            <div className="px-6 mb-6">
-                <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Ism, familiya yoki telefon bo'yicha qidirish..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
-            </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                            onClick={() => setImportModal(true)}
+                            className="flex items-center justify-center gap-2 bg-[#104292] px-5 py-2.5 text-white transition hover:bg-[#0d3677]"
+                        >
+                            <Plus size={18} />
+                            Excel import
+                        </button>
 
-            {selectedStudentIds.length > 0 && (
-                <div className="px-6 mb-4">
-                    <div className="bg-white border border-blue-200 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                                <Users size={20} />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-gray-800">
-                                    {selectedStudentIds.length} ta o'quvchi tanlandi
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    Belgilangan o'quvchilar ustida ommaviy amal bajarishingiz mumkin
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3">
-                            <button
-                                onClick={() => setBulkAssignModal(true)}
-                                disabled={bulkLoading}
-                                className="px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition flex items-center gap-2 disabled:opacity-50"
-                            >
-                                <Users size={18} />
-                                Guruhga biriktirish
-                            </button>
-
-                            <button
-                                onClick={() =>
-                                    showDeleteToast({
-                                        title: "Belgilangan o'quvchilarni o'chirish",
-                                        message: `${selectedStudentIds.length} ta zaxiradagi o'quvchini o'chirmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.`,
-                                        confirmText: "Ha, o'chirish",
-                                        onConfirm: deleteSelectedReserveStudents,
-                                    })
-                                }
-                                disabled={bulkLoading || selectedStudentIds.length === 0}
-                                className="px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition flex items-center gap-2 disabled:opacity-50"
-                            >
-                                <Trash2 size={18} />
-                                O'chirish
-                            </button>
-
-                            <button
-                                onClick={clearSelections}
-                                disabled={bulkLoading}
-                                className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition"
-                            >
-                                Bekor qilish
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => setAddModal(true)}
+                            className="flex items-center justify-center gap-2 bg-[#104292] px-5 py-2.5 text-white transition hover:bg-[#0d3677]"
+                        >
+                            <Plus size={18} />
+                            Qo'lda qo'shish
+                        </button>
                     </div>
                 </div>
-            )}
 
-            {/* Table */}
-            <div className="px-6">
-                <div className="bg-white rounded-xl shadow overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-[#104292] text-white">
-                            <tr>
-                                <th className="p-4 text-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        onChange={toggleSelectAll}
-                                        className="w-4 h-4"
-                                    />
-                                </th>
-                                <th className="p-4 text-left">#</th>
-                                <th className="p-4 text-left">F.I.Sh</th>
-                                <th className="p-4 text-left">Telefon</th>
-                                <th className="p-4 text-left">Ota-ona telefoni</th>
-                                <th className="p-4 text-left">Tug'ilgan sana</th>
-                                <th className="p-4 text-left">Status</th>
-                                <th className="p-4 text-center">Amallar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredStudents.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="p-8 text-center text-gray-500">                                        {searchTerm ? "Hech narsa topilmadi" : "Hozircha zaxirada o'quvchi yo'q"}
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredStudents.map((student, idx) => (
-                                    <tr
-                                        key={student.id}
-                                        className={`border-b transition-colors cursor-pointer ${selectedStudentIds.includes(student.id) ? "bg-blue-50" : "hover:bg-gray-50"
-                                            }`}
-                                        onClick={() => setDetailStudent(student)}
+                {/* Bulk actions */}
+                {selectedStudentIds.length > 0 && (
+                    <div className="px-6 pt-5">
+                        <div className="border border-blue-200 bg-white px-4 py-4 shadow-sm">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center bg-blue-100 text-blue-700">
+                                        <Users size={20} />
+                                    </div>
+
+                                    <div>
+                                        <p className="font-semibold text-gray-800">
+                                            {selectedStudentIds.length} ta o'quvchi tanlandi
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                            Belgilangan o'quvchilar ustida ommaviy amal bajarishingiz mumkin
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        onClick={() => setBulkAssignModal(true)}
+                                        disabled={bulkLoading}
+                                        className="flex items-center gap-2 bg-green-600 px-4 py-2.5 text-white transition hover:bg-green-700 disabled:opacity-50"
                                     >
-                                        <td
-                                            className="p-4 text-center"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
+                                        <Users size={18} />
+                                        Guruhga biriktirish
+                                    </button>
+
+                                    <button
+                                        onClick={() =>
+                                            showDeleteToast({
+                                                title: "Belgilangan o'quvchilarni o'chirish",
+                                                message: `${selectedStudentIds.length} ta zaxiradagi o'quvchini o'chirmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.`,
+                                                confirmText: "Ha, o'chirish",
+                                                onConfirm: deleteSelectedReserveStudents,
+                                            })
+                                        }
+                                        disabled={bulkLoading || selectedStudentIds.length === 0}
+                                        className="flex items-center gap-2 bg-red-600 px-4 py-2.5 text-white transition hover:bg-red-700 disabled:opacity-50"
+                                    >
+                                        <Trash2 size={18} />
+                                        O'chirish
+                                    </button>
+
+                                    <button
+                                        onClick={clearSelections}
+                                        disabled={bulkLoading}
+                                        className="bg-gray-200 px-4 py-2.5 text-gray-700 transition hover:bg-gray-300"
+                                    >
+                                        Bekor qilish
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Main card */}
+                <div className="card mt-6">
+                    <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <h3 className="text-[1.2rem] font-bold">
+                            Zaxiradagi o'quvchilar ({filteredStudents.length} ta)
+                        </h3>
+
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
+                                <Search size={18} color="#104292" />
+                                <input
+                                    type="text"
+                                    placeholder="Ism, familiya yoki telefon bo'yicha qidirish..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full outline-none text-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="overflow-hidden border border-gray-300 bg-white">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full border-collapse text-[15px]">
+                                <thead className="bg-[#104292] text-white">
+                                    <tr>
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedStudentIds.includes(student.id)}
-                                                onChange={() => toggleStudentSelection(student.id)}
-                                                className="w-4 h-4 accent-blue-600"
+                                                checked={isAllSelected}
+                                                onChange={toggleSelectAll}
+                                                className="h-4 w-4"
                                             />
-                                        </td>
+                                        </th>
 
-                                        <td className="p-4">{idx + 1}</td>
-                                        <td className="p-4 font-medium">{student.first_name} {student.last_name}</td>
-                                        <td className="p-4">{student.phone_number}</td>
-                                        <td className="p-4">{student.parents_phone_number}</td>
-                                        <td className="p-4">
-                                            {student.birth_date ? new Date(student.birth_date).toLocaleDateString("ru-RU") : "—"}
-                                        </td>
-                                        <td className="p-4">
-                                            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                                                {student.status === "new" ? "Yangi" : student.status}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <div className="flex gap-2 justify-center">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        openEditModal(student);
-                                                    }}
-                                                    className="p-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
-                                                >
-                                                    <Pen size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        showDeleteToast({
-                                                            title: "O'quvchini o'chirish",
-                                                            message: "Diqqat! Ushbu zaxiradagi o'quvchiga tegishli barcha ma'lumotlar o'chiriladi!",
-                                                            confirmText: "O'chirish",
-                                                            onConfirm: () => deleteReserveStudent(student.id),
-                                                        });
-                                                    }}
-                                                    className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                                            #
+                                        </th>
+
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                                            F.I.Sh
+                                        </th>
+
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                                            Telefon
+                                        </th>
+
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                                            Ota-ona telefoni
+                                        </th>
+
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                                            Tug'ilgan sana
+                                        </th>
+
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                                            Status
+                                        </th>
+
+                                        <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                                            Amallar
+                                        </th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                </thead>
+
+                                <tbody>
+                                    {filteredStudents.length === 0 ? (
+                                        <tr>
+                                            <td
+                                                colSpan={8}
+                                                className="border border-gray-300 py-12 text-center text-gray-500"
+                                            >
+                                                {searchTerm
+                                                    ? "Hech narsa topilmadi"
+                                                    : "Hozircha zaxirada o'quvchi yo'q"}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredStudents.map((student, idx) => (
+                                            <tr
+                                                key={student.id}
+                                                className={`cursor-pointer transition-colors ${selectedStudentIds.includes(student.id)
+                                                        ? "bg-blue-50"
+                                                        : "hover:bg-gray-50"
+                                                    }`}
+                                                onClick={() => setDetailStudent(student)}
+                                            >
+                                                <td
+                                                    className="border border-gray-300 px-4 py-3 text-center"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedStudentIds.includes(student.id)}
+                                                        onChange={() => toggleStudentSelection(student.id)}
+                                                        className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                </td>
+
+                                                <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                                                    {idx + 1}
+                                                </td>
+
+                                                <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-900">
+                                                    {student.first_name} {student.last_name}
+                                                </td>
+
+                                                <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                                                    {student.phone_number || "—"}
+                                                </td>
+
+                                                <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                                                    {student.parents_phone_number || "—"}
+                                                </td>
+
+                                                <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                                                    {student.birth_date
+                                                        ? new Date(student.birth_date).toLocaleDateString("ru-RU")
+                                                        : "—"}
+                                                </td>
+
+                                                <td className="border border-gray-300 px-4 py-3 text-center">
+                                                    <span className="inline-block bg-blue-100 px-3 py-1 text-sm text-blue-800">
+                                                        {student.status === "new" ? "Yangi" : student.status}
+                                                    </span>
+                                                </td>
+
+                                                <td
+                                                    className="border border-gray-300 px-4 py-3"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <div className="flex justify-center gap-2">
+                                                        <button
+                                                            onClick={() => openEditModal(student)}
+                                                            className="flex h-9 w-9 items-center justify-center bg-blue-600 text-white transition hover:bg-blue-700"
+                                                        >
+                                                            <Pen size={16} />
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => {
+                                                                showDeleteToast({
+                                                                    title: "O'quvchini o'chirish",
+                                                                    message:
+                                                                        "Diqqat! Ushbu zaxiradagi o'quvchiga tegishli barcha ma'lumotlar o'chiriladi!",
+                                                                    confirmText: "O'chirish",
+                                                                    onConfirm: () => deleteReserveStudent(student.id),
+                                                                });
+                                                            }}
+                                                            className="flex h-9 w-9 items-center justify-center bg-red-600 text-white transition hover:bg-red-700"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Import Modal */}
             {importModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full">
-                        <div className="p-6 border-b bg-[#104292] text-white rounded-t-xl flex justify-between items-center">
+                    <div className="bg-white  shadow-2xl max-w-lg w-full">
+                        <div className="p-6 border-b bg-[#104292] text-white flex justify-between items-center">
                             <h2 className="text-xl font-bold">Excel orqali yangi o'quvchilarni import qilish</h2>
                             <button onClick={() => setImportModal(false)}>
                                 <X size={24} />
@@ -797,7 +863,7 @@ export default function NewStudents() {
                                 type="file"
                                 accept=".xlsx,.xls"
                                 onChange={(e) => setSelectedFile(e.target.files[0])}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-green-200 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-100"
                             />
                             {importErrors.length > 0 && (
                                 <p className="mt-2 text-red-600 text-sm">{importErrors.join(", ")}</p>
@@ -805,14 +871,14 @@ export default function NewStudents() {
                             <div className="mt-6 flex justify-end gap-3">
                                 <button
                                     onClick={() => setImportModal(false)}
-                                    className="px-5 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                                    className="px-5 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300"
                                 >
                                     Bekor qilish
                                 </button>
                                 <button
                                     onClick={handleImport}
                                     disabled={!selectedFile}
-                                    className="px-5 py-2 bg-[#104292] text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-5 py-2 bg-[#104292] text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Import qilish
                                 </button>
@@ -825,8 +891,8 @@ export default function NewStudents() {
             {/* Qo'shish / Tahrirlash Modal */}
             {(addModal || editModal) && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b bg-[#104292] text-white rounded-t-xl flex justify-between items-center">
+                    <div className="bg-white  shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b bg-[#104292] text-white flex justify-between items-center">
                             <h2 className="text-xl font-bold">
                                 {editModal ? "Ma'lumotlarni tahrirlash" : "Yangi o'quvchi qo'shish (zaxira)"}
                             </h2>
@@ -853,7 +919,7 @@ export default function NewStudents() {
                                             ? setEditFormData({ ...editFormData, first_name: e.target.value })
                                             : setFormData({ ...formData, first_name: e.target.value })
                                         )}
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                         required
                                     />
                                 </div>
@@ -868,7 +934,7 @@ export default function NewStudents() {
                                             ? setEditFormData({ ...editFormData, last_name: e.target.value })
                                             : setFormData({ ...formData, last_name: e.target.value })
                                         )}
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                         required
                                     />
                                 </div>
@@ -884,7 +950,7 @@ export default function NewStudents() {
                                             : setFormData({ ...formData, phone_number: e.target.value })
                                         )}
                                         placeholder="+998901234567"
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                         required
                                     />
                                 </div>
@@ -900,7 +966,7 @@ export default function NewStudents() {
                                             : setFormData({ ...formData, father_name: e.target.value })
                                         )}
                                         placeholder="Ota yoki onaning ismi va familiyasi"
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
 
@@ -915,7 +981,7 @@ export default function NewStudents() {
                                             : setFormData({ ...formData, parents_phone_number: e.target.value })
                                         )}
                                         placeholder="+998901234567"
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                         required
                                     />
                                 </div>
@@ -930,7 +996,7 @@ export default function NewStudents() {
                                             ? setEditFormData({ ...editFormData, birth_date: e.target.value })
                                             : setFormData({ ...formData, birth_date: e.target.value })
                                         )}
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
 
@@ -944,7 +1010,7 @@ export default function NewStudents() {
                                             ? setEditFormData({ ...editFormData, came_in_school: e.target.value })
                                             : setFormData({ ...formData, came_in_school: e.target.value })
                                         )}
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
 
@@ -957,7 +1023,7 @@ export default function NewStudents() {
                                             ? setEditFormData({ ...editFormData, notes: e.target.value })
                                             : setFormData({ ...formData, notes: e.target.value })
                                         )}
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500"
                                         rows={3}
                                     />
                                 </div>
@@ -967,13 +1033,13 @@ export default function NewStudents() {
                                 <button
                                     type="button"
                                     onClick={() => { setAddModal(false); setEditModal(false); }}
-                                    className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                                    className="px-6 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300"
                                 >
                                     Bekor qilish
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-6 py-2 bg-[#104292] text-white rounded hover:bg-blue-700 flex items-center gap-2"
+                                    className="px-6 py-2 bg-[#104292] text-white hover:bg-blue-700 flex items-center gap-2"
                                 >
                                     <Check size={18} />
                                     Saqlash
@@ -986,7 +1052,7 @@ export default function NewStudents() {
 
             {progressModal && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                    <div className="bg-white shadow-2xl w-full max-w-lg overflow-hidden">
                         <div className="bg-[#104292] text-white px-6 py-4">
                             <h2 className="text-xl font-bold">Jarayon davom etmoqda</h2>
                             <p className="text-sm text-blue-100 mt-1">
@@ -1012,15 +1078,15 @@ export default function NewStudents() {
                             </div>
 
                             <div className="grid grid-cols-3 gap-3">
-                                <div className="rounded-xl bg-blue-50 p-4 text-center">
+                                <div className=" bg-blue-50 p-4 text-center">
                                     <p className="text-sm text-gray-500">Jami</p>
                                     <p className="text-xl font-bold text-blue-700">{progressData.total || 0}</p>
                                 </div>
-                                <div className="rounded-xl bg-green-50 p-4 text-center">
+                                <div className=" bg-green-50 p-4 text-center">
                                     <p className="text-sm text-gray-500">Bajarildi</p>
                                     <p className="text-xl font-bold text-green-700">{progressData.successCount || 0}</p>
                                 </div>
-                                <div className="rounded-xl bg-red-50 p-4 text-center">
+                                <div className=" bg-red-50 p-4 text-center">
                                     <p className="text-sm text-gray-500">Xato</p>
                                     <p className="text-xl font-bold text-red-700">{progressData.failedCount || 0}</p>
                                 </div>
@@ -1031,7 +1097,7 @@ export default function NewStudents() {
                             </div>
 
                             {progressData.errors?.length > 0 && (
-                                <div className="rounded-xl border border-red-200 bg-red-50 p-4 max-h-40 overflow-y-auto">
+                                <div className=" border border-red-200 bg-red-50 p-4 max-h-40 overflow-y-auto">
                                     <p className="font-semibold text-red-700 mb-2">Xatolar:</p>
                                     <div className="space-y-1 text-sm text-red-600">
                                         {progressData.errors.slice(0, 10).map((err, idx) => (
@@ -1060,7 +1126,7 @@ export default function NewStudents() {
                                             });
                                             setBulkLoading(false);
                                         }}
-                                        className="px-5 py-2.5 bg-[#104292] text-white rounded-xl hover:bg-blue-700"
+                                        className="px-5 py-2.5 bg-[#104292] text-white  hover:bg-blue-700"
                                     >
                                         Yopish
                                     </button>
@@ -1073,8 +1139,8 @@ export default function NewStudents() {
 
             {bulkAssignModal && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b bg-[#104292] text-white rounded-t-xl flex justify-between items-center">
+                    <div className="bg-white  shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b bg-[#104292] text-white flex justify-between items-center">
                             <div>
                                 <h2 className="text-xl font-bold">Belgilangan o'quvchilarni guruhlarga biriktirish</h2>
                                 <p className="text-sm text-blue-100 mt-1">
@@ -1107,7 +1173,7 @@ export default function NewStudents() {
                                     groups.map((group) => (
                                         <label
                                             key={group.id}
-                                            className="flex items-center gap-3 p-3 border rounded-xl hover:bg-gray-50 cursor-pointer transition"
+                                            className="flex items-center gap-3 p-3 border  hover:bg-gray-50 cursor-pointer transition"
                                         >
                                             <input
                                                 type="checkbox"
@@ -1121,7 +1187,7 @@ export default function NewStudents() {
                                                         );
                                                     }
                                                 }}
-                                                className="w-5 h-5 text-green-600 rounded"
+                                                className="w-5 h-5 text-green-600 hover:bg-green-600"
                                             />
                                             <span className="font-medium">{group.group_subject}</span>
                                         </label>
@@ -1136,7 +1202,7 @@ export default function NewStudents() {
                                         setBulkSelectedGroups([]);
                                     }}
                                     disabled={bulkLoading}
-                                    className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 disabled:opacity-50"
+                                    className="px-6 py-2.5 bg-gray-200 text-gray-700  hover:bg-gray-300 disabled:opacity-50"
                                 >
                                     Bekor qilish
                                 </button>
@@ -1144,7 +1210,7 @@ export default function NewStudents() {
                                 <button
                                     onClick={handleBulkAssignGroups}
                                     disabled={bulkLoading || bulkSelectedGroups.length === 0}
-                                    className="px-6 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="px-6 py-2.5 bg-green-600 text-white  hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
                                     <Check size={18} />
                                     {bulkLoading ? "Saqlanmoqda..." : "Saqlash va o'tkazish"}
@@ -1163,8 +1229,8 @@ export default function NewStudents() {
 
             {assignModal && assignStudent && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b bg-[#104292] text-white rounded-t-xl flex justify-between items-center">
+                    <div className="bg-white  shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b bg-[#104292] text-white flex justify-between items-center">
                             <h2 className="text-xl font-bold">
                                 {assignStudent.first_name} {assignStudent.last_name} ni guruhlarga biriktirish
                             </h2>
@@ -1185,7 +1251,7 @@ export default function NewStudents() {
                                     groups.map((group) => (
                                         <label
                                             key={group.id}
-                                            className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition"
+                                            className="flex items-center gap-3 p-3 border  hover:bg-gray-50 cursor-pointer transition"
                                         >
                                             <input
                                                 type="checkbox"
@@ -1197,7 +1263,7 @@ export default function NewStudents() {
                                                         setSelectedGroups(selectedGroups.filter(id => id !== group.id));
                                                     }
                                                 }}
-                                                className="w-5 h-5 text-green-600 rounded"
+                                                className="w-5 h-5 text-green-600 hover:bg-green-600"
                                             />
                                             <span className="font-medium">{group.group_subject}</span>
                                         </label>
@@ -1208,14 +1274,14 @@ export default function NewStudents() {
                             <div className="mt-8 flex justify-end gap-4 pt-4 border-t">
                                 <button
                                     onClick={() => setAssignModal(false)}
-                                    className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                                    className="px-6 py-2.5 bg-gray-200 text-gray-700  hover:bg-gray-300"
                                 >
                                     Bekor qilish
                                 </button>
                                 <button
                                     onClick={handleAssignGroups}
                                     disabled={selectedGroups.length === 0}
-                                    className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="px-6 py-2.5 bg-green-600 text-white  hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
                                     <Check size={18} />
                                     Saqlash va o'tkazish
@@ -1235,8 +1301,8 @@ export default function NewStudents() {
             {/* Tanlangan o'quvchi modal (detail + approve tugmasi) */}
             {detailStudent && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-t-xl flex justify-between items-center">
+                    <div className="bg-white  shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b bg-gradient-to-r from-blue-900 to-blue-700 text-white flex justify-between items-center">
                             <h2 className="text-xl font-bold">Zaxiradagi o'quvchi</h2>
                             <button onClick={() => { setDetailStudent(null) }}>
                                 <X size={24} />
@@ -1261,14 +1327,14 @@ export default function NewStudents() {
                             {detailStudent.notes && (
                                 <div>
                                     <h3 className="text-lg font-semibold mb-2">Izoh</h3>
-                                    <p className="bg-gray-50 p-3 rounded border">{detailStudent.notes}</p>
+                                    <p className="bg-gray-50 p-3 border">{detailStudent.notes}</p>
                                 </div>
                             )}
                         </div>
                         <div className="flex justify-end gap-4 pt-4 border-t p-6">
                             <button
                                 onClick={() => { openEditModal(detailStudent); setDetailStudent(null) }}
-                                className="px-5 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center gap-2"
+                                className="px-5 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
                             >
                                 <Pen size={16} /> Tahrirlash
                             </button>
@@ -1282,7 +1348,7 @@ export default function NewStudents() {
                                         onConfirm: () => deleteReserveStudent(detailStudent.id),
                                     })
                                 }
-                                className="px-5 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-2"
+                                className="px-5 py-2 bg-red-100 text-red-700 hover:bg-red-200 flex items-center gap-2"
                             >
                                 <Trash2 size={16} /> O'chirish
                             </button>
@@ -1290,7 +1356,7 @@ export default function NewStudents() {
                             {/* Yangi tugma: Guruhlarga biriktirish */}
                             <button
                                 onClick={() => { openAssignModal(detailStudent); setDetailStudent(null) }}
-                                className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+                                className="px-6 py-2 bg-green-600 text-white hover:bg-green-700 flex items-center gap-2"
                             >
                                 <Users size={18} /> Guruhlarga biriktirish
                             </button>

@@ -127,7 +127,7 @@ function Login({ setIsAuthenticated }) {
 
       {/* Card */}
       <motion.div
-        className="bg-white/80 backdrop-blur-lg shadow-2xl rounded-2xl w-full max-w-md p-8 border border-gray-100 flex flex-col items-center pt-20"
+        className="bg-white/80 backdrop-blur-lg shadow-2xl w-full max-w-md p-8 border border-gray-100 flex flex-col items-center pt-20"
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -159,7 +159,7 @@ function Login({ setIsAuthenticated }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+              className="w-full border px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
               placeholder="Elektron pochta kiriting"
               autoComplete="username"
               required
@@ -176,7 +176,7 @@ function Login({ setIsAuthenticated }) {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                className="w-full border px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition-all"
                 placeholder="Parolni kiriting"
                 autoComplete="current-password"
                 required
@@ -195,7 +195,7 @@ function Login({ setIsAuthenticated }) {
           <motion.button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center disabled:opacity-60"
+            className="w-full bg-[#104292] hover:bg-[#104292]/80 text-white font-medium py-3 px-4 transition-all duration-300 flex items-center justify-center disabled:opacity-60"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
           >

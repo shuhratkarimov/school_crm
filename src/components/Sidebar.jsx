@@ -179,7 +179,7 @@ function Sidebar() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`relative mb-1 flex min-h-10 items-center rounded-xl p-2 transition-all duration-200 ${
+                  className={`relative mb-1 flex min-h-10 items-center p-2 transition-all duration-200 ${
                     isActive
                       ? "bg-gradient-to-r from-blue-500 to-blue-600 shadow-md"
                       : "hover:bg-blue-700"
@@ -200,7 +200,7 @@ function Sidebar() {
               <div key={item.label} className="mb-2">
                 <div
                   onClick={() => toggleMenu(item.label)}
-                  className={`flex cursor-pointer items-center rounded-xl p-2 transition-all duration-200 ${
+                  className={`flex cursor-pointer items-center p-2 transition-all duration-200 ${
                     isMenuOpen ? "bg-blue-700" : "hover:bg-blue-700"
                   } ${isCollapsed && !expandedWidth ? "justify-center" : "justify-between"}`}
                 >
@@ -237,7 +237,7 @@ function Sidebar() {
                         <Link
                           key={sub.path}
                           to={sub.path}
-                          className={`mb-1 flex min-h-8 items-center rounded-xl p-2 transition-all duration-200 ${
+                          className={`mb-1 flex min-h-8 items-center p-2 transition-all duration-200 ${
                             isSubActive ? "bg-blue-600 shadow-md" : "hover:bg-blue-700"
                           }`}
                         >
@@ -251,7 +251,7 @@ function Sidebar() {
                           )}
 
                           {isSubActive && (
-                            <div className="ml-2 h-2 w-2 rounded-full bg-yellow-300 animate-pulse" />
+                            <div className="ml-2 h-2 w-2 rounded-full bg-white animate-pulse" />
                           )}
                         </Link>
                       );
@@ -266,7 +266,7 @@ function Sidebar() {
         <div className="mt-4 space-y-2 border-t border-blue-700 pt-4">
           <button
             onClick={openSupportModal}
-            className={`w-full rounded-xl border border-blue-500/40 bg-white/10 px-3 py-3 shadow-sm transition-all duration-200 hover:bg-white/15 ${
+            className={`w-full border border-blue-500/40 bg-white/10 px-3 py-3 shadow-sm transition-all duration-200 hover:bg-white/15 ${
               isCollapsed && !expandedWidth ? "flex justify-center" : "flex justify-start"
             } items-center`}
           >

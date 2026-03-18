@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, School, Pen } from "lucide-react";
+import { Trash2, School, Pen, Plus, X } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import "../index.css";
 import { toast } from "react-hot-toast";
@@ -43,6 +43,7 @@ const RoomManagement = () => {
   });
   const [editModal, setEditModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
+  const [addRoomModalOpen, setAddRoomModalOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -86,24 +87,22 @@ const RoomManagement = () => {
   const addRoom = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(
-        `${API_URL}/create_room`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: formData.name,
-            capacity: formData.capacity ? Number(formData.capacity) : null,
-          }),
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${API_URL}/create_room`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          capacity: formData.capacity ? Number(formData.capacity) : null,
+        }),
+        credentials: "include",
+      });
 
       if (response.ok) {
         const newRoom = await response.json();
         setRooms([...rooms, newRoom.room]);
         toast.success(`${formData.name} xonasi muvaffaqiyatli qo'shildi`);
         setFormData({ name: "", capacity: "" });
+        setAddRoomModalOpen(false);
       } else {
         throw new Error("Xona qo'shishda xatolik yuz berdi");
       }
@@ -281,7 +280,7 @@ const RoomManagement = () => {
     }
 
     // Standart rang (agar guruh ID si bo'lmasa)
-    return '#FFD700';
+    return 'green';
   };
 
   const renderScheduleCells = (day) => {
@@ -326,11 +325,12 @@ const RoomManagement = () => {
             style={{
               background: groupColor,
               color: textColor,
-              position: 'relative',
-              padding: '8px',
-              border: '1px solid #ddd',
-              minWidth: `${durationHours * 100}px`,
-              textAlign: 'center'
+              position: "relative",
+              padding: "10px",
+              border: "1px solid #d1d5db",
+              minWidth: `${durationHours * 110}px`,
+              textAlign: "center",
+              verticalAlign: "middle",
             }}
           >
             <div style={{
@@ -358,9 +358,10 @@ const RoomManagement = () => {
           <td
             key={`empty-${day}-${startHour}`}
             style={{
-              border: '1px solid #ddd',
-              minWidth: '100px',
-              height: '60px'
+              border: "1px solid #d1d5db",
+              minWidth: "110px",
+              height: "72px",
+              background: "#ffffff",
             }}
           ></td>
         );
@@ -372,113 +373,67 @@ const RoomManagement = () => {
     return cells;
   };
 
+  const openAddRoomModal = () => {
+    setAddRoomModalOpen(true);
+  };
+
+  const closeAddRoomModal = () => {
+    setAddRoomModalOpen(false);
+  };
+
   return (
     <div>
-      <div className="flex items-center gap-2 ml-6">
-        <School size={24} color="#104292" />
-        <h1 className="text-2xl font-bold">Xonalar va darslar jadvali</h1>
+      <div className="flex flex-col gap-3 px-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <School size={24} color="#104292" />
+          <h1 className="text-2xl font-bold">Xonalar va darslar jadvali</h1>
+        </div>
+
+        <button
+          className="flex items-center gap-2 bg-[#104292] px-4 py-2 text-white transition hover:bg-[#0d3677]"
+          onClick={() => {
+            setSelectedRoom(null);
+            setFormData({ name: "", capacity: "" });
+            setEditModal(false);
+            openAddRoomModal();
+          }}
+        >
+          <Plus size={18} />
+          Yangi xona qo'shish
+        </button>
       </div>
       {/* Xona qo‘shish formasi */}
-      <div className="card">
-        <h3 style={{ marginBottom: "20px", fontWeight: "bold" }}>Yangi xona qo'shish</h3>
-        <form onSubmit={addRoom}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Xona nomi</label>
-              <input
-                type="text"
-                className="input"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Xona nomini kiriting"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Sig‘im (ixtiyoriy)</label>
-              <input
-                type="number"
-                className="input"
-                value={formData.capacity}
-                onChange={(e) =>
-                  setFormData({ ...formData, capacity: e.target.value })
-                }
-                placeholder="Masalan: 30"
-                min="0"
-              />
-            </div>
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Qo'shish
-          </button>
-        </form>
-      </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
-        <h3 style={{ marginBottom: "20px", fontWeight: "bold" }}>Xonalar ({rooms.length} ta)</h3>
+
+      <div className="card mt-5">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h3 className="text-xl font-bold">Xonalar ({rooms.length} ta)</h3>
+        </div>
+
         {rooms.length === 0 ? (
-          <p style={{ textAlign: "center", padding: "20px" }}>
+          <div className="border border-gray-200 bg-gray-50 py-10 text-center text-gray-500">
             {error || "Xonalar hali mavjud emas"}
-          </p>
+          </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-              gap: "10px",
-            }}
-          >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {rooms.map((room) => (
               <div
                 key={room.id}
-                className="card"
-                style={{
-                  margin: 0,
-                  cursor: "pointer",
-                  background:
-                    selectedRoom?.id === room.id ? "#e6f3ff" : "white",
-                  border:
-                    selectedRoom?.id === room.id
-                      ? "2px solid #007bff"
-                      : "1px solid #ddd",
-                }}
                 onClick={() => setSelectedRoom(room)}
+                className={`cursor-pointer border bg-white p-5 shadow-sm transition hover:shadow-md ${selectedRoom?.id === room.id
+                  ? "border-[#104292] bg-blue-50 ring-2 ring-[#104292]/10"
+                  : "border-gray-200"
+                  }`}
               >
-                <div style={{ padding: "10px", fontSize: "17px" }}>
-                  <p
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: "18px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    {room.name}
-                  </p>
-                  <p style={{ marginBottom: "10px" }}>
-                    <strong>Sig‘im:</strong>{" "}
-                    {room.capacity ? `${room.capacity} o'quvchi sig'adi` : "Belgilanmagan"}
-                  </p>
-                  <p style={{ marginBottom: "10px" }}>
-                    <strong>Asosan bo'sh:</strong>
-                    {room?.busiestFreePeriod || "Kun bo'yi"}
-                  </p>
-                  <p style={{ marginBottom: "30px" }}>
-                    <strong>Bandlik foizi: </strong>
-                    {room?.occupancyPercentage != null
-                      ? `${room.occupancyPercentage}%`
-                      : "0%"}
-                  </p>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "4px",
-                      justifyContent: "flex-end",
-                    }}
-                  >
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900">{room.name}</h4>
+                    <p className="mt-1 text-sm text-gray-500">Xona ma'lumotlari</p>
+                  </div>
+
+                  <div className="flex gap-2">
                     <button
-                      className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
+                      className="flex h-9 w-9 items-center justify-center bg-blue-600 text-white transition hover:bg-blue-700"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(room);
@@ -487,8 +442,9 @@ const RoomManagement = () => {
                     >
                       <Pen size={16} />
                     </button>
+
                     <button
-                      className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition"
+                      className="flex h-9 w-9 items-center justify-center bg-red-600 text-white transition hover:bg-red-700"
                       onClick={(e) => {
                         e.stopPropagation();
                         showDeleteToast(room.id);
@@ -499,6 +455,31 @@ const RoomManagement = () => {
                     </button>
                   </div>
                 </div>
+
+                <div className="space-y-3 text-sm text-gray-700">
+                  <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                    <span className="font-medium text-gray-500">Sig‘im</span>
+                    <span className="text-right font-semibold text-gray-900">
+                      {room.capacity ? `${room.capacity} o'quvchi` : "Belgilanmagan"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                    <span className="font-medium text-gray-500">Asosan bo‘sh</span>
+                    <span className="text-right font-semibold text-gray-900">
+                      {room?.busiestFreePeriod || "Kun bo'yi"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between gap-4">
+                    <span className="font-medium text-gray-500">Bandlik foizi</span>
+                    <span className="text-right font-bold text-[#104292]">
+                      {room?.occupancyPercentage != null
+                        ? `${room.occupancyPercentage}%`
+                        : "0%"}
+                    </span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -507,105 +488,224 @@ const RoomManagement = () => {
 
 
       {selectedRoom && (
-        <div className="card" style={{ marginTop: "20px", overflowX: "auto" }}>
-          <h3 style={{ marginBottom: "20px" }}>
-            {selectedRoom.name} xonasidagi darslar jadvali
-          </h3>
+        <div className="card mt-5">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">
+                {selectedRoom.name} xonasidagi darslar jadvali
+              </h3>
+              <p className="text-sm text-gray-500">
+                Haftalik bandlik ko‘rinishi
+              </p>
+            </div>
+
+            <div className="bg-blue-50 px-4 py-2 text-sm font-medium text-[#104292]">
+              Bandlik:{" "}
+              <span className="font-bold">
+                {selectedRoom?.occupancyPercentage != null
+                  ? `${selectedRoom.occupancyPercentage}%`
+                  : "0%"}
+              </span>
+            </div>
+          </div>
+
           {getRoomSchedules(selectedRoom.id).length === 0 ? (
-            <p style={{ textAlign: "center", padding: "20px" }}>
+            <div className="border border-gray-200 bg-gray-50 py-10 text-center text-gray-500">
               Ushbu xonada darslar belgilangan emas
-            </p>
+            </div>
           ) : (
-            <table className="schedule-table">
-              <thead>
-                <tr>
-                  <th style={{ minWidth: "150px" }}>Kun/Soat</th>
-                  {Array.from({ length: 9 }, (_, i) => {
-                    const hour = 9 + i;
-                    return (
-                      <th key={hour}>
-                        {hour.toString().padStart(2, "0")}:00-
-                        {(hour + 1).toString().padStart(2, "0")}:00
+            <div className="overflow-hidden border border-gray-300 bg-white">
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse text-[12px]">
+                  <thead className="bg-[#104292] text-white">
+                    <tr>
+                      <th className="min-w-[150px] border border-gray-300 px-4 py-3 text-center font-semibold">
+                        Kun / Soat
                       </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  "DUSHANBA",
-                  "SESHANBA",
-                  "CHORSHANBA",
-                  "PAYSHANBA",
-                  "JUMA",
-                  "SHANBA",
-                  "YAKSHANBA",
-                ].map((day) => (
-                  <tr key={day}>
-                    <td style={{ fontWeight: "bold" }}>{dayParser(day)}</td>
-                    {renderScheduleCells(day)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      {Array.from({ length: 9 }, (_, i) => {
+                        const hour = 9 + i;
+                        return (
+                          <th
+                            key={hour}
+                            className="min-w-[110px] border border-gray-300 px-4 py-3 text-center font-semibold"
+                          >
+                            {hour.toString().padStart(2, "0")}:00 -{" "}
+                            {(hour + 1).toString().padStart(2, "0")}:00
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {[
+                      "DUSHANBA",
+                      "SESHANBA",
+                      "CHORSHANBA",
+                      "PAYSHANBA",
+                      "JUMA",
+                      "SHANBA",
+                      "YAKSHANBA",
+                    ].map((day) => (
+                      <tr key={day}>
+                        <td className="border border-gray-300 px-4 py-3 text-center font-bold text-gray-800">
+                          {day}
+                        </td>
+                        {renderScheduleCells(day)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
         </div>
       )}
 
-      {/* Tahrirlash modal oynasi */}
       {editModal && (
-        <div className="modal" onClick={() => setEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Xonani tahrirlash</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setEditModal(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 bg-[#104292] px-6 py-4 text-white">
+              <h2 className="text-xl font-bold">Xonani tahrirlash</h2>
               <button
                 type="button"
-                className="btn btn-secondary"
                 onClick={() => setEditModal(false)}
-                style={{ float: "right", padding: "4px 8px" }}
+                className="rounded-full p-2 transition-colors hover:bg-blue-700"
               >
-                Yopish
+                <X size={22} />
               </button>
             </div>
-            <form onSubmit={updateRoom}>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Xona nomi</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={editFormData.name}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, name: e.target.value })
-                  }
-                  required
-                />
+
+            <form onSubmit={updateRoom} className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Xona nomi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={editFormData.name}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, name: e.target.value })
+                    }
+                    placeholder="Masalan: 1-xona"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Sig‘im (ixtiyoriy)
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={editFormData.capacity}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        capacity: e.target.value,
+                      })
+                    }
+                    placeholder="Masalan: 30"
+                    min="0"
+                  />
+                </div>
               </div>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label>Sig‘im (ixtiyoriy)</label>
-                <input
-                  type="number"
-                  className="input"
-                  value={editFormData.capacity}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      capacity: e.target.value,
-                    })
-                  }
-                  placeholder="Masalan: 30"
-                  min="0"
-                />
-              </div>
-              <div className="modal-footer">
+
+              <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="px-5 py-2 bg-gray-200 text-gray-700 transition hover:bg-gray-300"
                   onClick={() => setEditModal(false)}
                 >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#104292] text-white transition hover:bg-[#0d3677]"
+                >
                   Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {addRoomModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 bg-[#104292] px-6 py-4 text-white">
+              <h2 className="flex items-center gap-2 text-xl font-bold">
+                <Plus size={20} />
+                Yangi xona qo'shish
+              </h2>
+              <button
+                type="button"
+                onClick={closeAddRoomModal}
+                className="rounded-full p-2 transition-colors hover:bg-blue-700"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <form onSubmit={addRoom} className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Xona nomi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="Xona nomini kiriting"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Sig‘im (ixtiyoriy)
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.capacity}
+                    onChange={(e) =>
+                      setFormData({ ...formData, capacity: e.target.value })
+                    }
+                    placeholder="Masalan: 30"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
+                <button
+                  type="button"
+                  className="px-5 py-2 bg-gray-200 text-gray-700 transition hover:bg-gray-300"
+                  onClick={closeAddRoomModal}
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 bg-[#104292] px-5 py-2 text-white transition hover:bg-[#0d3677]"
+                >
+                  <Plus size={18} />
+                  Qo'shish
                 </button>
               </div>
             </form>

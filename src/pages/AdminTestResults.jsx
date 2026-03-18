@@ -403,7 +403,7 @@ function AdminTestResults() {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
+        <div className="bg-white shadow-sm p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -412,14 +412,14 @@ function AdminTestResults() {
                 placeholder="Guruh qidirish..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <select
               value={groupFilter}
               onChange={(e) => setGroupFilter(e.target.value)}
-              className="border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Barcha guruhlar</option>
               {groups.map((group) => (
@@ -432,7 +432,7 @@ function AdminTestResults() {
             <select
               value={monthFilter}
               onChange={(e) => setMonthFilter(Number(e.target.value))}
-              className="border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {Object.entries(monthsInUzbek).map(([key, value]) => (
                 <option key={key} value={key}>
@@ -444,7 +444,7 @@ function AdminTestResults() {
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(Number(e.target.value))}
-              className="border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map(
                 (year) => (
@@ -459,37 +459,37 @@ function AdminTestResults() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200">
+          <div className="bg-white p-6 shadow-sm border border-blue-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-500 text-sm mb-1">Jami testlar</p>
                 <h3 className="text-2xl font-bold text-gray-800">{tests.length}</h3>
               </div>
-              <div className="bg-blue-100 p-3 rounded-xl">
+              <div className="bg-blue-100 p-3">
                 <FileText className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-green-200">
+          <div className="bg-white p-6 shadow-sm border border-green-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-500 text-sm mb-1">Jami guruhlar</p>
                 <h3 className="text-2xl font-bold text-gray-800">{groups.length}</h3>
               </div>
-              <div className="bg-green-100 p-3 rounded-xl">
+              <div className="bg-green-100 p-3">
                 <Users className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-purple-200">
+          <div className="bg-white p-6 shadow-sm border border-purple-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-500 text-sm mb-1">Filtrlangan testlar</p>
                 <h3 className="text-2xl font-bold text-gray-800">{filteredTests.length}</h3>
               </div>
-              <div className="bg-purple-100 p-3 rounded-xl">
+              <div className="bg-purple-100 p-3">
                 <Filter className="w-6 h-6 text-purple-600" />
               </div>
             </div>
@@ -498,7 +498,7 @@ function AdminTestResults() {
 
         {/* Tests List */}
         {filteredTests.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+          <div className="bg-white p-8 text-center shadow-sm">
             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <FileText className="text-gray-400" size={40} />
             </div>
@@ -506,11 +506,11 @@ function AdminTestResults() {
             <p className="text-gray-500">Boshqa filterlarni tanlab ko'ring yoki yangi test qo'shing</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-blue-800 to-blue-600 text-white">
+                  <tr className="bg-[#104292] text-white">
                     <th className="px-6 py-4 font-semibold text-center">#</th>
                     <th className="px-6 py-4 font-semibold text-center">Guruh</th>
                     <th className="px-6 py-4 font-semibold text-center">Ustoz</th>
@@ -528,7 +528,7 @@ function AdminTestResults() {
                     return (
                       <tr
                         key={test.id}
-                        className="border-b border-gray-200 hover:bg-blue-50 transition-colors"
+                        className="border-b border-gray-200 hover:bg-[#104292]/20 transition-colors"
                       >
                         <td className="px-6 py-4 text-center">{index + 1}</td>
                         <td className="px-6 py-4 font-medium text-center">{test.group?.group_subject}</td>
@@ -553,7 +553,7 @@ function AdminTestResults() {
                         <td className="px-6 py-4 text-center">
                           <div className="flex justify-center gap-2">
                             <button
-                              className="p-2 bg-green-500 text-white hover:bg-green-600 transition-colors rounded-full"
+                              className="p-2 bg-[#104292] text-white hover:bg-[#104292]/60 transition-colors rounded-full"
                               onClick={() => fetchTestDetails(test.id)}
                               title="Batafsil ko'rish"
                             >
@@ -573,9 +573,8 @@ function AdminTestResults() {
         {/* Sozlamalar Modali */}
         {settingsModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-2xl flex justify-between items-center shadow">
+            <div className="bg-white shadow-2xl max-w-md w-full">
+              <div className="bg-[#104292] text-white p-5 flex justify-between items-center shadow">
                 <h3 className="text-lg font-semibold">Test Sozlamalari</h3>
                 <button
                   onClick={() => setSettingsModal(false)}
@@ -585,7 +584,6 @@ function AdminTestResults() {
                 </button>
               </div>
 
-              {/* Form */}
               <div className="p-6 space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -600,7 +598,7 @@ function AdminTestResults() {
                       onChange={(e) => setEditTimeLimit(parseInt(e.target.value))}
                       className="w-full"
                     />
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg font-medium min-w-[50px] text-center">
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 font-medium min-w-[50px] text-center">
                       {editTimeLimit}
                     </span>
                   </div>
@@ -612,14 +610,14 @@ function AdminTestResults() {
                 <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
-                    className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="px-5 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                     onClick={() => setSettingsModal(false)}
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="button"
-                    className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                    className="px-5 py-2 bg-[#104292] text-white transition-colors flex items-center"
                     onClick={saveSettings}
                   >
                     <Check size={18} className="mr-1" />
@@ -634,8 +632,8 @@ function AdminTestResults() {
         {/* Add Modal */}
         {addModal && selectedGroup && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-2xl flex justify-between items-center shadow">
+            <div className="bg-white shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="bg-[#104292] text-white p-5 flex justify-between items-center shadow">
                 <div>
                   <h3 className="text-xl font-semibold">Yangi Test</h3>
                   <p className="text-blue-100 text-sm mt-1">{selectedGroup?.group_subject} guruhi</p>
@@ -654,7 +652,7 @@ function AdminTestResults() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Test tartib raqami *</label>
                     <input
                       type="number"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={testFormData.test_number}
                       onChange={(e) => setTestFormData({ ...testFormData, test_number: e.target.value })}
                       required
@@ -664,7 +662,7 @@ function AdminTestResults() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Test turi *</label>
                     <select
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={testFormData.test_type}
                       onChange={(e) => setTestFormData({ ...testFormData, test_type: e.target.value })}
                       required
@@ -679,7 +677,7 @@ function AdminTestResults() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Sana *</label>
                     <input
                       type="date"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={testFormData.date}
                       onChange={(e) => setTestFormData({ ...testFormData, date: e.target.value })}
                       required
@@ -699,7 +697,7 @@ function AdminTestResults() {
                       </span>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="bg-gray-50 p-4 border border-gray-200">
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
@@ -725,7 +723,7 @@ function AdminTestResults() {
                                       step="0.1"
                                       min="0"
                                       max="100"
-                                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      className="w-24 px-3 py-2 border border-gray-300 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                       value={testFormData.scores[student.id] || ""}
                                       onChange={(e) => {
                                         const newScores = {
@@ -750,14 +748,14 @@ function AdminTestResults() {
                 <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
                   <button
                     type="button"
-                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                     onClick={() => setAddModal(false)}
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                    className="px-5 py-2.5 bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center"
                   >
                     <Check size={18} className="mr-1" />
                     Saqlash
@@ -771,8 +769,8 @@ function AdminTestResults() {
         {/* Edit Modal */}
         {editModal && editFormData && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-2xl flex justify-between items-center shadow">
+            <div className="bg-white shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="bg-[#104292] text-white p-5 flex justify-between items-center shadow">
                 <div>
                   <h3 className="text-xl font-semibold">Test natijasini tahrirlash</h3>
                   <p className="text-blue-100 text-sm mt-1">
@@ -793,7 +791,7 @@ function AdminTestResults() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Test tartib raqami *</label>
                     <input
                       type="number"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={editFormData.test_number}
                       onChange={(e) => setEditFormData({ ...editFormData, test_number: e.target.value })}
                       required
@@ -803,7 +801,7 @@ function AdminTestResults() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Test turi *</label>
                     <select
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={editFormData.test_type}
                       onChange={(e) => setEditFormData({ ...editFormData, test_type: e.target.value })}
                       required
@@ -818,7 +816,7 @@ function AdminTestResults() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Sana *</label>
                     <input
                       type="date"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={editFormData.date}
                       onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
                       required
@@ -838,7 +836,7 @@ function AdminTestResults() {
                       </span>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="bg-gray-50 p-4 border border-gray-200">
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
@@ -864,7 +862,7 @@ function AdminTestResults() {
                                       step="0.1"
                                       min="0"
                                       max="100"
-                                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      className="w-24 px-3 py-2 border border-gray-300 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                       value={editFormData.scores[student.id] || ""}
                                       onChange={(e) => {
                                         const newScores = {
@@ -889,14 +887,14 @@ function AdminTestResults() {
                 <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
                   <button
                     type="button"
-                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                     onClick={() => setEditModal(false)}
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                    className="px-5 py-2.5 bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center"
                   >
                     <Check size={18} className="mr-1" />
                     Saqlash
@@ -910,7 +908,7 @@ function AdminTestResults() {
         {/* Test Details Modal */}
         {detailModal && selectedTest && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-white shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
               <div className="flex justify-between items-center p-6 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-gray-800">Test #{selectedTest.test_number} tafsilotlari</h2>
                 <button
@@ -923,17 +921,17 @@ function AdminTestResults() {
 
               <div className="overflow-y-auto p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div className="bg-blue-50 p-4 rounded-xl text-center border border-blue-200">
+                  <div className="bg-blue-50 p-4 text-center border border-blue-200">
                     <div className="text-2xl font-bold text-blue-600">{selectedTest.total_students}</div>
                     <div className="text-sm text-gray-600">Jami o'quvchilar</div>
                   </div>
 
-                  <div className="bg-green-50 p-4 rounded-xl text-center border border-green-200">
+                  <div className="bg-green-50 p-4 text-center border border-green-200">
                     <div className="text-2xl font-bold text-green-600">{selectedTest.attended_students}</div>
                     <div className="text-sm text-gray-600">Qatnashgan o'quvchilar</div>
                   </div>
 
-                  <div className="bg-purple-50 p-4 rounded-xl text-center border border-purple-200">
+                  <div className="bg-purple-50 p-4 text-center border border-purple-200">
                     <div className="text-2xl font-bold text-purple-600">{selectedTest.average_score.toFixed(2)}</div>
                     <div className="text-sm text-gray-600">O'rtacha ball</div>
                   </div>
@@ -958,7 +956,7 @@ function AdminTestResults() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="bg-gray-50 p-4 border border-gray-200">
                   <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <Users size={20} className="mr-2 text-blue-600" />
                     O'quvchilar natijalari

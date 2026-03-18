@@ -55,7 +55,7 @@ function Students() {
   });
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [pageInput, setPageInput] = useState("");
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -297,7 +297,6 @@ function Students() {
               background: "#dc3545",
               color: "white",
               border: "none",
-              borderRadius: "4px",
               cursor: "pointer",
             }}
             onClick={() => {
@@ -435,6 +434,52 @@ function Students() {
     return <LottieLoading />;
   }
 
+  const getVisiblePages = (current, total) => {
+    const delta = 2; // current page atrofida nechta ko'rinsin
+    const range = [];
+    const rangeWithDots = [];
+
+    // doim birinchi va oxirgi sahifa
+    // current atrofi ham ko'rinadi
+    for (let i = 1; i <= total; i++) {
+      if (
+        i === 1 ||
+        i === total ||
+        (i >= current - delta && i <= current + delta)
+      ) {
+        range.push(i);
+      }
+    }
+
+    let prev = null;
+
+    for (const page of range) {
+      if (prev !== null) {
+        if (page - prev === 2) {
+          rangeWithDots.push(prev + 1);
+        } else if (page - prev > 2) {
+          rangeWithDots.push("...");
+        }
+      }
+
+      rangeWithDots.push(page);
+      prev = page;
+    }
+
+    return rangeWithDots;
+  };
+
+  const handlePageInputSubmit = () => {
+    const page = Number(pageInput);
+
+    if (!page || page < 1 || page > pagination.totalPages) {
+      return;
+    }
+
+    setCurrentPage(page);
+    setPageInput("");
+  };
+
   return (
     <div>
       <div className="flex justify-between gap-2 pl-6 pr-6">
@@ -457,9 +502,9 @@ function Students() {
 
       {addModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white rounded-t-xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white">
               <h2 className="text-2xl font-bold">Yangi o'quvchi qo'shish</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
@@ -478,7 +523,7 @@ function Students() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                     placeholder="O'quvchining ismi"
@@ -493,7 +538,7 @@ function Students() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                     placeholder="O'quvchining familiyasi"
@@ -508,7 +553,7 @@ function Students() {
                   </label>
                   <input
                     type="tel"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.phone_number}
                     onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                     placeholder="+998901234567"
@@ -523,7 +568,7 @@ function Students() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.father_name}
                     onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
                     placeholder="Ota/onasining ismi va familiyasi"
@@ -537,7 +582,7 @@ function Students() {
                   </label>
                   <input
                     type="tel"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.parents_phone_number}
                     onChange={(e) => setFormData({ ...formData, parents_phone_number: e.target.value })}
                     placeholder="+998901234567"
@@ -552,7 +597,7 @@ function Students() {
                   </label>
                   <input
                     type="date"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.birth_date}
                     onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
                     max={today}
@@ -571,7 +616,7 @@ function Students() {
                     dateFormat="dd.MM.yyyy"
                     showYearDropdown
                     scrollableMonthYearDropdown
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     locale="uz"
                     placeholderText="O'qishga kelgan vaqti"
                     minDate={new Date("1990-01-01")}
@@ -587,7 +632,7 @@ function Students() {
                 </label>
 
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
+                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
                   value=""
                   onChange={(e) => {
                     const selectedGroupId = e.target.value;
@@ -645,14 +690,14 @@ function Students() {
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  className="px-5 py-2 btn btn-secondary text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-5 py-2 btn btn-secondary text-gray-700  hover:bg-gray-400 transition-colors"
                   onClick={() => setAddModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="px-5 py-2 btn btn-primary text-white  hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
                   <Plus size={18} />
                   Saqlash
@@ -677,7 +722,7 @@ function Students() {
             Bizning o'quvchilar ({pagination.totalItems} nafar)
           </h3>
           <div style={{ display: "flex", gap: "10px" }}>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center", border: "1px solid #ccc", borderRadius: "5px", padding: "5px" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", border: "1px solid #ccc", padding: "5px" }}>
               <Search size={22} color="#104292" style={{ marginLeft: "12px" }} />
               <input
                 type="text"
@@ -729,124 +774,194 @@ function Students() {
           </div>
         </div>
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>#</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>F.I.Sh.</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>Telefon raqami</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>Guruhlar</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>Ota/onasining F.I.Sh.</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid #e5e7eb", textAlign: "center" }}>
-                To'lov ({monthFilter})
-              </th>
-              <th style={{ backgroundColor: "#104292", color: "white", textAlign: "center" }}>Amallar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.length === 0 ? (
-              <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "40px" }}>
-                  {searchTerm || paymentFilter !== "all" ? "Ushbu qidiruv bo'yicha o'quvchi topilmadi..." : "O'quvchilar yo'q"}
-                </td>
-              </tr>
-            ) : (
-              students.map((student, index) => (
-                <tr
-                  key={student.id}
-                  onClick={() => openDetailModal(student)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td style={{ textAlign: "center" }}>
-                    {(currentPage - 1) * pagination.limit + index + 1}
-                  </td>
-                  <td style={{ textAlign: "center" }}>{`${student.first_name} ${student.last_name}`}</td>
-                  <td style={{ textAlign: "center" }}>{student.phone_number}</td>
-                  <td style={{ paddingLeft: "30px" }}>{student.groups?.map((group) => group.group_subject).map((g, i) => <p key={i}>{i + 1}. {g}</p>) || "N/A"}</td>
-                  <td style={{ textAlign: "center" }}>{student.father_name || "N/A"}</td>
-                  <td style={{ textAlign: "center" }}>{getPaymentRatio(student)}</td>
-                  <td>
-                    <div className="flex gap-2 justify-center">
-                      <div className="relative group">
-                        <button
-                          className="rounded-full bg-[#104292] h-8 w-8 flex items-center justify-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(student);
-                          }}
-                        >
-                          <Pen size={18} color="white" />
-                        </button>
-                        <span className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-sm rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          Tahrirlash
-                        </span>
-                      </div>
-                      <div className="relative group">
-                        <button
-                          className="rounded-full bg-[#dc3545] h-8 w-8 flex items-center justify-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            showDeleteToast(student.id);
-                          }}
-                        >
-                          <Trash2 size={18} color="white" />
-                        </button>
-                        <span className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-sm rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          O'chirish
-                        </span>
-                      </div>
-                    </div>
-                  </td>
+        <div className="overflow-hidden  border border-gray-300 bg-white">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-[16px]">
+
+              {/* HEADER */}
+              <thead className="bg-[#104292] text-white">
+                <tr>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">#</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">F.I.Sh.</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Telefon</th>
+                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Guruhlar</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Ota/ona</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">
+                    To'lov ({monthFilter})
+                  </th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Amallar</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+
+              {/* BODY */}
+              <tbody>
+                {students.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="border border-gray-300 py-12 text-center text-gray-500">
+                      {searchTerm || paymentFilter !== "all"
+                        ? "O'quvchi topilmadi"
+                        : "O'quvchilar yo'q"}
+                    </td>
+                  </tr>
+                ) : (
+                  students.map((student, index) => (
+                    <tr
+                      key={student.id}
+                      onClick={() => openDetailModal(student)}
+                      className="hover:bg-gray-50 cursor-pointer"
+                    >
+                      {/* INDEX */}
+                      <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                        {(currentPage - 1) * pagination.limit + index + 1}
+                      </td>
+
+                      {/* NAME */}
+                      <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-900">
+                        {student.first_name} {student.last_name}
+                      </td>
+
+                      {/* PHONE */}
+                      <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                        {student.phone_number || "—"}
+                      </td>
+
+                      {/* GROUPS */}
+                      <td className="border border-gray-300 px-4 py-3">
+                        {student.groups?.length > 0 ? (
+                          student.groups.map((g, i) => (
+                            <div key={i} className="text-sm text-gray-700">
+                              {i + 1}. {g.group_subject}
+                            </div>
+                          ))
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+
+                      {/* FATHER */}
+                      <td className="border border-gray-300 px-4 py-3 text-center">
+                        {student.father_name || "—"}
+                      </td>
+
+                      {/* PAYMENT */}
+                      <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                        {getPaymentRatio(student)}
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td
+                        className="border border-gray-300 px-4 py-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex justify-center gap-2">
+                          <button
+                            className="h-9 w-9 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => openEditModal(student)}
+                          >
+                            <Pen size={16} />
+                          </button>
+
+                          <button
+                            className="h-9 w-9 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => showDeleteToast(student.id)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {pagination.totalPages > 1 && (
-          <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
-            <div className="text-sm text-gray-600 text-center md:text-left">
-              Jami <span className="font-semibold text-[#104292]">{pagination.totalItems}</span> ta o‘quvchi,
-              <span className="mx-1 font-semibold text-[#104292]">{currentPage}</span>
-              / {pagination.totalPages} sahifa
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-              <button
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={!pagination.hasPrevPage}
-                className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${pagination.hasPrevPage
-                    ? "border-[#104292]/20 text-[#104292] bg-white hover:bg-[#104292] hover:text-white hover:border-[#104292]"
-                    : "border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed"
-                  }`}
-              >
-                « Oldingi
-              </button>
-
-              <div className="flex items-center gap-2 flex-wrap justify-center">
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((number) => (
-                  <button
-                    key={number}
-                    onClick={() => setCurrentPage(number)}
-                    className={`min-w-[40px] h-10 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${currentPage === number
-                        ? "bg-[#104292] text-white border-[#104292] shadow-md scale-105"
-                        : "bg-[#104292]/5 text-[#104292] border-[#104292]/10 hover:bg-[#104292]/10"
-                      }`}
-                  >
-                    {number}
-                  </button>
-                ))}
+          <div className="mt-8 border border-gray-200 bg-white px-4 py-4 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="text-center text-sm text-gray-600 lg:text-left">
+                Jami{" "}
+                <span className="font-semibold text-[#104292]">
+                  {pagination.totalItems}
+                </span>{" "}
+                ta o‘quvchi,
+                <span className="mx-1 font-semibold text-[#104292]">
+                  {currentPage}
+                </span>
+                / {pagination.totalPages} sahifa
               </div>
 
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={!pagination.hasPrevPage}
+                  className={` border px-4 py-2 text-sm font-medium transition ${pagination.hasPrevPage
+                    ? "border-[#104292]/20 bg-white text-[#104292] hover:border-[#104292] hover:bg-[#104292] hover:text-white"
+                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                    }`}
+                >
+                  « Oldingi
+                </button>
+
+                {getVisiblePages(currentPage, pagination.totalPages).map((item, index) =>
+                  item === "..." ? (
+                    <span
+                      key={`dots-${index}`}
+                      className="flex h-10 min-w-[40px] items-center justify-center px-2 text-sm font-semibold text-gray-500"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setCurrentPage(item)}
+                      className={`h-10 min-w-[40px]  border px-3 text-sm font-semibold transition ${currentPage === item
+                        ? "border-[#104292] bg-[#104292] text-white shadow-sm"
+                        : "border-gray-200 bg-white text-[#104292] hover:bg-[#104292]/10"
+                        }`}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={!pagination.hasNextPage}
+                  className={` border px-4 py-2 text-sm font-medium transition ${pagination.hasNextPage
+                    ? "border-[#104292]/20 bg-white text-[#104292] hover:border-[#104292] hover:bg-[#104292] hover:text-white"
+                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                    }`}
+                >
+                  Keyingi »
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-2 lg:justify-end">
+              <span className="text-sm text-gray-500">Sahifaga o‘tish:</span>
+
+              <input
+                type="number"
+                min={1}
+                max={pagination.totalPages}
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handlePageInputSubmit();
+                  }
+                }}
+                placeholder="Masalan 12"
+                className="w-28  border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+              />
+
               <button
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={!pagination.hasNextPage}
-                className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${pagination.hasNextPage
-                    ? "border-[#104292]/20 text-[#104292] bg-white hover:bg-[#104292] hover:text-white hover:border-[#104292]"
-                    : "border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed"
-                  }`}
+                onClick={handlePageInputSubmit}
+                className=" bg-[#104292] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0d3677]"
               >
-                Keyingi »
+                O‘tish
               </button>
             </div>
           </div>
@@ -855,9 +970,9 @@ function Students() {
 
       {editModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white rounded-t-xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white">
               <h2 className="text-2xl font-bold">O'quvchi ma'lumotlarini tahrirlash</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
@@ -876,7 +991,7 @@ function Students() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={editFormData.first_name}
                     onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
                     required
@@ -890,7 +1005,7 @@ function Students() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={editFormData.last_name}
                     onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
                     required
@@ -904,7 +1019,7 @@ function Students() {
                   </label>
                   <input
                     type="tel"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={editFormData.phone_number}
                     onChange={(e) => setEditFormData({ ...editFormData, phone_number: e.target.value })}
                     placeholder="+998 (__) ___-__-__"
@@ -919,7 +1034,7 @@ function Students() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={editFormData.father_name}
                     onChange={(e) => setEditFormData({ ...editFormData, father_name: e.target.value })}
                   />
@@ -932,7 +1047,7 @@ function Students() {
                   </label>
                   <input
                     type="tel"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={editFormData.parents_phone_number}
                     onChange={(e) => setEditFormData({ ...editFormData, parents_phone_number: e.target.value })}
                     placeholder="+998 (__) ___-__-__"
@@ -951,7 +1066,7 @@ function Students() {
                     dateFormat="dd.MM.yyyy"
                     showYearDropdown
                     scrollableMonthYearDropdown
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     locale="uz"
                     placeholderText="Tug'ilgan sana"
                     minDate={new Date('1980-01-01')}
@@ -970,7 +1085,7 @@ function Students() {
                     dateFormat="dd.MM.yyyy"
                     showYearDropdown
                     scrollableMonthYearDropdown
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     locale="uz"
                     placeholderText="O'qishga kelgan vaqti"
                     minDate={new Date('2010-01-01')}
@@ -986,7 +1101,7 @@ function Students() {
                 </label>
 
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
+                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
                   value=""
                   onChange={(e) => {
                     const selectedGroupId = e.target.value;
@@ -1015,7 +1130,7 @@ function Students() {
                     return (
                       <div
                         key={groupId}
-                        className="flex items-center bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm font-medium"
+                        className="flex items-center bg-blue-100 text-blue-800 py-1 px-3 text-sm font-medium"
                       >
                         {group.group_subject}
                         <button
@@ -1044,14 +1159,14 @@ function Students() {
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  className="px-5 py-2 btn btn-secondary text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-5 py-2 btn btn-secondary text-gray-700  hover:bg-gray-400 transition-colors"
                   onClick={() => setEditModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-5 py-2 btn btn-primary text-white  hover:bg-blue-700 transition-colors"
                 >
                   Saqlash
                 </button>
@@ -1063,9 +1178,9 @@ function Students() {
 
       {editPaymentModalOpen && editingPayment && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-xl flex justify-between items-center">
+            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 flex justify-between items-center">
               <h3 className="text-lg font-semibold">To'lovni tahrirlash</h3>
               <button
                 onClick={() => setEditPaymentModalOpen(false)}
@@ -1125,7 +1240,7 @@ function Students() {
                 </label>
                 <input
                   type="number"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500"
                   value={editingPayment.payment_amount || ""}
                   onChange={(e) =>
                     setEditingPayment({
@@ -1144,7 +1259,7 @@ function Students() {
                   To'lov turi *
                 </label>
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500"
                   value={editingPayment.payment_type || ""}
                   onChange={(e) =>
                     setEditingPayment({
@@ -1168,7 +1283,7 @@ function Students() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500"
                   value={editingPayment.received || ""}
                   onChange={(e) =>
                     setEditingPayment({
@@ -1187,7 +1302,7 @@ function Students() {
                   Qaysi oy uchun *
                 </label>
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500"
                   value={editingPayment.for_which_month || ""}
                   onChange={(e) =>
                     setEditingPayment({
@@ -1208,7 +1323,7 @@ function Students() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Izoh</label>
                 <textarea
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[80px]"
+                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 min-h-[80px]"
                   value={editingPayment.comment || ""}
                   onChange={(e) =>
                     setEditingPayment({
@@ -1221,7 +1336,7 @@ function Students() {
               </div>
 
               {/* Imtiyozli to'lov toggle */}
-              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+              <div className="flex items-center justify-between bg-gray-50 p-3 ">
                 <span className="text-gray-700 font-medium">
                   Imtiyozli to'lov (to'liq deb hisoblash)
                 </span>
@@ -1246,13 +1361,13 @@ function Students() {
                 <button
                   type="button"
                   onClick={() => setEditPaymentModalOpen(false)}
-                  className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  className="px-5 py-2.5 bg-gray-200 text-gray-700  hover:bg-gray-300"
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  className="px-5 py-2.5 bg-blue-600 text-white  hover:bg-blue-700 flex items-center gap-2"
                 >
                   <Pen size={16} />
                   Saqlash
@@ -1265,9 +1380,9 @@ function Students() {
 
       {selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedStudent(null)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {/* Modal header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white rounded-t-xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-[#104292] text-white ">
               <h2 className="text-2xl font-bold">O'quvchi ma'lumotlari</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
@@ -1281,7 +1396,7 @@ function Students() {
             <div className="p-6">
               {/* Asosiy ma'lumotlar */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div className="bg-blue-50 p-4  border border-blue-100">
                   <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
                     <Users size={20} />
                     Shaxsiy ma'lumotlar
@@ -1294,7 +1409,7 @@ function Students() {
                   </div>
                 </div>
 
-                <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                <div className="bg-green-50 p-4  border border-green-100">
                   <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center gap-2">
                     <Users size={20} />
                     Ota-ona ma'lumotlari
@@ -1308,7 +1423,7 @@ function Students() {
 
               {/* ID va to'lov holati */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <div className="bg-purple-50 p-4  border border-purple-100">
                   <h3 className="text-lg font-semibold text-purple-800 mb-3">Identifikator</h3>
                   <div className="flex items-center justify-center">
                     <span className="bg-purple-100 text-purple-800 py-2 px-4 rounded-full font-mono text-lg">
@@ -1317,7 +1432,7 @@ function Students() {
                   </div>
                 </div>
 
-                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                <div className="bg-amber-50 p-4  border border-amber-100">
                   <h3 className="text-lg font-semibold text-amber-800 mb-3">To'lov holati ({monthFilter})</h3>
                   <div className="text-center">
                     <div className="text-2xl font-bold mb-2">{getPaymentRatio(selectedStudent)}</div>
@@ -1356,7 +1471,7 @@ function Students() {
                     );
 
                     return (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div key={index} className="border border-gray-200  p-4 hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-3">
                           <h4 className="text-lg font-medium text-blue-800">{group.group_subject}</h4>
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${groupPayment?.paid
@@ -1397,7 +1512,7 @@ function Students() {
                     <p className="mt-2 text-gray-500">To'lovlar yuklanmoqda...</p>
                   </div>
                 ) : studentPayments.length === 0 ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                  <div className="bg-gray-50 border border-gray-200  p-8 text-center">
                     <AlertCircle size={40} className="mx-auto text-gray-400 mb-3" />
                     <p className="text-gray-600 font-medium">Hozircha to'lovlar mavjud emas</p>
                   </div>
@@ -1406,7 +1521,7 @@ function Students() {
                     {studentPayments.map((payment) => (
                       <div
                         key={payment.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all bg-white"
+                        className="border border-gray-200  p-4 hover:shadow-md transition-all bg-white"
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div>
@@ -1474,15 +1589,15 @@ function Students() {
             </div>
 
             {/* Modal footer */}
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
               <button
-                className="px-5 py-2 btn btn-secondary text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                className="px-5 py-2 btn btn-secondary text-gray-700  hover:bg-gray-400 transition-colors"
                 onClick={() => setSelectedStudent(null)}
               >
                 Yopish
               </button>
               <button
-                className="px-5 py-2 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-5 py-2 btn btn-primary text-white  hover:bg-blue-700 transition-colors flex items-center gap-2"
                 onClick={(e) => {
                   e.stopPropagation();
                   openEditModal(selectedStudent);

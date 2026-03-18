@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, GraduationCap, Plus, Pen, X, Euro } from "lucide-react";
+import { Trash2, GraduationCap, Plus, Pen, X, Euro, Search, DollarSign } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import { toast } from "react-hot-toast";
 import API_URL from "../conf/api";
@@ -504,7 +504,7 @@ function Teachers() {
           <h1 className="text-2xl font-bold">Ustozlar</h1>
         </div>
         <button
-          className="btn btn-primary"
+          className="btn btn-primary bg-[#104292] hover:bg-[#104292]/80"
           onClick={() => setIsAddModalOpen(true)}
           style={{ display: "flex", alignItems: "center", gap: "8px" }}
         >
@@ -514,339 +514,151 @@ function Teachers() {
       </div>
 
       {isAddModalOpen && (
-        <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "#fff",
-              padding: "0",
-              borderRadius: "12px",
-              width: "600px",
-              maxWidth: "90%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
-            }}
-          >
-            {/* Modal Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "20px 24px",
-                borderBottom: "1px solid #eaeaea",
-                backgroundColor: "#f9fafb",
-                borderTopLeftRadius: "12px",
-                borderTopRightRadius: "12px",
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  fontWeight: "600",
-                  fontSize: "1.25rem",
-                  color: "#104292",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 bg-[#104292] px-6 py-4 text-white">
+              <h2 className="flex items-center gap-2 text-2xl font-bold">
                 <Plus size={22} />
                 Yangi ustoz qo'shish
-              </h3>
+              </h2>
               <button
+                type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#6b7280",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                onMouseOver={(e) => (e.target.style.color = "#374151")}
-                onMouseOut={(e) => (e.target.style.color = "#6b7280")}
+                className="rounded-full p-2 transition-colors hover:bg-[#104292]/80"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={addTeacher}>
-              <div
-                style={{
-                  padding: "24px",
-                }}
-              >
-                <div
-                  className="form-grid"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                    gap: "16px",
-                  }}
-                >
-                  <div className="form-group">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "6px",
-                        fontWeight: "500",
-                        color: "#374151",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      Ism *
-                    </label>
-                    <input
-                      type="text"
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "6px",
-                        fontSize: "0.875rem",
-                        transition: "border-color 0.2s",
-                      }}
-                      value={formData.first_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, first_name: e.target.value })
-                      }
-                      placeholder="Ustoz ismi"
-                      required
-                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
-                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "6px",
-                        fontWeight: "500",
-                        color: "#374151",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      Familiya *
-                    </label>
-                    <input
-                      type="text"
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "6px",
-                        fontSize: "0.875rem",
-                        transition: "border-color 0.2s",
-                      }}
-                      value={formData.last_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, last_name: e.target.value })
-                      }
-                      placeholder="Ustoz familiyasi"
-                      required
-                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
-                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "6px",
-                        fontWeight: "500",
-                        color: "#374151",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      Otasining ismi
-                    </label>
-                    <input
-                      type="text"
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "6px",
-                        fontSize: "0.875rem",
-                        transition: "border-color 0.2s",
-                      }}
-                      value={formData.father_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, father_name: e.target.value })
-                      }
-                      placeholder="Otasining ismi (ixtiyoriy)"
-                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
-                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "6px",
-                        fontWeight: "500",
-                        color: "#374151",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      Tug'ilgan sana *
-                    </label>
-                    <input
-                      type="date"
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "6px",
-                        fontSize: "0.875rem",
-                        transition: "border-color 0.2s",
-                      }}
-                      value={formData.birth_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, birth_date: e.target.value })
-                      }
-                      required
-                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
-                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "6px",
-                        fontWeight: "500",
-                        color: "#374151",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      Telefon raqami *
-                    </label>
-                    <input
-                      type="tel"
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "6px",
-                        fontSize: "0.875rem",
-                        transition: "border-color 0.2s",
-                      }}
-                      value={formData.phone_number}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone_number: e.target.value })
-                      }
-                      placeholder="+998 (__) ___-__-__"
-                      required
-                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
-                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "6px",
-                        fontWeight: "500",
-                        color: "#374151",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      Fan *
-                    </label>
-                    <input
-                      type="text"
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "6px",
-                        fontSize: "0.875rem",
-                        transition: "border-color 0.2s",
-                      }}
-                      value={formData.subject}
-                      onChange={(e) =>
-                        setFormData({ ...formData, subject: e.target.value })
-                      }
-                      placeholder="O'qitadigan fani"
-                      required
-                      onFocus={(e) => (e.target.style.borderColor = "#104292")}
-                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
-                    />
-                  </div>
+            {/* Body */}
+            <form onSubmit={addTeacher} className="p-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ism <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.first_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, first_name: e.target.value })
+                    }
+                    placeholder="Ustoz ismi"
+                    required
+                  />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Familiya <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.last_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, last_name: e.target.value })
+                    }
+                    placeholder="Ustoz familiyasi"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Otasining ismi
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.father_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, father_name: e.target.value })
+                    }
+                    placeholder="Otasining ismi (ixtiyoriy)"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tug'ilgan sana <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.birth_date}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birth_date: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Telefon raqami <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_number: e.target.value })
+                    }
+                    placeholder="+998 (__) ___-__-__"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Fan <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={formData.subject}
+                    onChange={(e) =>
+                      setFormData({ ...formData, subject: e.target.value })
+                    }
+                    placeholder="O'qitadigan fani"
+                    required
+                  />
+                </div>
+
+                {/* Kerak bo‘lsa keyin qo‘shish uchun joy qoldirdim:
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Oylik summasi
+            </label>
+            <input
+              type="number"
+              className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+              value={formData.salary_amount}
+              onChange={(e) =>
+                setFormData({ ...formData, salary_amount: e.target.value })
+              }
+              placeholder="Masalan: 3000000"
+            />
+          </div>
+          */}
               </div>
 
-              {/* Modal Footer */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "12px",
-                  padding: "16px 24px",
-                  borderTop: "1px solid #eaeaea",
-                  backgroundColor: "#f9fafb",
-                  borderBottomLeftRadius: "12px",
-                  borderBottomRightRadius: "12px",
-                }}
-              >
+              {/* Footer */}
+              <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
                 <button
                   type="button"
-                  style={{
-                    padding: "10px 16px",
-                    backgroundColor: "#6b7280",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    transition: "background-color 0.2s",
-                  }}
+                  className="px-5 py-2 bg-gray-200 text-gray-700 transition hover:bg-gray-300"
                   onClick={() => setIsAddModalOpen(false)}
-                  onMouseOver={(e) => (e.target.style.backgroundColor = "#4b5563")}
-                  onMouseOut={(e) => (e.target.style.backgroundColor = "#6b7280")}
                 >
                   Bekor qilish
                 </button>
+
                 <button
                   type="submit"
-                  style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#104292",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseOver={(e) => (e.target.style.backgroundColor = "#0d366e")}
-                  onMouseOut={(e) => (e.target.style.backgroundColor = "#104292")}
+                  className="flex items-center gap-2 bg-[#104292] px-5 py-2 text-white transition hover:bg-[#0d3677]"
                 >
                   <Plus size={18} />
                   Ustoz qo'shish
@@ -858,99 +670,96 @@ function Teachers() {
       )}
 
       {isPaymentModalOpen && (
-        <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              width: "400px",
-              maxWidth: "90%",
-            }}
-          >
-            <h3 style={{ marginBottom: "16px", textAlign: "center", fontSize: "1.3rem", fontWeight: "700" }}>To'lov qo'shish</h3>
-            <form onSubmit={addPayment}>
-              <div className="form-group">
-                <label>To'lov turi</label>
-                <select
-                  className="input"
-                  value={paymentFormData.payment_type}
-                  onChange={(e) =>
-                    setPaymentFormData({
-                      ...paymentFormData,
-                      payment_type: e.target.value,
-                    })
-                  }
-                  required
-                >
-                  <option value="avans">Avans</option>
-                  <option value="hisob">Hisob</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Kim tomonidan berildi</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={paymentFormData.given_by}
-                  onChange={(e) =>
-                    setPaymentFormData({
-                      ...paymentFormData,
-                      given_by: e.target.value,
-                    })
-                  }
-                  placeholder="Kim tomonidan berildi"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>To'lov summasi</label>
-                <input
-                  type="number"
-                  className="input"
-                  value={paymentFormData.payment_amount}
-                  onChange={(e) =>
-                    setPaymentFormData({
-                      ...paymentFormData,
-                      payment_amount: e.target.value,
-                    })
-                  }
-                  placeholder="To'lov summasi"
-                  min="0"
-                  required
-                />
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "10px",
-                  marginTop: "16px",
-                }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md overflow-hidden bg-white shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 bg-[#104292] px-6 py-4 text-white">
+              <h2 className="text-xl font-bold">To'lov qo'shish</h2>
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="rounded-full p-2 transition-colors hover:bg-blue-700"
               >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <form onSubmit={addPayment} className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    To'lov turi <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={paymentFormData.payment_type}
+                    onChange={(e) =>
+                      setPaymentFormData({
+                        ...paymentFormData,
+                        payment_type: e.target.value,
+                      })
+                    }
+                    required
+                  >
+                    <option value="avans">Avans</option>
+                    <option value="hisob">Hisob</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Kim tomonidan berildi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={paymentFormData.given_by}
+                    onChange={(e) =>
+                      setPaymentFormData({
+                        ...paymentFormData,
+                        given_by: e.target.value,
+                      })
+                    }
+                    placeholder="Masalan: Direktor"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    To'lov summasi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+                    value={paymentFormData.payment_amount}
+                    onChange={(e) =>
+                      setPaymentFormData({
+                        ...paymentFormData,
+                        payment_amount: e.target.value,
+                      })
+                    }
+                    placeholder="Masalan: 500000"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="px-5 py-2 bg-gray-200 text-gray-700 transition hover:bg-gray-300"
                   onClick={() => setIsPaymentModalOpen(false)}
                 >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#104292] text-white transition hover:bg-[#0d3677]"
+                >
                   To'lov qo'shish
                 </button>
               </div>
@@ -960,49 +769,30 @@ function Teachers() {
       )}
 
       {isEditModalOpen && (
-        <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              width: "500px",
-              maxWidth: "90%",
-            }}
-          >
-            <h3 style={{ marginBottom: "16px", textAlign: "center", fontSize: "1.3rem", fontWeight: "700" }}>
-              Ustoz ma'lumotlarini yangilash
-            </h3>
-            <form onSubmit={updateTeacher}>
-              <div
-                className="form-grid"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: "12px",
-                  padding: "12px",
-                }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 bg-[#104292] px-6 py-4 text-white">
+              <h2 className="text-2xl font-bold">Ustoz ma'lumotlarini yangilash</h2>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="rounded-full p-2 transition-colors hover:bg-blue-700"
               >
-                <div className="form-group">
-                  <label>Ism</label>
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <form onSubmit={updateTeacher} className="p-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ism <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.first_name}
                     onChange={(e) =>
                       setEditFormData({
@@ -1014,11 +804,14 @@ function Teachers() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Familiya</label>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Familiya <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.last_name}
                     onChange={(e) =>
                       setEditFormData({
@@ -1030,11 +823,14 @@ function Teachers() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Otasining ismi</label>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Otasining ismi
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.father_name}
                     onChange={(e) =>
                       setEditFormData({
@@ -1045,11 +841,14 @@ function Teachers() {
                     placeholder="Otasining ismi (ixtiyoriy)"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Tug'ilgan sana</label>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tug'ilgan sana <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.birth_date}
                     onChange={(e) =>
                       setEditFormData({
@@ -1060,11 +859,14 @@ function Teachers() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Telefon raqami</label>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Telefon raqami <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="tel"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.phone_number}
                     onChange={(e) =>
                       setEditFormData({
@@ -1076,11 +878,14 @@ function Teachers() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Fan</label>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Fan <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.subject}
                     onChange={(e) =>
                       setEditFormData({
@@ -1092,11 +897,14 @@ function Teachers() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Foydalanuvchi nomi</label>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Foydalanuvchi nomi
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.username || ""}
                     onFocus={(e) => {
                       if (e.target.value === "") {
@@ -1112,11 +920,14 @@ function Teachers() {
                     placeholder="Foydalanuvchi nomi yo'q"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Parol</label>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Parol
+                  </label>
                   <input
                     type="text"
-                    className="input"
+                    className="w-full border border-gray-300 px-4 py-2 outline-none transition focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
                     value={editFormData.password}
                     onFocus={(e) => {
                       if (e.target.value === "********" || e.target.value === "") {
@@ -1134,22 +945,20 @@ function Teachers() {
                   />
                 </div>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "10px",
-                  marginTop: "16px",
-                }}
-              >
+
+              {/* Footer */}
+              <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="px-5 py-2 bg-gray-200 text-gray-700 transition hover:bg-gray-300"
                   onClick={() => setIsEditModalOpen(false)}
                 >
                   Bekor qilish
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#104292] text-white transition hover:bg-[#0d3677]"
+                >
                   Yangilash
                 </button>
               </div>
@@ -1159,234 +968,229 @@ function Teachers() {
       )}
 
       {isDetailModalOpen && selectedTeacher && (
-        <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              width: "800px",
-              maxWidth: "95%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "end",
-                alignItems: "center",
-                marginBottom: "20px",
-              }}
-            >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 bg-[#104292] px-6 py-4 text-white">
+              <h2 className="text-2xl font-bold">Ustoz ma'lumotlari</h2>
               <button
                 onClick={closeDetailModal}
-                style={{
-                  background: "red",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#fff",
-                  padding: "8px",
-                  borderRadius: "50%",
-                }}
+                className="rounded-full p-2 transition-colors hover:bg-blue-700"
               >
                 <X size={24} />
               </button>
             </div>
-            <div>
-              <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", textAlign: "center" }}>Ustoz ma'lumotlari</h2>
-            </div>
-            <div style={{ marginBottom: "24px" }}>
-              <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Ism</td>
-                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.first_name}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Familiya</td>
-                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.last_name}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Otasining ismi</td>
-                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.father_name || "Mavjud emas"}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Tug'ilgan sana</td>
-                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>
-                      {new Date(selectedTeacher.birth_date).toLocaleDateString("ru-RU")}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Telefon</td>
-                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.phone_number}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Fan</td>
-                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>{selectedTeacher.subject}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "8px", border: "1px solid #ddd", fontWeight: "bold" }}>Joriy balans</td>
-                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>
-                      {(teacherBalances[selectedTeacher.id] || 0).toLocaleString("ru-RU")} so'm
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+            {/* Body */}
+            <div className="p-6">
+              {/* Asosiy ma'lumotlar */}
+              <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="border border-blue-100 bg-blue-50 p-5">
+                  <h3 className="mb-4 text-lg font-semibold text-blue-800">
+                    Shaxsiy ma'lumotlar
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div className="flex">
+                      <span className="w-1/3 text-sm font-medium text-gray-600">Ism:</span>
+                      <span className="flex-1 font-medium text-gray-800">
+                        {selectedTeacher.first_name || "—"}
+                      </span>
+                    </div>
+
+                    <div className="flex">
+                      <span className="w-1/3 text-sm font-medium text-gray-600">Familiya:</span>
+                      <span className="flex-1 font-medium text-gray-800">
+                        {selectedTeacher.last_name || "—"}
+                      </span>
+                    </div>
+
+                    <div className="flex">
+                      <span className="w-1/3 text-sm font-medium text-gray-600">Otasining ismi:</span>
+                      <span className="flex-1 font-medium text-gray-800">
+                        {selectedTeacher.father_name || "Mavjud emas"}
+                      </span>
+                    </div>
+
+                    <div className="flex">
+                      <span className="w-1/3 text-sm font-medium text-gray-600">Tug'ilgan sana:</span>
+                      <span className="flex-1 font-medium text-gray-800">
+                        {selectedTeacher.birth_date
+                          ? new Date(selectedTeacher.birth_date).toLocaleDateString("ru-RU")
+                          : "—"}
+                      </span>
+                    </div>
+
+                    <div className="flex">
+                      <span className="w-1/3 text-sm font-medium text-gray-600">Telefon:</span>
+                      <span className="flex-1 font-medium text-gray-800">
+                        {selectedTeacher.phone_number || "—"}
+                      </span>
+                    </div>
+
+                    <div className="flex">
+                      <span className="w-1/3 text-sm font-medium text-gray-600">Fan:</span>
+                      <span className="flex-1 font-medium text-gray-800">
+                        {selectedTeacher.subject || "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-green-100 bg-green-50 p-5">
+                  <h3 className="mb-4 text-lg font-semibold text-green-800">
+                    Ish faoliyati
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div className="border border-green-200 bg-white p-4">
+                      <p className="mb-1 text-sm font-medium text-gray-500">
+                        Joriy balans
+                      </p>
+                      <p className="text-2xl font-bold text-green-700">
+                        {(teacherBalances[selectedTeacher.id] || 0).toLocaleString("ru-RU")} so'm
+                      </p>
+                    </div>
+
+                    <div className="border border-green-200 bg-white p-4">
+                      <p className="mb-1 text-sm font-medium text-gray-500">
+                        Guruhlar soni
+                      </p>
+                      <p className="text-2xl font-bold text-[#104292]">
+                        {teacherGroups.length} ta
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* To'lovlar tarixi */}
+              <div className="mb-8">
+                <h3 className="mb-4 text-xl font-semibold text-gray-800">
+                  To'lovlar tarixi
+                </h3>
+
+                {teacherPayments.filter((p) => p.teacher_id === selectedTeacher.id).length > 0 ? (
+                  <div className="overflow-hidden border border-gray-300 bg-white">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border-collapse text-[15px]">
+                        <thead className="bg-[#104292] text-white">
+                          <tr>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">#</th>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">To'lov turi</th>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Summasi</th>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Kim tomonidan</th>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Sana</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {teacherPayments
+                            .filter((p) => p.teacher_id === selectedTeacher.id)
+                            .map((payment, index) => (
+                              <tr key={payment.id} className="hover:bg-gray-50">
+                                <td className="border border-gray-300 px-4 py-3 text-center">
+                                  {index + 1}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-3 text-center">
+                                  {payment.payment_type === "avans" ? "Avans" : "Hisob"}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                                  {formatMoney(payment.payment_amount)}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-3 text-center">
+                                  {payment.given_by || "—"}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-3 text-center">
+                                  {payment.given_date
+                                    ? new Date(payment.given_date).toLocaleDateString("ru-RU")
+                                    : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 bg-gray-50 p-8 text-center text-gray-500">
+                    To'lovlar tarixi mavjud emas
+                  </div>
+                )}
+              </div>
+
+              {/* Guruhlar */}
+              <div>
+                <h3 className="mb-4 text-xl font-semibold text-gray-800">
+                  Guruhlar ({teacherGroups.length} ta)
+                </h3>
+
+                {teacherGroups.length > 0 ? (
+                  <div className="overflow-hidden border border-gray-300 bg-white">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border-collapse text-[15px]">
+                        <thead className="bg-[#104292] text-white">
+                          <tr>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">#</th>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Guruh nomi</th>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">O'quvchilar soni</th>
+                            <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Kunlari</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {teacherGroups.map((group, index) => (
+                            <tr key={group.id} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 px-4 py-3 text-center">
+                                {index + 1}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                                {group.group_subject}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-center">
+                                {group.students_amount || 0}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-center">
+                                {group.days || "Mavjud emas"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 bg-gray-50 p-8 text-center text-gray-500">
+                    Ustozga hozircha guruh biriktirilmagan
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
-              <h3
-                style={{
-                  marginBottom: "16px",
-                  borderBottom: "1px solid #eee",
-                  paddingBottom: "8px",
-                  fontSize: "1.2rem",
-                  fontWeight: "600",
-                  textAlign: "center",
-                }}
-              >
-                To'lovlar tarixi
-              </h3>
-              {teacherPayments.filter((p) => p.teacher_id === selectedTeacher.id)
-                .length > 0 ? (
-                <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>№</th>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>To'lov turi</th>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Summasi</th>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Kim tomonidan</th>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Sana</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teacherPayments
-                      .filter((p) => p.teacher_id === selectedTeacher.id)
-                      .map((payment, index) => (
-                        <tr key={payment.id}>
-                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{index + 1}</td>
-                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
-                            {payment.payment_type === "avans"
-                              ? "Avans"
-                              : "Hisob"}
-                          </td>
-                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
-                            {formatMoney(payment.payment_amount)}
-                          </td>
-                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{payment.given_by}</td>
-                          <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>
-                            {new Date(payment.given_date).toLocaleDateString(
-                              "ru-RU"
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p
-                  style={{
-                    textAlign: "center",
-                    padding: "20px",
-                    color: "#666",
-                  }}
-                >
-                  To'lovlar tarixi mavjud emas
-                </p>
-              )}
-            </div>
-
-            <div>
-              <h3
-                style={{
-                  marginBottom: "16px",
-                  borderBottom: "1px solid #eee",
-                  paddingBottom: "8px",
-                  fontSize: "1.2rem",
-                  fontWeight: "600",
-                  textAlign: "center",
-                }}
-              >
-                Guruhlar ({teacherGroups.length} ta)
-              </h3>
-              {teacherGroups.length > 0 ? (
-                <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>№</th>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Guruh nomi</th>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>O'quvchilar soni</th>
-                      <th style={{ padding: "8px", border: "1px solid #ddd", backgroundColor: "#104292", color: "#fff", textAlign: "center" }}>Kunlari</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teacherGroups.map((group, index) => (
-                      <tr key={group.id}>
-                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{index + 1}</td>
-                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{group.group_subject}</td>
-                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{group.students_amount || 0}</td>
-                        <td style={{ padding: "8px", border: "1px solid #ddd", textAlign: "center" }}>{group.days || "Mavjud emas"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p
-                  style={{
-                    textAlign: "center",
-                    padding: "20px",
-                    color: "#666",
-                  }}
-                >
-                  Ustozga hozircha guruh biriktirilmagan
-                </p>
-              )}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "20px",
-                gap: "10px",
-              }}
-            >
+            {/* Footer */}
+            <div className="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 p-6 sm:flex-row sm:justify-end">
               <button
-                className="btn btn-primary"
+                className="px-5 py-2 bg-green-600 text-white transition hover:bg-green-700"
                 onClick={() => {
                   setIsDetailModalOpen(false);
-                  openPaymentModal(selectedTeacher)
+                  openPaymentModal(selectedTeacher);
                 }}
               >
                 To'lov qo'shish
               </button>
+
               <button
-                className="btn btn-primary"
+                className="px-5 py-2 bg-[#104292] text-white transition hover:bg-[#0d3677]"
                 onClick={() => {
                   setIsDetailModalOpen(false);
-                  openEditModal(selectedTeacher)
+                  openEditModal(selectedTeacher);
                 }}
               >
                 Tahrirlash
               </button>
-              <button className="btn btn-secondary" onClick={closeDetailModal}>
+
+              <button
+                className="px-5 py-2 bg-gray-200 text-gray-700 transition hover:bg-gray-300"
+                onClick={closeDetailModal}
+              >
                 Yopish
               </button>
             </div>
@@ -1395,96 +1199,157 @@ function Teachers() {
       )}
 
       <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>№</th>
-              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>F.I.Sh.</th>
-              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Tug'ilgan sana</th>
-              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Fan</th>
-              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Guruhlar soni</th>
-              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Joriy balans (so'm)</th> {/* O'zgartirilgan sarlavha */}
-              <th style={{ textAlign: "center", backgroundColor: "#104292", color: "white", borderRight: "1px solid #ddd" }}>Amallar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTeachers.length === 0 ? (
-              <tr style={{ textAlign: "center", padding: "40px" }}>
-                <td
-                  colSpan="8"
-                  style={{ textAlign: "center", padding: "40px" }}
-                >
-                  {searchTerm ||
-                    subjectFilter !== "all" ||
-                    salaryFilter !== "all"
-                    ? "Qidiruv bo'yicha natija topilmadi"
-                    : teachersError || "Hali ustozlar qo'shilmagan"}
-                </td>
-              </tr>
-            ) : (
-              filteredTeachers.map((teacher, index) => {
-                const groupsCount = groups.filter(
-                  (g) => g.teacher_id === teacher.id
-                ).length;
-                return (
-                  <tr key={teacher.id}>
-                    <td style={{ textAlign: "center" }}>{index + 1}</td>
+        <div
+          className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5"
+        >
+          <h3 className="font-bold text-[1.2rem]">
+            Bizning ustozlar ({filteredTeachers.length} nafar)
+          </h3>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[240px]">
+              <Search size={18} color="#104292" />
+              <input
+                type="text"
+                className="w-full outline-none text-sm"
+                placeholder="Ustozni qidirish..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Subject filter */}
+            <select
+              className="border border-gray-300 px-4 py-2 bg-white text-sm min-w-[180px] outline-none focus:border-[#104292]"
+              value={subjectFilter}
+              onChange={(e) => setSubjectFilter(e.target.value)}
+            >
+              <option value="all">Barcha fanlar</option>
+              {[...new Set(teachers.map((t) => t.subject).filter(Boolean))].map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
+                </option>
+              ))}
+            </select>
+
+            {/* Salary filter */}
+            <select
+              className="border border-gray-300 px-4 py-2 bg-white text-sm min-w-[180px] outline-none focus:border-[#104292]"
+              value={salaryFilter}
+              onChange={(e) => setSalaryFilter(e.target.value)}
+            >
+              <option value="all">Barcha holatlar</option>
+              <option value="paid">Oyligi berilgan</option>
+              <option value="unpaid">Oyligi berilmagan</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-hidden border border-gray-300 bg-white">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-[16px]">
+              <thead className="bg-[#104292] text-white">
+                <tr>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">#</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">F.I.Sh.</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Tug'ilgan sana</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Fan</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Guruhlar</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Joriy balans</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Amallar</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredTeachers.length === 0 ? (
+                  <tr>
                     <td
-                      style={{ cursor: "pointer", color: "#104292", textAlign: "center" }}
-                      onClick={() => openDetailModal(teacher)}
+                      colSpan="7"
+                      className="border border-gray-300 py-12 text-center text-gray-500"
                     >
-                      {`${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""
-                        }`}
+                      {searchTerm || subjectFilter !== "all" || salaryFilter !== "all"
+                        ? "Qidiruv bo'yicha natija topilmadi"
+                        : teachersError || "Hali ustozlar qo'shilmagan"}
                     </td>
-                    <td style={{ textAlign: "center" }}>
-                      {teacher.birth_date
-                        ? new Date(teacher.birth_date).toLocaleDateString(
-                          "ru-RU"
-                        )
-                        : "N/A"}
-                    </td>
-                    <td style={{ textAlign: "center" }}>{teacher.subject || "N/A"}</td>
-                    <td style={{ textAlign: "center" }}>{groupsCount} ta</td>
-                    <td style={{ textAlign: "center" }}>
-                      {formatMoney(teacherBalances[teacher.id] || 0)}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <button
-                        className="bg-green-600 text-white rounded-full p-2 hover:bg-green-700 transition"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openPaymentModal(teacher);
-                        }}
-                        title="To'lov qilish"
-                      >
-                        <Euro size={16} />
-                      </button>
-                      <button
-                        className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition ml-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(teacher);
-                        }}
-                        title="Tahrirlash"
-                      >
-                        <Pen size={16} />
-                      </button>
-                      <button
-                        className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition ml-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showDeleteToast(teacher.id);
-                        }}
-                        title="O'chirish"
-                      >
-                        <Trash2 size={16} />
-                      </button></td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                ) : (
+                  filteredTeachers.map((teacher, index) => {
+                    const groupsCount = groups.filter(
+                      (g) => g.teacher_id === teacher.id
+                    ).length;
+
+                    return (
+                      <tr
+                        key={teacher.id}
+                        onClick={() => openDetailModal(teacher)}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
+                        <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                          {index + 1}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-900">
+                          {teacher.first_name} {teacher.last_name}{" "}
+                          {teacher.father_name || ""}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                          {teacher.birth_date
+                            ? new Date(teacher.birth_date).toLocaleDateString("ru-RU")
+                            : "N/A"}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                          {teacher.subject || "N/A"}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                          {groupsCount} ta
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center font-medium text-gray-900">
+                          {formatMoney(teacherBalances[teacher.id] || 0)}
+                        </td>
+
+                        <td
+                          className="border border-gray-300 px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex justify-center gap-2">
+                            <button
+                              className="h-9 w-9 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white transition"
+                              onClick={() => openPaymentModal(teacher)}
+                              title="To'lov qilish"
+                            >
+                              <DollarSign size={16} />
+                            </button>
+
+                            <button
+                              className="h-9 w-9 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white transition"
+                              onClick={() => openEditModal(teacher)}
+                              title="Tahrirlash"
+                            >
+                              <Pen size={16} />
+                            </button>
+
+                            <button
+                              className="h-9 w-9 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white transition"
+                              onClick={() => showDeleteToast(teacher.id)}
+                              title="O'chirish"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

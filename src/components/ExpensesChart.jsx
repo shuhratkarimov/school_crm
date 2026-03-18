@@ -103,7 +103,7 @@ export default function MonthlyExpenses({ expenses = [], salaries = [] }) {
   if (error) return <div className="text-red-600 font-bold">{error}</div>;
 
   return (
-    <div className="bg-white shadow rounded-xl p-6 border border-blue-400">
+    <div className="bg-white shadow p-6 border border-[#104292]">
       <h3 className="font-bold text-lg mb-4 text-gray-700">
         Yillik xarajatlar va o‘qituvchilarga to‘lovlar
       </h3>
@@ -127,13 +127,13 @@ export default function MonthlyExpenses({ expenses = [], salaries = [] }) {
             <Bar
               dataKey="expenses"
               name="Oddiy xarajatlar"
-              fill="#ef4444"
+              fill="green"
               radius={[4, 4, 0, 0]}
             />
             <Bar
               dataKey="salaries"
               name="O'qituvchilarga to'lov"
-              fill="#3b82f6"
+              fill="orange"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

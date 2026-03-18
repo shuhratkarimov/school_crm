@@ -101,6 +101,7 @@ export default function Attendance() {
   const [sendingSMS, setSendingSMS] = useState(false);
   const [smsText, setSmsText] = useState("");
   const [smsModalOpen, setSmsModalOpen] = useState(false);
+  const [missedAttendanceDates, setMissedAttendanceDates] = useState([]);
 
   const daysOfWeek = [
     "DUSHANBA",
@@ -111,6 +112,13 @@ export default function Attendance() {
     "SHANBA",
     "YAKSHANBA",
   ];
+
+  const toDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   const handleSendSMStoGroup = async () => {
     if (!selectedGroup) return;
@@ -227,6 +235,23 @@ export default function Attendance() {
       }
     } catch (err) {
       toast.error(`${err.message || "Vaqt uzaytirishda xatolik"}`);
+    }
+  };
+
+  const fetchMissedAttendanceDates = async (groupId) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/group-missed-attendance-dates/${groupId}`,
+        { credentials: "include" }
+      );
+
+      if (!res.ok) throw new Error("Davomat qilinmagan kunlarni olishda xatolik");
+
+      const data = await res.json();
+      setMissedAttendanceDates(data?.dates || []);
+    } catch (err) {
+      console.error(err);
+      setMissedAttendanceDates([]);
     }
   };
 
@@ -466,22 +491,22 @@ export default function Attendance() {
 
   const addGroup = async (e) => {
     e.preventDefault();
-  
+
     if (formData.days.length === 0) {
       toast.error("Kamida bitta dars kuni tanlanishi kerak");
       return;
     }
-  
+
     if (formData.start_time >= formData.end_time) {
       toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak");
       return;
     }
-  
+
     if (!formData.teacher_id || !formData.room_id) {
       toast.error("O‘qituvchi va xona tanlanishi kerak");
       return;
     }
-  
+
     const groupData = {
       group_subject: formData.group_subject,
       teacher_id: formData.teacher_id,
@@ -491,7 +516,7 @@ export default function Attendance() {
       end_time: `${formData.end_time}:00`,
       monthly_fee: Number(formData.monthly_fee),
     };
-  
+
     try {
       const response = await fetch(`${API_URL}/create_group`, {
         method: "POST",
@@ -499,19 +524,19 @@ export default function Attendance() {
         body: JSON.stringify(groupData),
         credentials: "include",
       });
-  
+
       if (!response.ok) {
         const errorMessage = await getErrorMessage(response);
         toast.error(errorMessage);
         return;
       }
-  
+
       const newGroup = await response.json();
-  
+
       setGroups([...groups, newGroup.group]);
       setSuccess(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
       toast.success(`${formData.group_subject} guruhi muvaffaqiyatli qo'shildi`);
-  
+
       setFormData({
         group_subject: "",
         teacher_id: "",
@@ -521,7 +546,7 @@ export default function Attendance() {
         end_time: "",
         monthly_fee: "",
       });
-  
+
       setAddModal(false);
       fetchGroups();
     } catch (err) {
@@ -531,17 +556,17 @@ export default function Attendance() {
 
   const updateGroup = async (e) => {
     e.preventDefault();
-  
+
     if (editFormData.days.length === 0) {
       toast.error("Kamida bitta dars kuni tanlanishi kerak");
       return;
     }
-  
+
     if (editFormData.start_time >= editFormData.end_time) {
       toast.error("Boshlanish vaqti tugash vaqtidan oldin bo‘lishi kerak");
       return;
     }
-  
+
     try {
       const payload = {
         ...editFormData,
@@ -550,7 +575,7 @@ export default function Attendance() {
         end_time: `${editFormData.end_time}:00`,
         monthly_fee: Number(editFormData.monthly_fee),
       };
-  
+
       const response = await fetch(
         `${API_URL}/update_group/${editingGroup.id}`,
         {
@@ -560,13 +585,13 @@ export default function Attendance() {
           credentials: "include",
         }
       );
-  
+
       if (!response.ok) {
         const errorMessage = await getErrorMessage(response);
         toast.error(errorMessage);
         return;
       }
-  
+
       const updatedGroup = {
         ...editingGroup,
         ...editFormData,
@@ -575,17 +600,17 @@ export default function Attendance() {
         end_time: `${editFormData.end_time}:00`,
         monthly_fee: Number(editFormData.monthly_fee),
       };
-  
+
       setGroups(
         groups.map((group) =>
           group.id === editingGroup.id ? updatedGroup : group
         )
       );
-  
+
       toast.success(`${editFormData.group_subject} guruhi muvaffaqiyatli yangilandi`);
       setEditModal(false);
       fetchGroups();
-  
+
       if (selectedGroup && selectedGroup.id === editingGroup.id) {
         setSelectedGroup(updatedGroup);
         fetchTeacher(updatedGroup.teacher_id);
@@ -832,7 +857,7 @@ export default function Attendance() {
 
       if (res.status === 404) {
         toast.custom((t) => (
-          <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded-lg">
+          <div className="flex items-center gap-2 p-2 bg-yellow-500 text-white">
             <AlertCircle className="w-5 h-5" />
             <span>{formatDateWithDaysStart(date)} yilda davomat qilinmagan!</span>
           </div>
@@ -884,13 +909,16 @@ export default function Attendance() {
   };
 
   const handleGroupSelect = async (group) => {
-    setAttendance({})
+    setAttendance({});
     setAttendanceTime(null);
     setSelectedGroup(group);
     setGroupStudents([]);
+    setMissedAttendanceDates([]);
+
     await fetchStudents(group.id);
     await fetchAttendance(group.id, selectedDate);
     await fetchTeacher(group.teacher_id);
+    await fetchMissedAttendanceDates(group.id);
   };
 
   const GroupCalendar = ({ group, onSelectDate, selectedDate }) => {
@@ -901,18 +929,25 @@ export default function Attendance() {
     const filterDate = (date) => classDays.includes(date.getDay());
 
     const dayClassName = (date) => {
-      return classDays.includes(date.getDay())
-        ? "highlight-class-day"
-        : undefined;
+      const dateKey = formatDate(date);
+      const isClassDay = classDays.includes(date.getDay());
+      const isMissedDay = missedAttendanceDates.includes(dateKey);
+      const isTodayOrPast = date <= new Date();
+
+      if (isMissedDay && isTodayOrPast) {
+        return "missed-attendance-day";
+      }
+
+      if (isClassDay) {
+        return "highlight-class-day";
+      }
+
+      return undefined;
     };
 
     return (
-      <motion.div
-        className="absolute top-full right-0 z-20 bg-white shadow-2xl rounded-lg p-4 border border-gray-200"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
+      <div
+        className="absolute top-full right-0 z-20 bg-white shadow-2xl p-4 border border-gray-200"
       >
         <CalendarEl
           selected={selectedDate}
@@ -929,7 +964,7 @@ export default function Attendance() {
           dateFormat="dd/MM/yyyy"
           calendarClassName="custom-calendar"
         />
-      </motion.div>
+      </div>
     );
   };
 
@@ -976,17 +1011,14 @@ export default function Attendance() {
   if (loading && groups.length === 0) return <LottieLoading />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
+    <div className="min-h-screen p-6">
       {/* Header */}
-      <motion.div
+      <div
         className="mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-2xl shadow-lg">
+            <div className="bg-[#104292] p-3 shadow-lg">
               <Calendar className="text-white" size={32} />
             </div>
             <div>
@@ -995,182 +1027,167 @@ export default function Attendance() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Groups List */}
-        <motion.div
-          className="lg:col-span-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 max-h-[80vh] overflow-y-auto border border-white/20"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700 flex items-center gap-2">
-              <Users className="text-blue-600" size={20} />
-              Guruhlar
-            </h2>
-            <motion.button
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => setAddModal(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Plus size={18} />
-              Yangi guruh
-            </motion.button>
-          </div>
+        <div className="lg:col-span-1 lg:sticky lg:top-6 h-fit self-start">
+          <div className="bg-white/80 backdrop-blur-sm shadow-xl p-6 max-h-[calc(100vh-48px)] overflow-y-auto border border-white/20">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-700 flex items-center gap-2">
+                <Users className="text-blue-600" size={20} />
+                Guruhlar
+              </h2>
+              <button
+                className="bg-[#104292] text-white px-4 py-2 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => setAddModal(true)}
+              >
+                <Plus size={18} />
+                Yangi guruh
+              </button>
+            </div>
 
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
-              placeholder="Guruhni qidirish..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+            <div className="relative mb-4">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <input
+                type="text"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                placeholder="Guruhni qidirish..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-          <AnimatePresence>
-            {filteredGroups.map((group, index) => {
-              const todayClass = isClassOnDate(group, new Date());
-              let statusEl, statusClass, statusIcon;
+            <AnimatePresence>
+              {filteredGroups.map((group, index) => {
+                const todayClass = isClassOnDate(group, new Date());
+                let statusEl, statusClass, statusIcon;
 
-              if (!todayClass) {
-                statusEl = "Bugun dars yo‘q";
-                statusClass = "bg-gray-100 text-gray-600";
-                statusIcon = <Coffee size={14} />;
-              } else if (group.todayStatus === "loading") {
-                statusEl = "Yuklanmoqda...";
-                statusClass = "bg-gray-100 text-gray-400";
-                statusIcon = <Timer size={14} />;
-              } else if (group.todayStatus === "done") {
-                statusEl = "Davomat qilingan";
-                statusClass = "bg-green-100 text-green-700";
-                statusIcon = <Check size={14} />;
-              } else if (group.todayStatus === "no_attendance") {
-                const now = new Date();
-                const [sh, sm] = group.start_time.split(":").map(Number);
-                const [eh, em] = group.end_time.split(":").map(Number);
-                const start = new Date(now);
-                start.setHours(sh, sm, 0, 0);
+                if (!todayClass) {
+                  statusEl = "Bugun dars yo‘q";
+                  statusClass = "bg-gray-100 text-gray-600";
+                  statusIcon = <Coffee size={14} />;
+                } else if (group.todayStatus === "loading") {
+                  statusEl = "Yuklanmoqda...";
+                  statusClass = "bg-gray-100 text-gray-400";
+                  statusIcon = <Timer size={14} />;
+                } else if (group.todayStatus === "done") {
+                  statusEl = "Davomat qilingan";
+                  statusClass = "bg-green-100 text-green-700";
+                  statusIcon = <Check size={14} />;
+                } else if (group.todayStatus === "no_attendance") {
+                  const now = new Date();
+                  const [sh, sm] = group.start_time.split(":").map(Number);
+                  const [eh, em] = group.end_time.split(":").map(Number);
+                  const start = new Date(now);
+                  start.setHours(sh, sm, 0, 0);
 
-                const end = new Date(now);
-                end.setHours(eh, em, 0, 0);
+                  const end = new Date(now);
+                  end.setHours(eh, em, 0, 0);
 
-                if (now < start) {
-                  statusEl = `Dars ${group.start_time.slice(0, 5)} da boshlanadi`;
-                  statusClass = "bg-yellow-100 text-yellow-700";
-                  statusIcon = <Clock size={14} />;
-                } else if (now >= start && now <= end) {
-                  statusEl = "Dars davom etmoqda";
-                  statusClass = "bg-blue-100 text-blue-700";
-                  statusIcon = <BellRing size={14} />;
-                } else {
-                  statusEl = "Davomat qilinmagan";
-                  statusClass = "bg-red-100 text-red-700";
-                  statusIcon = <AlertCircle size={14} />;
+                  if (now < start) {
+                    statusEl = `Dars ${group.start_time.slice(0, 5)} da boshlanadi`;
+                    statusClass = "bg-yellow-100 text-yellow-700";
+                    statusIcon = <Clock size={14} />;
+                  } else if (now >= start && now <= end) {
+                    statusEl = "Dars davom etmoqda";
+                    statusClass = "bg-blue-100 text-blue-700";
+                    statusIcon = <BellRing size={14} />;
+                  } else {
+                    statusEl = "Davomat qilinmagan";
+                    statusClass = "bg-red-100 text-red-700";
+                    statusIcon = <AlertCircle size={14} />;
+                  }
                 }
-              }
 
-              return (
-                <motion.div
-                  key={group.id}
-                  className="mb-4"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.2, delay: index * 0.05 }}
-                >
-                  <div
-                    className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 ${selectedGroup?.id === group.id ? 'border-blue-600' : 'border-transparent'
-                      }`}
-                    onClick={() => handleGroupSelect(group)}
-                  >
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-bold text-lg text-gray-800">{group.group_subject}</h3>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusClass}`}>
-                          {statusIcon}
-                          {statusEl}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2 text-sm text-gray-600 mb-3">
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className="text-blue-600" />
-                          <span>{formatDaysForDisplay(group.days) || "Belgilanmagan"}</span>
+                return (
+                  <div key={group.id} className="mb-4">
+                    <div
+                      className={`bg-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 ${selectedGroup?.id === group.id
+                          ? "border-blue-600"
+                          : "border-transparent"
+                        }`}
+                      onClick={() => handleGroupSelect(group)}
+                    >
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="font-bold text-lg text-gray-800">
+                            {group.group_subject}
+                          </h3>
+                          <span
+                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusClass}`}
+                          >
+                            {statusIcon}
+                            {statusEl}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Clock size={14} className="text-blue-600" />
-                          <span>{group.start_time.slice(0, 5)} - {group.end_time.slice(0, 5)}</span>
-                        </div>
-                      </div>
 
-                      <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                        <motion.button
-                          className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openExtendModal(group);
-                          }}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          title="Davomat vaqtini uzaytirish"
-                        >
-                          <Timer size={16} />
-                        </motion.button>
-                        <motion.button
-                          className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(group);
-                          }}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          title="Tahrirlash"
-                        >
-                          <Pen size={16} />
-                        </motion.button>
-                        <motion.button
-                          className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            showDeleteToast(group.id);
-                          }}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          title="O'chirish"
-                        >
-                          <Trash2 size={16} />
-                        </motion.button>
+                        <div className="space-y-2 text-sm text-gray-600 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-blue-600" />
+                            <span>{formatDaysForDisplay(group.days) || "Belgilanmagan"}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock size={14} className="text-blue-600" />
+                            <span>
+                              {group.start_time.slice(0, 5)} - {group.end_time.slice(0, 5)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                          <button
+                            className="p-2 bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openExtendModal(group);
+                            }}
+                            title="Davomat vaqtini uzaytirish"
+                          >
+                            <Timer size={16} />
+                          </button>
+                          <button
+                            className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(group);
+                            }}
+                            title="Tahrirlash"
+                          >
+                            <Pen size={16} />
+                          </button>
+                          <button
+                            className="p-2 bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              showDeleteToast(group.id);
+                            }}
+                            title="O'chirish"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                );
+              })}
+            </AnimatePresence>
 
-          {filteredGroups.length === 0 && (
-            <motion.div
-              className="text-center py-12 text-gray-500"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <Users size={48} className="mx-auto mb-3 text-gray-300" />
-              <p>{searchTerm ? "Bunday guruh topilmadi" : errors.groups || "Hali guruh mavjud emas"}</p>
-            </motion.div>
-          )}
-        </motion.div>
+            {filteredGroups.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Users size={48} className="mx-auto mb-3 text-gray-300" />
+                <p>{searchTerm ? "Bunday guruh topilmadi" : errors.groups || "Hali guruh mavjud emas"}</p>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Selected Group Details */}
-        <motion.div
-          className="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+        <div
+          className="lg:col-span-2 bg-white/80 backdrop-blur-sm shadow-xl p-6 border border-white/20"
         >
           {selectedGroup ? (
             <>
@@ -1185,28 +1202,24 @@ export default function Attendance() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <motion.button
+                  <button
                     onClick={() => setSmsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                     disabled={sendingSMS}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                   >
                     <MessageSquare size={18} />
                     Guruhga SMS
                     {sendingSMS && <span className="animate-pulse">...</span>}
-                  </motion.button>
+                  </button>
 
                   <div className="relative">
-                    <motion.button
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 bg-[#104292] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                       onClick={() => setShowCalendar(!showCalendar)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
                     >
                       <Calendar size={18} />
                       Boshqa kun
-                    </motion.button>
+                    </button>
                     <AnimatePresence>
                       {showCalendar && (
                         <GroupCalendar
@@ -1225,11 +1238,8 @@ export default function Attendance() {
 
               {/* Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <motion.div
-                  className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
+                <div
+                  className="bg-[#104292] p-4 text-white shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <CreditCard size={20} />
@@ -1243,13 +1253,10 @@ export default function Attendance() {
                   <p className="text-sm opacity-90">
                     To‘lov: {paymentSummary?.paid_count || 0} / {paymentSummary?.total_students || 0}
                   </p>
-                </motion.div>
+                </div>
 
-                <motion.div
-                  className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
+                <div
+                  className="bg-purple-700 p-4 text-white shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <GraduationCap size={20} />
@@ -1257,13 +1264,10 @@ export default function Attendance() {
                   </div>
                   <p className="text-lg font-bold truncate">{teacher?.first_name} {teacher?.last_name}</p>
                   <p className="text-sm opacity-90">{teacher?.subject || "—"}</p>
-                </motion.div>
+                </div>
 
-                <motion.div
-                  className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                <div
+                  className="bg-green-700 p-4 text-white shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <Users size={20} />
@@ -1271,13 +1275,10 @@ export default function Attendance() {
                   </div>
                   <p className="text-2xl font-bold">{groupStudents.length} nafar</p>
                   <p className="text-sm opacity-90">Guruhdagi o‘quvchilar</p>
-                </motion.div>
+                </div>
 
-                <motion.div
-                  className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white shadow-lg"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
+                <div
+                  className="bg-orange-700 p-4 text-white shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <BarChart3 size={20} />
@@ -1287,16 +1288,13 @@ export default function Attendance() {
                     {Object.values(attendance).filter(att => att?.status === "present").length} / {groupStudents.length}
                   </p>
                   <p className="text-sm opacity-90">Hozirgi davomat</p>
-                </motion.div>
+                </div>
               </div>
 
               {/* Attendance Summary */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <motion.div
-                  className="bg-white rounded-xl p-4 shadow-md border border-gray-100"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
+                <div
+                  className="bg-white p-4 shadow-md border border-gray-100"
                 >
                   <h3 className="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
                     <Award className="text-yellow-500" size={18} />
@@ -1329,13 +1327,10 @@ export default function Attendance() {
                       </svg>
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
-                <motion.div
-                  className="bg-white rounded-xl p-4 shadow-md border border-gray-100"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
+                <div
+                  className="bg-white p-4 shadow-md border border-gray-100"
                 >
                   <h3 className="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
                     <Award className="text-indigo-500" size={18} />
@@ -1368,20 +1363,20 @@ export default function Attendance() {
                       </svg>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               </div>
 
               {/* Date Info */}
-              <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl">
+              <div className="flex items-center justify-between mb-4 bg-[#104292] p-4">
                 <div className="flex items-center gap-3">
-                  <Calendar className="text-blue-600" size={20} />
+                  <Calendar className="text-white" size={20} />
                   <div>
-                    <p className="text-sm text-gray-500">Tanlangan sana</p>
-                    <p className="font-semibold text-gray-800">{formatDateWithDaysStart(selectedDate)}</p>
+                    <p className="text-sm text-white">Tanlangan sana</p>
+                    <p className="font-semibold text-white">{formatDateWithDaysStart(selectedDate)}</p>
                   </div>
                 </div>
                 {attendanceTime && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-white">
                     <Clock size={16} />
                     <span>Yo‘qlama: {formatStartTime(attendanceTime)} da</span>
                   </div>
@@ -1396,10 +1391,10 @@ export default function Attendance() {
                 </h3>
 
                 {groupStudents.length > 0 ? (
-                  <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <div className="overflow-x-auto border border-gray-200">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                        <tr className="bg-[#104292] text-white">
                           <th className="p-3 text-left font-semibold">#</th>
                           <th className="p-3 text-left font-semibold">Ism Familiya</th>
                           <th className="p-3 text-left font-semibold">Telefon</th>
@@ -1414,12 +1409,9 @@ export default function Attendance() {
                           const isPresent = attRecord?.status === "present";
 
                           return (
-                            <motion.tr
+                            <tr
                               key={student.id}
                               className="border-b hover:bg-gray-50 transition-colors"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ duration: 0.3, delay: index * 0.05 }}
                             >
                               <td className="p-3">{index + 1}</td>
                               <td className="p-3 font-medium text-gray-800">
@@ -1443,14 +1435,14 @@ export default function Attendance() {
                               <td className="p-3 text-center text-gray-600">
                                 {attRecord?.note || "-"}
                               </td>
-                            </motion.tr>
+                            </tr>
                           );
                         })}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-12 bg-gray-50 rounded-xl">
+                  <div className="text-center py-12 bg-gray-50">
                     <Users size={48} className="mx-auto mb-3 text-gray-300" />
                     <p className="text-gray-500 font-medium">Bu guruhda o‘quvchilar mavjud emas</p>
                   </div>
@@ -1471,12 +1463,7 @@ export default function Attendance() {
                           <span>{percent}%</span>
                         </div>
                         <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-gradient-to-r from-blue-600 to-indigo-600"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percent}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                          />
+                          <div className="h-full bg-[#104292]" style={{ width: `${percent}%` }} />
                         </div>
                       </div>
                     );
@@ -1485,52 +1472,41 @@ export default function Attendance() {
               )}
             </>
           ) : (
-            <motion.div
+            <div
               className="h-[60vh] flex flex-col items-center justify-center text-gray-400"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
             >
               <Users size={80} className="mb-4 text-gray-300" />
               <p className="text-xl font-medium mb-2">Guruh tanlanmagan</p>
               <p className="text-sm">Iltimos, chap tomondan guruhni tanlang</p>
-            </motion.div>
+            </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* SMS Modal */}
       <AnimatePresence>
         {smsModalOpen && (
-          <motion.div
+          <div
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
           >
-            <motion.div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ duration: 0.3 }}
+            <div
+              className="bg-white shadow-2xl w-full max-w-lg overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 flex justify-between items-center">
+              <div className="bg-green-700 text-white px-6 py-4 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <MessageSquare size={24} />
                   <h3 className="text-lg font-bold">Guruhga SMS yuborish</h3>
                 </div>
-                <motion.button
+                <button
                   onClick={() => setSmsModalOpen(false)}
                   className="hover:bg-white/20 p-1 rounded-full transition-colors"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
                 >
                   <X size={20} />
-                </motion.button>
+                </button>
               </div>
 
               <div className="p-6 space-y-5">
-                <div className="bg-blue-50 p-4 rounded-xl flex items-center gap-3">
+                <div className="bg-blue-50 p-4 flex items-center gap-3">
                   <Users className="text-blue-600" size={20} />
                   <p className="text-gray-700">
                     <span className="font-semibold">{groupStudents.length}</span> ta o‘quvchiga yuboriladi
@@ -1538,7 +1514,7 @@ export default function Attendance() {
                 </div>
 
                 <textarea
-                  className="w-full border border-gray-300 rounded-xl p-4 min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className="w-full border border-gray-300 p-4 min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   placeholder="Xabar matnini kiriting..."
                   value={smsText}
                   onChange={e => setSmsText(e.target.value)}
@@ -1554,59 +1530,46 @@ export default function Attendance() {
               </div>
 
               <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                <motion.button
-                  className="px-5 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors"
+                <button
+                  className="px-5 py-2 border border-gray-300 hover:bg-gray-100 transition-colors"
                   onClick={() => setSmsModalOpen(false)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
                   Bekor qilish
-                </motion.button>
-                <motion.button
-                  className="px-5 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                </button>
+                <button
+                  className="px-5 py-2 bg-green-700 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                   disabled={!smsText.trim() || sendingSMS}
                   onClick={handleSendSMStoGroup}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
                   {sendingSMS ? "Yuborilmoqda..." : "SMS yuborish"}
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Add Group Modal */}
       <AnimatePresence>
         {addModal && (
-          <motion.div
+          <div
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
           >
-            <motion.div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ duration: 0.3 }}
+            <div
+              className="bg-white shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4">
+              <div className="bg-[#104292] text-white px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Plus size={24} />
                     <h3 className="text-xl font-bold">Yangi guruh qo'shish</h3>
                   </div>
-                  <motion.button
+                  <button
                     onClick={() => setAddModal(false)}
                     className="hover:bg-white/20 p-1 rounded-full transition-colors"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
                   >
                     <X size={20} />
-                  </motion.button>
+                  </button>
                 </div>
                 <p className="text-blue-100 text-sm mt-1">Yangi guruh ma'lumotlarini to'ldiring</p>
               </div>
@@ -1619,7 +1582,7 @@ export default function Attendance() {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       value={formData.group_subject}
                       onChange={(e) => setFormData({ ...formData, group_subject: e.target.value })}
                       placeholder="Masalan: Matematika 1-guruh"
@@ -1633,7 +1596,7 @@ export default function Attendance() {
                         O'qituvchi <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                         value={formData.teacher_id}
                         onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
                         required
@@ -1656,7 +1619,7 @@ export default function Attendance() {
                         Xona <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                         value={formData.room_id}
                         onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
                         required
@@ -1683,7 +1646,7 @@ export default function Attendance() {
                       {daysOfWeek.map((day) => (
                         <label
                           key={day}
-                          className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer transition-all duration-200 ${formData.days.includes(day)
+                          className={`flex items-center gap-2 p-3 border cursor-pointer transition-all duration-200 ${formData.days.includes(day)
                             ? "border-blue-500 bg-blue-50"
                             : "border-gray-300 hover:border-gray-400"
                             }`}
@@ -1695,7 +1658,7 @@ export default function Attendance() {
                             className="hidden"
                           />
                           <div
-                            className={`w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.days.includes(day)
+                            className={`w-5 h-5 border flex items-center justify-center transition-colors ${formData.days.includes(day)
                               ? "border-blue-500 bg-blue-500 text-white"
                               : "border-gray-400"
                               }`}
@@ -1718,7 +1681,7 @@ export default function Attendance() {
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         value={formData.start_time}
                         onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                         required
@@ -1731,7 +1694,7 @@ export default function Attendance() {
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         value={formData.end_time}
                         onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                         required
@@ -1745,7 +1708,7 @@ export default function Attendance() {
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       value={formData.monthly_fee}
                       onChange={(e) => setFormData({ ...formData, monthly_fee: e.target.value })}
                       placeholder="Masalan: 225000"
@@ -1755,63 +1718,50 @@ export default function Attendance() {
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                    <motion.button
+                    <button
                       type="button"
                       onClick={() => setAddModal(false)}
-                      className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors font-medium"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      className="px-6 py-2 border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
                     >
                       Bekor qilish
-                    </motion.button>
-                    <motion.button
+                    </button>
+                    <button
                       type="submit"
-                      className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium flex items-center gap-2"
+                      className="px-6 py-2 bg-[#104292] text-white shadow-lg hover:shadow-xl transition-all duration-300 font-medium flex items-center gap-2"
                       disabled={formData.days.length === 0}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
                     >
                       <Plus size={18} />
                       Guruh qo'shish
-                    </motion.button>
+                    </button>
                   </div>
                 </form>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Extend Time Modal */}
       <AnimatePresence>
         {extendModal && (
-          <motion.div
+          <div
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
           >
-            <motion.div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ duration: 0.3 }}
+            <div
+              className="bg-white shadow-2xl w-full max-w-md overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4">
+              <div className="bg-[#104292] text-white px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Timer size={24} />
                     <h3 className="text-lg font-bold">Davomat vaqtini uzaytirish</h3>
                   </div>
-                  <motion.button
+                  <button
                     onClick={() => setExtendModal(false)}
                     className="hover:bg-white/20 p-1 rounded-full transition-colors"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
                   >
                     <X size={20} />
-                  </motion.button>
+                  </button>
                 </div>
               </div>
 
@@ -1821,7 +1771,7 @@ export default function Attendance() {
                 </p>
 
                 {extensionInfo && extensionInfo.extended_until && extensionInfo.extended_until > new Date().toISOString() && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="bg-blue-50 border border-blue-200 p-4">
                     <div className="flex items-center gap-2 text-blue-700 mb-2">
                       <Check size={16} />
                       <span className="font-medium">Joriy uzaytirish mavjud:</span>
@@ -1859,7 +1809,7 @@ export default function Attendance() {
                     </label>
                     <input
                       type="date"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                       value={extensionData.date}
                       onChange={(e) => setExtensionData({ ...extensionData, date: e.target.value })}
                       required
@@ -1873,7 +1823,7 @@ export default function Attendance() {
                     </label>
                     <input
                       type="time"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                       value={extensionData.time}
                       onChange={(e) => setExtensionData({ ...extensionData, time: e.target.value })}
                       required
@@ -1881,71 +1831,58 @@ export default function Attendance() {
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <div className="bg-yellow-50 border border-yellow-200 p-4">
                   <p className="text-sm text-yellow-800 flex items-center gap-2">
                     <AlertCircle size={16} />
-                    ⏰ Tanlangan vaqtgacha yo'qlama qilish mumkin bo'ladi
+                    Tanlangan vaqtgacha yo'qlama qilish mumkin bo'ladi
                   </p>
                 </div>
               </div>
 
               <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                <motion.button
+                <button
                   type="button"
-                  className="px-5 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors"
+                  className="px-5 py-2 border border-gray-300 hover:bg-gray-100 transition-colors"
                   onClick={() => setExtendModal(false)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
                   Bekor qilish
-                </motion.button>
-                <motion.button
+                </button>
+                <button
                   type="button"
-                  className="px-5 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2"
+                  className="px-5 py-2 bg-[#104292] text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2"
                   onClick={extendAttendanceTime}
                   disabled={!extensionData.date || !extensionData.time}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
                   <Timer size={16} />
                   {extensionInfo ? "Vaqtni yangilash" : "Vaqtni uzaytirish"}
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Edit Modal */}
       <AnimatePresence>
         {editModal && (
-          <motion.div
+          <div
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
           >
-            <motion.div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ duration: 0.3 }}
+            <div
+              className="bg-white shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4">
+              <div className="bg-[#104292] text-white px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Pen size={24} />
                     <h3 className="text-xl font-bold">Guruhni tahrirlash</h3>
                   </div>
-                  <motion.button
+                  <button
                     onClick={() => setEditModal(false)}
                     className="hover:bg-white/20 p-1 rounded-full transition-colors"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
                   >
                     <X size={20} />
-                  </motion.button>
+                  </button>
                 </div>
               </div>
 
@@ -1957,7 +1894,7 @@ export default function Attendance() {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                       value={editFormData.group_subject}
                       onChange={(e) => setEditFormData({ ...editFormData, group_subject: e.target.value })}
                       required
@@ -1970,7 +1907,7 @@ export default function Attendance() {
                         O'qituvchi <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200 bg-white"
                         value={editFormData.teacher_id}
                         onChange={(e) => setEditFormData({ ...editFormData, teacher_id: e.target.value })}
                         required
@@ -1992,7 +1929,7 @@ export default function Attendance() {
                         Xona <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200 bg-white"
                         value={editFormData.room_id}
                         onChange={(e) => setEditFormData({ ...editFormData, room_id: e.target.value })}
                         required
@@ -2014,12 +1951,12 @@ export default function Attendance() {
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Dars kunlari <span className="text-red-500">*</span>
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {daysOfWeek.map((day) => (
                         <label
                           key={day}
-                          className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer transition-all duration-200 ${editFormData.days.includes(day)
-                            ? "border-purple-500 bg-purple-50"
+                          className={`flex items-center gap-2 p-3 border cursor-pointer transition-all duration-200 ${editFormData.days.includes(day)
+                            ? "border-[#104292] bg-[#104292] text-white"
                             : "border-gray-300 hover:border-gray-400"
                             }`}
                         >
@@ -2030,8 +1967,8 @@ export default function Attendance() {
                             className="hidden"
                           />
                           <div
-                            className={`w-5 h-5 border rounded flex items-center justify-center transition-colors ${editFormData.days.includes(day)
-                              ? "border-purple-500 bg-purple-500 text-white"
+                            className={`w-5 h-5 border flex items-center justify-center transition-colors ${editFormData.days.includes(day)
+                              ? "border-[#104292] bg-[#104292] text-white"
                               : "border-gray-400"
                               }`}
                           >
@@ -2050,7 +1987,7 @@ export default function Attendance() {
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                         value={editFormData.start_time}
                         onChange={(e) => setEditFormData({ ...editFormData, start_time: e.target.value })}
                         required
@@ -2063,7 +2000,7 @@ export default function Attendance() {
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                         value={editFormData.end_time}
                         onChange={(e) => setEditFormData({ ...editFormData, end_time: e.target.value })}
                         required
@@ -2077,7 +2014,7 @@ export default function Attendance() {
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                       value={editFormData.monthly_fee}
                       onChange={(e) => setEditFormData({ ...editFormData, monthly_fee: e.target.value })}
                       placeholder="Masalan: 200000"
@@ -2087,46 +2024,40 @@ export default function Attendance() {
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                    <motion.button
+                    <button
                       type="button"
-                      className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors font-medium"
+                      className="px-6 py-2 border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
                       onClick={() => setEditModal(false)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
                     >
                       Bekor qilish
-                    </motion.button>
-                    <motion.button
+                    </button>
+                    <button
                       type="submit"
-                      className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium flex items-center gap-2"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      className="px-6 py-2 bg-[#104292] text-white shadow-lg hover:shadow-xl transition-all duration-300 font-medium flex items-center gap-2"
                     >
                       <Check size={18} />
                       Saqlash
-                    </motion.button>
+                    </button>
                   </div>
                 </form>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Success Toast */}
       <AnimatePresence>
         {success && (
-          <motion.div
-            className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
+          <div
+            className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 shadow-lg flex items-center gap-2"
           >
             <Check size={20} />
             <span>{success}</span>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
+      <p className="mt-4 italic"><span className="font-bold"><span className="text-red-500 text-2xl">* </span>Eslatma:</span> Tanlangan guruhdagi boshqa kunni tanlash tugmasi bosilganida, qizil dumaloq aylana ko'rinishida ushbu guruh tashkil qilingan kundan boshlab to hozirgacha dars o'tilishi kerak bo'lgan, lekin ustoz tomonidan yo'qlama qilinmagan kunlarni ko'rish mumkin.</p>
     </div>
   );
 }

@@ -156,7 +156,7 @@ function Header({ setIsAuthenticated }) {
       <div className="flex items-center gap-4">
         {/* Settings button */}
         <button
-          className="btn flex items-center gap-2 bg-lime-600 hover:bg-lime-700 transition text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg"
+          className="btn flex items-center gap-2 bg-[#104292] hover:bg-[#104292]/80 transition text-white px-4 py-2 shadow-md hover:shadow-lg"
           onClick={() => setShowProfileModal(true)}
         >
           <Settings size={18} />
@@ -165,7 +165,7 @@ function Header({ setIsAuthenticated }) {
 
         {/* Logout button */}
         <button
-          className="btn flex items-center gap-2 bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg"
+          className="btn flex items-center gap-2 bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 shadow-md hover:shadow-lg"
           onClick={handleLogout}
         >
           <LogOut size={24} />
@@ -176,7 +176,7 @@ function Header({ setIsAuthenticated }) {
       {/* Profile Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => {
                 setShowProfileModal(false);
@@ -188,7 +188,7 @@ function Header({ setIsAuthenticated }) {
             </button>
 
             <div className="flex flex-col items-center mb-6">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold mb-3 shadow-md">
+              <div className="w-24 h-24 rounded-full bg-[#104292] flex items-center justify-center text-white text-2xl font-bold mb-3 shadow-md">
                 {user?.username?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <h2 className="text-2xl font-bold text-center text-gray-800">
@@ -197,7 +197,7 @@ function Header({ setIsAuthenticated }) {
             </div>
 
             <div className="space-y-4 mb-6">
-              <div className="p-3 bg-gray-100 rounded-xl shadow-sm">
+              <div className="p-3 bg-gray-100 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <User size={24} className="text-gray-500 mr-3" />
@@ -232,7 +232,7 @@ function Header({ setIsAuthenticated }) {
                     type="text"
                     value={tempUsername}
                     onChange={(e) => setTempUsername(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     autoFocus
                   />
                 ) : (
@@ -240,7 +240,7 @@ function Header({ setIsAuthenticated }) {
                 )}
               </div>
 
-              <div className="flex items-center p-3 bg-gray-100 rounded-xl shadow-sm">
+              <div className="flex items-center p-3 bg-gray-100 shadow-sm">
                 <Mail size={24} className="text-gray-500 mr-3" />
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
@@ -250,7 +250,7 @@ function Header({ setIsAuthenticated }) {
             </div>
 
             <button
-              className="w-full flex justify-center items-center py-3 px-4 bg-[#104292] transition-colors text-white font-medium rounded-xl shadow-md hover:shadow-lg"
+              className="w-full flex justify-center items-center py-3 px-4 bg-[#104292] transition-colors text-white font-medium shadow-md hover:shadow-lg"
               onClick={() => {
                 setShowProfileModal(false);
                 setShowPasswordModal(true);
@@ -266,7 +266,7 @@ function Header({ setIsAuthenticated }) {
       {/* Password Update Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => setShowPasswordModal(false)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-full hover:bg-gray-200"
@@ -275,7 +275,7 @@ function Header({ setIsAuthenticated }) {
             </button>
 
             <div className="flex flex-col items-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center text-white mb-3 shadow-md">
+              <div className="w-16 h-16 rounded-full bg-[#104292] flex items-center justify-center text-white mb-3 shadow-md">
                 <KeyRound size={28} />
               </div>
               <h2 className="text-2xl font-bold text-center text-gray-800">
@@ -294,7 +294,7 @@ function Header({ setIsAuthenticated }) {
                     type={showOldPassword ? "text" : "password"}
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    className="w-full border border-gray-300 px-4 py-3 pr-10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    className="w-full border border-gray-300 px-4 py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     required
                     placeholder="Hozirgi parolingizni kiriting"
                   />
@@ -315,7 +315,7 @@ function Header({ setIsAuthenticated }) {
                     type={showNewPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full border border-gray-300 px-4 py-3 pr-10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    className="w-full border border-gray-300 px-4 py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     required
                     placeholder="Yangi parolni kiriting"
                   />
@@ -332,14 +332,14 @@ function Header({ setIsAuthenticated }) {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-100 transition-colors shadow-sm"
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition-colors shadow-sm"
                   onClick={() => setShowPasswordModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 transition-colors text-white font-medium rounded-xl shadow-md hover:shadow-lg"
+                  className="flex-1 py-3 px-4 bg-[#104292] hover:bg-[#104292]/80 transition-colors text-white font-medium shadow-md hover:shadow-lg"
                 >
                   Saqlash
                 </button>

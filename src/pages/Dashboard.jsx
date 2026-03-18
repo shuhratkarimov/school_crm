@@ -269,7 +269,7 @@ function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-2">
-        <div className="bg-gradient-to-br from-blue-100 to-blue-50 shadow rounded-xl p-6 flex items-center justify-between border border-blue-300 hover:shadow-lg transition">
+        <div className="bg-gradient-to-br from-blue-100 to-blue-50 shadow p-6 flex items-center justify-between border border-blue-300 hover:shadow-lg transition">
           <div>
             <div className="text-3xl font-bold text-gray-800">{animatedStudents} nafar</div>
             <div className="text-sm text-gray-600 font-medium">Jami o'quvchilar</div>
@@ -346,7 +346,7 @@ function Dashboard() {
           label="O'qituvchilar"
           color="purple"
         />
-        <div className="bg-white shadow rounded-xl p-6 flex items-center border border-green-300 hover:shadow-lg transition">
+        <div className="bg-white shadow p-6 flex items-center border border-green-300 hover:shadow-lg transition">
           <div className="w-20 h-20">
             <CircularProgressbar
               value={animatedRoomPercent}
@@ -373,7 +373,7 @@ function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="bg-white shadow rounded-xl p-6 flex items-center border border-blue-300 hover:shadow-lg transition">
+        <div className="bg-white shadow p-6 flex items-center border border-blue-300 hover:shadow-lg transition">
           <div className="w-20 h-20">
             <CircularProgressbar
               value={animatedAttendance}
@@ -402,7 +402,7 @@ function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="bg-white shadow rounded-xl p-6 flex items-center border border-purple-300">
+        <div className="bg-white shadow p-6 flex items-center border border-purple-300">
           <div className="w-20 h-20">
             <CircularProgressbar
               value={animatedWeekAttendance}
@@ -418,7 +418,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-xl p-6 flex items-center border border-cyan-300">
+        <div className="bg-white shadow p-6 flex items-center border border-cyan-300">
           <div className="w-20 h-20">
             <CircularProgressbar
               value={animatedMonthAttendance}
@@ -435,7 +435,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-xl p-6 border border-blue-400">
+      <div className="bg-white shadow p-6 border border-blue-400">
         <h3 className="font-bold text-lg mb-2 text-gray-700">
           Yillik tushumlar va xarajatlar
         </h3>
@@ -499,7 +499,7 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded-xl p-6 border border-blue-400">
+        <div className="bg-white shadow p-6 border border-blue-400">
           <h3 className="font-bold text-lg mb-4 text-black-700 text-center">
             So'nggi qo'shilgan o'quvchilar
           </h3>
@@ -543,7 +543,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-xl p-6 border border-blue-400">
+        <div className="bg-white shadow p-6 border border-blue-400">
           <h3 className="font-bold text-lg mb-4 text-black-700 text-center">So'nggi to'lovlar</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -594,7 +594,7 @@ function Card({ icon, value, label, color }) {
   };
   return (
     <div
-      className={`bg-gradient-to-br ${colors[color]} shadow rounded-xl p-6 flex items-center justify-between border hover:shadow-lg transition`}
+      className={`bg-gradient-to-br ${colors[color]} shadow p-6 flex items-center justify-between border hover:shadow-lg transition`}
     >
       <div>
         <div className="text-3xl font-bold text-gray-800">{value}</div>

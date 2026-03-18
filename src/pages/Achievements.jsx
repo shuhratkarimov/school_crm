@@ -266,7 +266,7 @@ function Achievements() {
         </div>
 
         <button
-          className="flex items-center gap-2 bg-[#104292] hover:bg-blue-700 text-white px-4 py-3 rounded-xl transition-colors shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 bg-[#104292] hover:bg-blue-700 text-white px-4 py-3 transition-colors shadow-md hover:shadow-lg"
           onClick={() => setAddModal(true)}
         >
           <Plus size={20} />
@@ -282,7 +282,7 @@ function Achievements() {
             placeholder="Yutuq yoki ism bo'yicha qidirish..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
@@ -290,15 +290,15 @@ function Achievements() {
       {/* Tur selector */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Yutuq turi</label>
-        <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
+        <div className="flex bg-gray-100 p-1 w-fit">
           <button
-            className={`px-4 py-2 rounded-xl transition-colors ${selectedType === "student" ? "bg-white shadow-sm" : "text-gray-500"}`}
+            className={`px-4 py-2 transition-colors ${selectedType === "student" ? "bg-white shadow-sm" : "text-gray-500"}`}
             onClick={() => setSelectedType("student")}
           >
             O'quvchilar yutuqlari
           </button>
           <button
-            className={`px-4 py-2 rounded-xl transition-colors ${selectedType === "teacher" ? "bg-white shadow-sm" : "text-gray-500"}`}
+            className={`px-4 py-2 transition-colors ${selectedType === "teacher" ? "bg-white shadow-sm" : "text-gray-500"}`}
             onClick={() => setSelectedType("teacher")}
           >
             Ustozlar yutuqlari
@@ -313,9 +313,9 @@ function Achievements() {
           const isStudent = students.some(s => s.id === entity.id);
           return selectedType === "student" ? isStudent : !isStudent;
         }).map(({ entity, achievements }) => (
-          <div key={entity.id} className="bg-white rounded-xl shadow-sm p-6">
+          <div key={entity.id} className="bg-white shadow-sm p-6">
             <div className="flex items-start gap-4 mb-4">
-              <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+              <div className="w-14 h-14 bg-[#104292] rounded-full flex items-center justify-center text-white font-bold text-lg">
                 {entity.first_name?.charAt(0)}{entity.last_name?.charAt(0)}
               </div>
               <div>
@@ -333,7 +333,7 @@ function Achievements() {
 
             <div className="grid gap-3">
               {achievements?.map(ach => (
-                <div key={ach.id} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50 rounded-r">
+                <div key={ach.id} className="border-l-4 border-[#104292] pl-4 py-2 bg-[#104292]/10">
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-medium text-gray-800">{ach.achievement_title}</h4>
@@ -356,14 +356,14 @@ function Achievements() {
                           });
                           setEditModal(true);
                         }}
-                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"
+                        className="p-2 text-blue-600 hover:bg-[#104292]/10 rounded-full transition-colors"
                         title="Tahrirlash"
                       >
                         <Pen size={16} />
                       </button>
                       <button
                         onClick={() => showDeleteToast(ach.id)}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"
+                        className="p-2 text-red-600 hover:bg-[#104292]/10 rounded-full transition-colors"
                         title="O'chirish"
                       >
                         <Trash2 size={16} />
@@ -380,7 +380,7 @@ function Achievements() {
           const isStudent = students.some(s => s.id === entity.id);
           return selectedType === "students" ? isStudent : !isStudent;
         }).length === 0 && (
-            <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+            <div className="text-center py-12 bg-white shadow-sm">
               <Award size={48} className="mx-auto text-gray-300 mb-3" />
               <h3 className="text-lg font-medium text-gray-500">Hozircha hech qanday yutuq mavjud emas</h3>
               <p className="text-gray-400 mt-1">Yutuq qo'shish uchun yuqoridagi tugmadan foydalaning</p>
@@ -391,7 +391,7 @@ function Achievements() {
       {/* Yutuq qo'shish modali */}
       {addModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => {
                 setAddModal(false);
@@ -435,7 +435,7 @@ function Achievements() {
                   type="text"
                   value={formData.achievement_title}
                   onChange={(e) => setFormData({ ...formData, achievement_title: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq nomi"
                   required
                 />
@@ -446,7 +446,7 @@ function Achievements() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq haqida batafsil"
                   rows="3"
                   required
@@ -459,7 +459,7 @@ function Achievements() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -467,7 +467,7 @@ function Achievements() {
               <div className="flex gap-3 pt-2">
                 <button 
                   type="button"
-                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-100 transition-colors"
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition-colors"
                   onClick={() => {
                     setAddModal(false);
                     setFormData({
@@ -482,7 +482,7 @@ function Achievements() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-[#104292] hover:bg-[#104292]/80 transition-colors text-white font-medium rounded-xl"
+                  className="flex-1 py-3 px-4 bg-[#104292] hover:bg-[#104292]/80 transition-colors text-white font-medium"
                 >
                   Qo'shish
                 </button>
@@ -495,7 +495,7 @@ function Achievements() {
       {/* Yutuqni tahrirlash modali */}
       {editModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+          <div className="bg-white shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
             <button
               onClick={() => setEditModal(false)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-full hover:bg-gray-200"
@@ -512,7 +512,7 @@ function Achievements() {
                   type="text"
                   value={formData.achievement_title}
                   onChange={(e) => setFormData({ ...formData, achievement_title: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq nomi"
                   required
                 />
@@ -523,7 +523,7 @@ function Achievements() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Yutuq haqida batafsil"
                   rows="3"
                   required
@@ -536,7 +536,7 @@ function Achievements() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -544,14 +544,14 @@ function Achievements() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-100 transition-colors"
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition-colors"
                   onClick={() => setEditModal(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-medium rounded-xl"
+                  className="flex-1 py-3 px-4 bg-[#104292] hover:bg-[#104292]/80 transition-colors text-white font-medium"
                 >
                   Yangilash
                 </button>

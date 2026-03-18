@@ -125,7 +125,7 @@ function Payments() {
     const timer = setTimeout(() => {
       setSearchTerm(paymentSearchInput);
       setPaymentsPagination((prev) => ({ ...prev, page: 1 }));
-    }, 400);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [paymentSearchInput]);
@@ -134,7 +134,7 @@ function Payments() {
     const timer = setTimeout(() => {
       setUnpaidSearch(unpaidSearchInput);
       setUnpaidPagination((prev) => ({ ...prev, page: 1 }));
-    }, 400);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [unpaidSearchInput]);
@@ -296,6 +296,7 @@ function Payments() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       const q = studentSearch.trim();
+      console.log(q);
 
       if (q.length < 2) {
         setStudentResults([]);
@@ -320,7 +321,7 @@ function Payments() {
       } finally {
         setStudentLoading(false);
       }
-    }, 300);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [studentSearch]);
@@ -585,15 +586,18 @@ function Payments() {
   };
 
   const handleStudentSelect = (student) => {
-    setFormData({ ...formData, pupil_id: student.id, group_id: "", came_in_school: student.came_in_school });
-    setStudentSearch(`${student.first_name} ${student.last_name}`);
-    setShowDropdown(false);
-    setSelectedGroups([]); // Tanlangan guruhlarni tozalash
-    setGroupDiscounts({}); //
     setFormData((prev) => ({
       ...prev,
+      pupil_id: student.id,
+      group_id: "",
+      came_in_school: student.came_in_school,
       shouldBeConsideredAsPaid: false,
     }));
+
+    setStudentSearch(`${student.first_name} ${student.last_name}`);
+    setShowDropdown(false);
+    setSelectedGroups([]);
+    setGroupDiscounts({});
   };
 
   const handleGroupToggle = (groupId) => {
@@ -899,7 +903,7 @@ function Payments() {
         <div className="flex gap-4">
           <button
             onClick={() => setShowUnpaid(!showUnpaid)}
-            className={`px-5 py-2.5 rounded-[5px] font-medium text-white shadow-sm transition-all duration-200 relative
+            className={`px-5 py-2.5 font-medium text-white shadow-sm transition-all duration-200 relative
       ${showUnpaid
                 ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
                 : 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700'}`}
@@ -918,7 +922,7 @@ function Payments() {
               setGroupDiscounts({});
               setTotalAmount(0);
             }}
-            className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white font-medium rounded-[5px] shadow-sm transition-all duration-200 flex items-center gap-2"
+            className="px-5 py-2.5 bg-[#104292] hover:bg-[#104292]/80 active:bg-[#104292]/80 text-white font-medium shadow-sm transition-all duration-200 flex items-center gap-2"
           >
             <Plus size={20} />
             To'lov qo'shish
@@ -938,7 +942,7 @@ function Payments() {
                   setSelectedYear(e.target.value);
                   setUnpaid([]);           // yangi yil tanlanganda tozalash
                 }}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                className="w-32 px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
               >
                 {years.map(y => (
                   <option key={y} value={y}>{y}-yil</option>
@@ -954,7 +958,7 @@ function Payments() {
                   setSelectedMonth(e.target.value);
                   setUnpaid([]); // yangi oy tanlanganda tozalash
                 }}
-                className="w-40 px-3 py-2 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                className="w-40 px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
               >
                 <option value={currentMonth}>Joriy oy ({currentMonth})</option>
                 {allMonths
@@ -976,15 +980,15 @@ function Payments() {
                   setUnpaidPagination((prev) => ({ ...prev, page: 1 }));
                 }}
                 placeholder="Ism yoki telefon..."
-                className="w-64 px-3 py-2 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                className="w-64 px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
               />
             </div>
           </div>
 
           {/* ← Jadval shu yerdan boshlanadi */}
-          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-xl shadow-sm p-5">
+          <div className="border border-red-300 shadow-sm p-5">
             <div className="flex justify-between mb-3">
-              <h3 className="text-xl font-bold text-amber-800 mb-4 flex items-center gap-2">
+              <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
                 <AlertCircle size={24} />
                 To'lanmagan to'lovlar ({selectedYear} yil {selectedMonth !== "all" ? selectedMonth : "barcha oylar"})
               </h3>
@@ -1033,7 +1037,7 @@ function Payments() {
                   );
                 }}
                 disabled={Object.values(sendingNotification).some(v => v)}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-[5px] shadow disabled:opacity-50"
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white shadow disabled:opacity-50"
               >
                 Barchasiga xabar jo'natish
               </button>
@@ -1082,7 +1086,7 @@ function Payments() {
                           <button
                             onClick={() => sendNotification(item.student?.id)}
                             disabled={sendingNotification[item.student?.id || ""]}
-                            className={`px-4 py-1.5 text-white text-sm rounded shadow-sm transition-colors flex items-center gap-2
+                            className={`px-4 py-1.5 text-white text-sm shadow-sm transition-colors flex items-center gap-2
         ${sendingNotification[item.student?.id || ""]
                                 ? "bg-gray-500 cursor-not-allowed"
                                 : "bg-red-600 hover:bg-red-700"
@@ -1109,7 +1113,7 @@ function Payments() {
                         setUnpaidPagination((prev) => ({ ...prev, page: prev.page - 1 }))
                       }
                       disabled={!unpaidPagination.hasPrevPage}
-                      className="px-4 py-2 rounded-lg border disabled:opacity-50 bg-white"
+                      className="px-4 py-2 border disabled:opacity-50 bg-white"
                     >
                       Oldingi
                     </button>
@@ -1123,7 +1127,7 @@ function Payments() {
                         setUnpaidPagination((prev) => ({ ...prev, page: prev.page + 1 }))
                       }
                       disabled={!unpaidPagination.hasNextPage}
-                      className="px-4 py-2 rounded-lg border disabled:opacity-50 bg-white"
+                      className="px-4 py-2 border disabled:opacity-50 bg-white"
                     >
                       Keyingi
                     </button>
@@ -1137,14 +1141,14 @@ function Payments() {
 
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
+          <div className="bg-white shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-t-2xl flex justify-between items-center shadow">
+            <div className="bg-[#104292] text-white p-5 flex justify-between items-center shadow">
               <h3 className="text-lg font-semibold">To'lovni tahrirlash</h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-white hover:bg-blue-800 p-1 rounded-full transition-colors"
+                className="text-white hover:bg-[#104292]/80 p-1 rounded-full transition-colors"
               >
                 <X size={22} />
               </button>
@@ -1159,7 +1163,7 @@ function Payments() {
                 <div className="relative">
                   <input
                     type="number"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={editFormData.payment_amount}
                     onChange={(e) => setEditFormData({ ...editFormData, payment_amount: e.target.value })}
                     placeholder="350000"
@@ -1175,7 +1179,7 @@ function Payments() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">To'lov turi *</label>
                 <div className="relative">
                   <select
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
                     value={editFormData.payment_type}
                     onChange={(e) => setEditFormData({ ...editFormData, payment_type: e.target.value })}
                     required
@@ -1194,7 +1198,7 @@ function Payments() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Qaysi oy uchun to'lov *</label>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   {radioMonths.map((month) => (
-                    <label key={month} className="flex items-center p-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <label key={month} className="flex items-center p-2 border border-gray-300 hover:bg-gray-50 cursor-pointer">
                       <input
                         type="radio"
                         className="text-blue-600 focus:ring-blue-500 h-4 w-4"
@@ -1210,7 +1214,7 @@ function Payments() {
 
                 <div className="relative">
                   <select
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
                     value={radioMonths.includes(editFormData.for_which_month) ? "" : editFormData.for_which_month}
                     onChange={(e) => handleEditChange(e.target.value)}
                   >
@@ -1228,7 +1232,7 @@ function Payments() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Guruh *</label>
                 <div className="relative">
                   <select
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
                     value={editFormData.group_id}
                     onChange={(e) => {
                       const groupId = e.target.value;
@@ -1268,7 +1272,7 @@ function Payments() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Qabul qilgan mas'ul *</label>
                 <input
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={editFormData.received}
                   placeholder="F.I.Sh. kiriting..."
                   onChange={(e) => setEditFormData({ ...editFormData, received: e.target.value })}
@@ -1280,7 +1284,7 @@ function Payments() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Izoh (ixtiyoriy)</label>
                 <textarea
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   rows={3}
                   value={editFormData.comment}
                   placeholder="Izohni kiriting..."
@@ -1289,7 +1293,7 @@ function Payments() {
               </div>
 
               {/* To'liq to'lov toggle */}
-              <div className="flex items-center justify-start p-3 bg-gray-50 rounded-lg shadow-sm">
+              <div className="flex items-center justify-start p-3 bg-gray-50 shadow-sm">
                 <span className="text-gray-700 font-medium">O'quvchi imtiyozli to'lov qilmoqda <br /> va to'lovni to'liq amalga oshirdi deb hisoblash</span>
                 <button
                   type="button"
@@ -1299,7 +1303,7 @@ function Payments() {
                       shouldBeConsideredAsPaid: !prev.shouldBeConsideredAsPaid,
                     }))
                   }
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${editFormData.shouldBeConsideredAsPaid ? "bg-blue-600" : "bg-gray-300"
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${editFormData.shouldBeConsideredAsPaid ? "bg-[#104292]" : "bg-gray-300"
                     }`}
                 >
                   <div
@@ -1313,14 +1317,14 @@ function Payments() {
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                   onClick={() => setIsEditModalOpen(false)}
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                  className="px-5 py-2.5 bg-[#104292] text-white hover:bg-[#104292]/80 transition-colors flex items-center"
                 >
                   <Check size={18} className="mr-1" />
                   Yangilash
@@ -1333,12 +1337,12 @@ function Payments() {
 
       {isDetailModalOpen && selectedPayment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="bg-[#104292] text-white p-5 rounded-t-xl flex justify-between items-center">
+          <div className="bg-white shadow-2xl max-w-md w-full">
+            <div className="bg-[#104292] text-white p-5 flex justify-between items-center">
               <h3 className="text-xl font-semibold">To'lov tafsilotlari</h3>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="text-white hover:bg-blue-800 p-1 rounded-full transition-colors"
+                className="text-white hover:bg-[#104292]/80 p-1 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -1346,7 +1350,7 @@ function Payments() {
 
             <div className="p-5 space-y-4">
               <div className="flex items-center">
-                <div className="bg-blue-100 p-3 rounded-full">
+                <div className="bg-[#104292] p-3 rounded-full">
                   <User size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
@@ -1358,7 +1362,7 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-green-100 p-3 rounded-full">
+                <div className="bg-[#104292] p-3 rounded-full">
                   <DollarSign size={20} className="text-green-600" />
                 </div>
                 <div className="ml-4">
@@ -1372,7 +1376,7 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-purple-100 p-3 rounded-full">
+                <div className="bg-[#104292] p-3 rounded-full">
                   <CreditCard size={20} className="text-purple-600" />
                 </div>
                 <div className="ml-4">
@@ -1382,7 +1386,7 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-amber-100 p-3 rounded-full">
+                <div className="bg-[#104292] p-3 rounded-full">
                   <User size={20} className="text-amber-600" />
                 </div>
                 <div className="ml-4">
@@ -1392,7 +1396,7 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-rose-100 p-3 rounded-full">
+                <div className="bg-[#104292] p-3 rounded-full">
                   <Calendar size={20} className="text-rose-600" />
                 </div>
                 <div className="ml-4">
@@ -1402,7 +1406,7 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-indigo-100 p-3 rounded-full">
+                <div className="bg-[#104292] p-3 rounded-full">
                   <Users size={20} className="text-indigo-600" />
                 </div>
                 <div className="ml-4">
@@ -1414,7 +1418,7 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-gray-100 p-3 rounded-full">
+                <div className="bg-[#104292] p-3 rounded-full">
                   <Calendar size={20} className="text-gray-600" />
                 </div>
                 <div className="ml-4">
@@ -1429,7 +1433,7 @@ function Payments() {
 
               {selectedPayment.comment && (
                 <div className="flex items-start">
-                  <div className="bg-blue-100 p-3 rounded-full mt-1">
+                  <div className="bg-[#104292] p-3 rounded-full mt-1">
                     <MessageSquare size={20} className="text-blue-600" />
                   </div>
                   <div className="ml-4">
@@ -1442,7 +1446,7 @@ function Payments() {
 
             <div className="flex justify-end p-5 border-t border-gray-200">
               <button
-                className="px-5 py-2.5 btn btn-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-5 py-2.5 btn btn-primary text-white hover:bg-blue-700 transition-colors"
                 onClick={() => setIsDetailModalOpen(false)}
               >
                 Yopish
@@ -1463,7 +1467,7 @@ function Payments() {
           }}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden"
+            className="bg-white shadow-2xl w-full max-w-3xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal header */}
@@ -1475,6 +1479,8 @@ function Payments() {
                   setSelectedGroups([]);
                   setGroupDiscounts({});
                   setTotalAmount(0);
+                  setStudentSearch("");
+                  setStudentResults([]);
                 }}
                 className="text-white text-2xl leading-none hover:opacity-80"
               >
@@ -1496,11 +1502,11 @@ function Payments() {
                     className="input"
                     style={{ width: "300px" }}
                     placeholder="O'quvchi ismini kiriting..."
-                    value={paymentSearchInput}
-                    onChange={(e) => setPaymentSearchInput(e.target.value)}
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
                   />
                   {showDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-md max-h-56 overflow-y-auto z-10">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 shadow-md max-h-56 overflow-y-auto z-10">
                       {studentLoading ? (
                         <div className="px-3 py-2 text-gray-500">Yuklanmoqda...</div>
                       ) : studentResults.length > 0 ? (
@@ -1525,7 +1531,7 @@ function Payments() {
                   <label className="block mb-2 text-sm font-semibold text-gray-700">
                     Guruhlar * (bir nechtasini tanlashingiz mumkin)
                   </label>
-                  <div className="border border-gray-300 rounded-lg max-h-80 overflow-y-auto p-2">
+                  <div className="border border-gray-300 max-h-80 overflow-y-auto p-2">
                     {formData.pupil_id && getStudentGroups(formData.pupil_id).length > 0 ? (
                       getStudentGroups(formData.pupil_id).map((groupId) => {
                         const group = groups.find((g) => g.id === groupId);
@@ -1541,7 +1547,7 @@ function Payments() {
                         const groupDiscount = groupDiscounts[group.id] || { percent: 0, amount: 0, finalAmount: originalAmount };
 
                         return (
-                          <div key={group.id} className="mb-3 border rounded-lg overflow-hidden">
+                          <div key={group.id} className="mb-3 border overflow-hidden">
                             {/* Guruh tanlash qismi */}
                             <div
                               className={`p-3 cursor-pointer transition-colors flex items-center justify-between ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
@@ -1553,7 +1559,7 @@ function Payments() {
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => { }}
-                                  className="h-4 w-4 text-blue-600 rounded"
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
                                 />
                                 <span className="ml-2 font-medium">{group.group_subject}</span>
                               </div>
@@ -1572,7 +1578,7 @@ function Payments() {
                                       type="text"
                                       inputMode="numeric"
                                       pattern="[0-9]*"
-                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 focus:ring-1 focus:ring-blue-500"
                                       value={groupDiscount.percent || ""}
                                       onChange={(e) => {
                                         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -1590,7 +1596,7 @@ function Payments() {
                                       type="text"
                                       inputMode="numeric"
                                       pattern="[0-9]*"
-                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 focus:ring-1 focus:ring-blue-500"
                                       value={groupDiscount.finalAmount || ""}
                                       onChange={(e) => {
                                         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -1621,7 +1627,7 @@ function Payments() {
                     )}
                   </div>
                   {selectedGroups.length > 0 && (
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <div className="mt-3 p-3 bg-blue-50">
                       <p className="text-sm font-medium text-gray-700">Umumiy to'lov: {totalAmount.toLocaleString()} so'm</p>
                       <p className="text-xs text-gray-500 mt-1">Tanlangan guruhlar: {selectedGroups.length} ta</p>
                     </div>
@@ -1637,7 +1643,7 @@ function Payments() {
                     <div className="relative">
                       <input
                         type="number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
                         value={totalAmount}
                         onChange={(e) => setTotalAmount(e.target.value)}
                         readOnly
@@ -1688,7 +1694,7 @@ function Payments() {
                     To'lov turi *
                   </label>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.payment_type}
                     onChange={(e) =>
                       setFormData({ ...formData, payment_type: e.target.value })
@@ -1708,7 +1714,7 @@ function Payments() {
                     Qabul qilgan mas'ul *
                   </label>
                   <input
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={formData.received}
                     placeholder="F.I.Sh. kiriting..."
                     onChange={(e) =>
@@ -1727,7 +1733,7 @@ function Payments() {
                     {radioMonths.map((month) => (
                       <label
                         key={month}
-                        className="flex items-center px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                        className="flex items-center px-3 py-2 border border-gray-300 cursor-pointer hover:bg-gray-50"
                       >
                         <input
                           type="radio"
@@ -1742,7 +1748,7 @@ function Payments() {
                     ))}
                   </div>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={
                       radioMonths.includes(formData.for_which_month)
                         ? ""
@@ -1765,7 +1771,7 @@ function Payments() {
                     Izoh (ixtiyoriy)
                   </label>
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
                     value={formData.comment}
                     placeholder="Qo'shimcha izoh..."
                     onChange={(e) =>
@@ -1775,7 +1781,7 @@ function Payments() {
                 </div>
 
                 {/* Switch toggle */}
-                <div className="flex items-center justify-start gap-5 sm:col-span-2 p-3 bg-gray-50 rounded-lg shadow-sm">
+                <div className="flex items-center justify-start gap-5 sm:col-span-2 p-3 bg-gray-50 shadow-sm">
                   <span className="text-gray-700 font-medium">
                     O'quvchi imtiyozli to'lov qilmoqda va to'lovni to'liq amalga oshirdi deb hisoblash
                   </span>
@@ -1810,15 +1816,17 @@ function Payments() {
                   setSelectedGroups([]);
                   setGroupDiscounts({});
                   setTotalAmount(0);
+                  setStudentSearch("");
+                  setStudentResults([]);
                 }}
-                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                className="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
               >
                 Bekor qilish
               </button>
               <button
                 type="submit"
                 form="add-payment-form"
-                className="px-5 py-2.5 btn btn-primary text-white rounded-lg font-semibold hover:opacity-90 transition"
+                className="px-5 py-2.5 btn btn-primary text-white font-semibold hover:opacity-90 transition"
               >
                 To'lovni qo'shish
               </button>
@@ -1828,46 +1836,46 @@ function Payments() {
       )}
 
       <div className="card">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px",
-            gap: "16px",
-            flexWrap: "wrap",
-          }}
-        >
-          <h3 style={{ fontWeight: "bold", fontSize: "1.2rem" }}>
-            To'lov qilganlar ({filteredPayments.length}) – {selectedPaymentYear === "all" ? "Barcha yillar" : selectedPaymentYear + "-yil"}
+        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <h3 className="text-[1.2rem] font-bold">
+            To'lov qilganlar ({filteredPayments.length}) —{" "}
+            {selectedPaymentYear === "all"
+              ? "Barcha yillar"
+              : `${selectedPaymentYear}-yil`}
             {monthFilter !== "all" && `, ${monthFilter}`}
           </h3>
 
-          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            <input
-              type="text"
-              className="input"
-              style={{ width: "300px" }}
-              placeholder="O'quvchi ismini kiriting..."
-              value={paymentSearchInput}
-              onChange={(e) => setPaymentSearchInput(e.target.value)}
-            />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {/* Search */}
+            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
+              <input
+                type="text"
+                className="w-full outline-none text-sm"
+                placeholder="O'quvchi ismini kiriting..."
+                value={paymentSearchInput}
+                onChange={(e) => setPaymentSearchInput(e.target.value)}
+              />
+            </div>
 
+            {/* Year filter */}
             <select
               value={selectedPaymentYear}
               onChange={(e) => setSelectedPaymentYear(e.target.value)}
-              style={{ width: "140px", border: "1px solid rgb(200, 200, 200)", borderRadius: "5px" }}
+              className="min-w-[150px] border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:border-[#104292]"
             >
               <option value="all">Barcha yillar</option>
-              {years.map(y => (
-                <option key={y} value={y}>{y}-yil</option>
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}-yil
+                </option>
               ))}
             </select>
 
+            {/* Month filter */}
             <select
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
-              style={{ width: "130px", border: "1px solid rgb(200, 200, 200)", borderRadius: "5px" }}
+              className="min-w-[150px] border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:border-[#104292]"
             >
               <option value="all">Barcha oylar</option>
               {allMonths.map((month) => (
@@ -1879,116 +1887,159 @@ function Payments() {
           </div>
         </div>
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>#</th>
-              <th colSpan={3} style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Ism</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Summa</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Qaysi oy uchun</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Qaysi guruh uchun</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Sana</th>
-              <th style={{ backgroundColor: "#104292", color: "white", borderRight: "1px solid rgb(255, 255, 255)", textAlign: "center" }}>Amallar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPayments.length === 0 ? (
-              <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "10px" }}>
-                  {searchTerm || monthFilter !== "all"
-                    ? "Qidiruv bo'yicha natija topilmadi"
-                    : paymentsError || "Hozircha to'lovlar yo'q"}
-                </td>
-              </tr>
-            ) : (
-              filteredPayments.map((payment, index) => {
-                const group = groups.find(
-                  (g) => g.id === payment.group_id
-                );
+        <div className="overflow-hidden border border-gray-300 bg-white">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-[15px]">
+              <thead className="bg-[#104292] text-white">
+                <tr>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">#</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">O'quvchi</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Summa</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Qaysi oy uchun</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Guruh</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Sana</th>
+                  <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Amallar</th>
+                </tr>
+              </thead>
 
-                const groupName = group ? group.group_subject : "N/A";
-                return (
-                  <tr
-                    key={payment.id}
-                    onClick={() => openDetailModal(payment)}
-                    style={{ cursor: "pointer" }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}
-                  >
-                    <td style={{ textAlign: "center" }}>{index + 1}</td>
-                    <td colSpan={3} style={{ textAlign: "center" }}>
-                      {`${payment.student?.first_name || ""} ${payment.student?.last_name || ""
-                        }`.trim() || "N/A"}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {payment.payment_amount
-                        ? Number(payment.payment_amount).toLocaleString(
-                          "uz-UZ"
-                        ) + " so'm"
-                        : "N/A"}
-                    </td>
-                    <td style={{ textAlign: "center" }}>{payment.for_which_month || "N/A"}</td>
-                    <td style={{ textAlign: "center" }}>
-                      {payment.paymentGroup?.group_subject ?? "N/A"}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {payment.created_at
-                        ? new Date(payment.created_at).toLocaleDateString("ru-RU")
-                        : "N/A"}
-                    </td>
-                    <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(payment);
-                        }}
-                        title="Tahrirlash"
-                      >
-                        <Pen size={16} />
-                      </button>
-                      <button
-                        className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition ml-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showDeleteToast(payment.id);
-                        }}
-                        title="O'chirish"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+              <tbody>
+                {filteredPayments.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="7"
+                      className="border border-gray-300 py-12 text-center text-gray-500"
+                    >
+                      {paymentSearchInput || monthFilter !== "all" || selectedPaymentYear !== "all"
+                        ? "Qidiruv bo'yicha natija topilmadi"
+                        : paymentsError || "Hozircha to'lovlar yo'q"}
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                ) : (
+                  filteredPayments.map((payment, index) => {
+                    const group = groups.find((g) => g.id === payment.group_id);
+                    const groupName =
+                      payment.paymentGroup?.group_subject ||
+                      group?.group_subject ||
+                      "N/A";
+
+                    return (
+                      <tr
+                        key={payment.id}
+                        onClick={() => openDetailModal(payment)}
+                        className="cursor-pointer hover:bg-gray-50"
+                      >
+                        <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                          {(paymentsPagination.page - 1) * paymentsPagination.limit + index + 1}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-900">
+                          {`${payment.student?.first_name || ""} ${payment.student?.last_name || ""}`.trim() || "N/A"}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center font-medium text-gray-800">
+                          {payment.payment_amount
+                            ? `${Number(payment.payment_amount).toLocaleString("uz-UZ")} so'm`
+                            : "N/A"}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                          {payment.for_which_month || "N/A"}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                          {groupName}
+                        </td>
+
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-700">
+                          {payment.created_at
+                            ? new Date(payment.created_at).toLocaleDateString("ru-RU")
+                            : "N/A"}
+                        </td>
+
+                        <td
+                          className="border border-gray-300 px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex justify-center gap-2">
+                            <button
+                              className="flex h-9 w-9 items-center justify-center bg-[#104292] text-white transition hover:bg-[#104292]/80"
+                              onClick={() => openEditModal(payment)}
+                              title="Tahrirlash"
+                            >
+                              <Pen size={16} />
+                            </button>
+
+                            <button
+                              className="flex h-9 w-9 items-center justify-center bg-red-600 text-white transition hover:bg-red-700"
+                              onClick={() => showDeleteToast(payment.id)}
+                              title="O'chirish"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {paymentsPagination.totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <button
-              onClick={() =>
-                setPaymentsPagination((prev) => ({ ...prev, page: prev.page - 1 }))
-              }
-              disabled={!paymentsPagination.hasPrevPage}
-              className="px-4 py-2 rounded-lg border disabled:opacity-50"
-            >
-              Oldingi
-            </button>
+          <div className="mt-8 border border-gray-200 bg-white px-4 py-4 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="text-center text-sm text-gray-600 lg:text-left">
+                Jami{" "}
+                <span className="font-semibold text-[#104292]">
+                  {paymentsPagination.totalItems}
+                </span>{" "}
+                ta to‘lov,
+                <span className="mx-1 font-semibold text-[#104292]">
+                  {paymentsPagination.page}
+                </span>
+                / {paymentsPagination.totalPages} sahifa
+              </div>
 
-            <span className="text-sm text-gray-600">
-              {paymentsPagination.page} / {paymentsPagination.totalPages}
-            </span>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  onClick={() =>
+                    setPaymentsPagination((prev) => ({
+                      ...prev,
+                      page: prev.page - 1,
+                    }))
+                  }
+                  disabled={!paymentsPagination.hasPrevPage}
+                  className={`border px-4 py-2 text-sm font-medium transition ${paymentsPagination.hasPrevPage
+                    ? "border-[#104292]/20 bg-white text-[#104292] hover:border-[#104292] hover:bg-[#104292] hover:text-white"
+                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                    }`}
+                >
+                  « Oldingi
+                </button>
 
-            <button
-              onClick={() =>
-                setPaymentsPagination((prev) => ({ ...prev, page: prev.page + 1 }))
-              }
-              disabled={!paymentsPagination.hasNextPage}
-              className="px-4 py-2 rounded-lg border disabled:opacity-50"
-            >
-              Keyingi
-            </button>
+                <span className="flex h-10 min-w-[70px] items-center justify-center border border-gray-200 bg-white px-3 text-sm font-semibold text-[#104292]">
+                  {paymentsPagination.page} / {paymentsPagination.totalPages}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setPaymentsPagination((prev) => ({
+                      ...prev,
+                      page: prev.page + 1,
+                    }))
+                  }
+                  disabled={!paymentsPagination.hasNextPage}
+                  className={`border px-4 py-2 text-sm font-medium transition ${paymentsPagination.hasNextPage
+                    ? "border-[#104292]/20 bg-white text-[#104292] hover:border-[#104292] hover:bg-[#104292] hover:text-white"
+                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                    }`}
+                >
+                  Keyingi »
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
