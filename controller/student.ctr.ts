@@ -1734,6 +1734,106 @@ async function getOverallAttendanceStats(req: Request, res: Response, next: Next
   }
 }
 
+async function getGroupMissedAttendanceDates(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const groupId = req.params.groupId;
+
+    if (!groupId) {
+      return next(BaseError.BadRequest(400, "groupId majburiy"));
+    }
+
+    const group = await Group.findOne({
+      where: withBranchScope(req, { id: groupId }),
+      attributes: ["id", "days", "created_at"],
+    });
+
+    if (!group) {
+      return next(BaseError.BadRequest(404, "Guruh topilmadi"));
+    }
+
+    const groupDaysRaw = String(group.dataValues.days || "");
+    const classDayNames = groupDaysRaw
+      .split("-")
+      .map((d: string) => d.trim().toUpperCase())
+      .filter(Boolean);
+
+    if (classDayNames.length === 0) {
+      return res.status(200).json({ dates: [] });
+    }
+
+    const dayNameToWeekday: Record<string, number> = {
+      YAKSHANBA: 7,
+      DUSHANBA: 1,
+      SESHANBA: 2,
+      CHORSHANBA: 3,
+      PAYSHANBA: 4,
+      JUMA: 5,
+      SHANBA: 6,
+    };
+
+    const classWeekdays = classDayNames
+      .map((day) => dayNameToWeekday[day])
+      .filter((v) => !!v);
+
+    if (classWeekdays.length === 0) {
+      return res.status(200).json({ dates: [] });
+    }
+
+    const groupCreatedAt = DateTime.fromJSDate(group.dataValues.created_at).setZone(groupTimeZone).startOf("day");
+    const today = DateTime.now().setZone(groupTimeZone).startOf("day");
+
+    const takenAttendances = await Attendance.findAll({
+      where: {
+        group_id: groupId,
+        date: {
+          [Op.between]: [groupCreatedAt.toISODate(), today.toISODate()],
+        },
+      },
+      attributes: ["date"],
+      raw: true,
+    });
+
+    const takenDateSet = new Set(
+      takenAttendances
+        .map((a: any) => {
+          if (!a.date) return null;
+          return typeof a.date === "string"
+            ? a.date
+            : DateTime.fromJSDate(a.date).setZone(groupTimeZone).toISODate();
+        })
+        .filter(Boolean)
+    );
+
+    const missedDates: string[] = [];
+
+    let cursor = groupCreatedAt;
+
+    while (cursor <= today) {
+      const isClassDay = classWeekdays.includes(cursor.weekday);
+
+      if (isClassDay) {
+        const dateKey = cursor.toISODate();
+
+        if (dateKey && !takenDateSet.has(dateKey)) {
+          missedDates.push(dateKey);
+        }
+      }
+
+      cursor = cursor.plus({ days: 1 });
+    }
+
+    return res.status(200).json({
+      dates: missedDates,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export {
   getStudents,
   getOneStudent,
@@ -1755,5 +1855,6 @@ export {
   getOneGroupStudentsForTeacher,
   getAttendanceByTeacher,
   updateStudentPaymentStatus,
-  monthsInUzbek
+  monthsInUzbek,
+  getGroupMissedAttendanceDates
 };

@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from "express"
-import { getStudents, getOneStudent, createStudent, updateStudent, deleteStudent, getAttendanceByTeacher, getMonthlyStudentStats, makeAttendance, getOneGroupStudents, getTodayAttendanceStats, getAttendanceByDate, updateAttendance, extendAttendanceTime, getExtendAttendanceTime, getPaymentsByStudent } from "../controller/student.ctr";
+import { getStudents, getOneStudent, createStudent, updateStudent, deleteStudent, getAttendanceByTeacher, getMonthlyStudentStats, makeAttendance, getOneGroupStudents, getTodayAttendanceStats, getAttendanceByDate, updateAttendance, extendAttendanceTime, getExtendAttendanceTime, getPaymentsByStudent, getGroupMissedAttendanceDates } from "../controller/student.ctr";
 import { authMiddleware } from "../middlewares/auth-guard.middleware";
 import { roleMiddleware } from "../middlewares/role.middleware";
 import { accessScopeMiddleware } from "../middlewares/access-scope.middleware";
@@ -45,6 +45,9 @@ StudentsRouter.get("/get_extend_attendance_time/:groupId", authMiddleware,
 StudentsRouter.get("/get_payments_by_student/:student_id", authMiddleware,
     roleMiddleware("manager", "director", "superadmin"),
     accessScopeMiddleware, getPaymentsByStudent as RequestHandler)
+StudentsRouter.get("/group-missed-attendance-dates/:groupId", authMiddleware,
+    roleMiddleware("manager", "director", "superadmin"),
+    accessScopeMiddleware, getGroupMissedAttendanceDates as RequestHandler)
 
 export {
     StudentsRouter
