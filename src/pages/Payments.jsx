@@ -1,13 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useDeferredValue, useCallback } from "react";
 import { Trash2, BookOpen, Plus, Pen, X, Check, Calendar, CreditCard, Users, User, MessageSquare, DollarSign, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import "../../styles/styles.css";
 import LottieLoading from "../components/Loading";
 import API_URL from "../conf/api";
+import { useAppContext } from "../context/AppContext";
+
+const PaymentSearchInput = ({ value, onChange, onSearch }) => {
+  return (
+    <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
+      <input
+        type="text"
+        className="w-full outline-none text-sm"
+        placeholder="O'quvchi ismini kiriting..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onSearch();
+          }
+        }}
+      />
+
+      <button
+        onClick={onSearch}
+        className="px-3 py-1 bg-[#104292] text-white text-sm"
+      >
+        Qidirish
+      </button>
+    </div>
+  );
+};
+
 
 function Payments() {
+
+  const { user } = useAppContext();
 
   const allMonths = [
     "Yanvar",
@@ -47,7 +77,7 @@ function Payments() {
     id: "",
     pupil_id: "",
     payment_amount: "",
-    payment_type: "",
+    payment_type: "Naqd",
     received: "",
     for_which_month: "",
     comment: "",
@@ -90,54 +120,37 @@ function Payments() {
     group_id: "",
     pupil_id: "",
     payment_amount: "",
-    payment_type: "",
+    payment_type: "Naqd",
     received: "",
     for_which_month: "",
     comment: "",
     shouldBeConsideredAsPaid: false,
     came_in_school: "",
   });
+  const [autoCalculate, setAutoCalculate] = useState(true);
   const [currentYearUnpaidCount, setCurrentYearUnpaidCount] = useState(0);
   const [selectedPaymentYear, setSelectedPaymentYear] = useState(new Date().getFullYear().toString());
   const [sendingNotification, setSendingNotification] = useState({});
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const years = Array.from({ length: 6 }, (_, i) => (new Date().getFullYear() - i).toString());
 
-  const loadInitialStudents = async () => {
-    try {
-      setStudentLoading(true);
+  // const loadInitialStudents = async () => {
+  //   try {
+  //     setStudentLoading(true);
 
-      const res = await fetch(
-        `${API_URL}/get_students?page=1&limit=10&simple=true`,
-        { credentials: "include" }
-      );
+  //     const res = await fetch(
+  //       `${API_URL}/get_students?page=1&limit=10&simple=true`,
+  //       { credentials: "include" }
+  //     );
 
-      const data = await res.json();
-      setStudentResults(data.data || []);
-    } catch {
-      setStudentResults([]);
-    } finally {
-      setStudentLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchTerm(paymentSearchInput);
-      setPaymentsPagination((prev) => ({ ...prev, page: 1 }));
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [paymentSearchInput]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setUnpaidSearch(unpaidSearchInput);
-      setUnpaidPagination((prev) => ({ ...prev, page: 1 }));
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [unpaidSearchInput]);
+  //     const data = await res.json();
+  //     setStudentResults(data.data || []);
+  //   } catch {
+  //     setStudentResults([]);
+  //   } finally {
+  //     setStudentLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     if (!showUnpaid) {
@@ -199,6 +212,26 @@ function Payments() {
     loadInitialUnpaidCount();
   }, []);
 
+  const getPaymentDateRange = (month, cameInSchool) => {
+    if (!month || !cameInSchool) return null;
+
+    const currentYear = new Date().getFullYear();
+    const monthIndex = allMonths.findIndex(m => m === month);
+    if (monthIndex === -1) return null;
+
+    const selectedMonthFirstDay = new Date(currentYear, monthIndex, 1);
+    const selectedMonthLastDay = new Date(currentYear, monthIndex + 1, 0);
+    const cameDate = new Date(cameInSchool);
+
+    if (cameDate > selectedMonthLastDay) return null;
+
+    const startDate = cameDate > selectedMonthFirstDay ? cameDate : selectedMonthFirstDay;
+
+    const format = (date) =>
+      `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+
+    return `${format(startDate)} - ${format(selectedMonthLastDay)}`;
+  };
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -208,27 +241,33 @@ function Payments() {
   }, [currentMonth]);
 
   const handleChange = (value) => {
-    setFormData(prev => {
-      // Yangi oy uchun to'lov miqdorini qayta hisoblaymiz
-      const selectedGroup = groups.find(group => group.id === prev.group_id);
-      const calculatedAmount = calculatePaymentAmount(
-        selectedGroup,
-        value,
-        prev.came_in_school
-      );
+    setFormData((prev) => ({ ...prev, for_which_month: value }));
 
-      return {
-        ...prev,
-        for_which_month: value,
-        payment_amount: calculatedAmount || prev.payment_amount
-      };
+    if (!autoCalculate) return; // ← manual rejimda hisoblama
+
+    setGroupDiscounts((prev) => {
+      const next = { ...prev };
+      selectedGroups.forEach((groupId) => {
+        const group = groups.find((g) => g.id === groupId);
+        if (!group) return;
+        const originalAmount = Number(calculatePaymentAmount(group, value, formData.came_in_school)) || 0;
+        next[groupId] = { percent: 0, amount: 0, finalAmount: originalAmount };
+      });
+      return next;
     });
   };
 
   const handleEditChange = (value) => {
-    setEditFormData(prev => {
-      // Yangi oy uchun to'lov miqdorini qayta hisoblaymiz
-      const selectedGroup = groups.find(group => group.id === prev.group_id);
+    setEditFormData((prev) => {
+      const selectedGroup = groups.find((group) => group.id === prev.group_id);
+
+      if (!autoCalculate) {
+        return {
+          ...prev,
+          for_which_month: value,
+        };
+      }
+
       const calculatedAmount = calculatePaymentAmount(
         selectedGroup,
         value,
@@ -238,12 +277,12 @@ function Payments() {
       return {
         ...prev,
         for_which_month: value,
-        payment_amount: calculatedAmount || prev.payment_amount
+        payment_amount: calculatedAmount ?? prev.payment_amount
       };
     });
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setGroupsError("");
@@ -291,14 +330,14 @@ function Payments() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [paymentsPagination.page, searchTerm, selectedPaymentYear, monthFilter]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
       const q = studentSearch.trim();
       console.log(q);
 
-      if (q.length < 2) {
+      if (q.length < 3) {
         setStudentResults([]);
         return;
       }
@@ -321,7 +360,7 @@ function Payments() {
       } finally {
         setStudentLoading(false);
       }
-    }, 1000);
+    }, 700);
 
     return () => clearTimeout(timer);
   }, [studentSearch]);
@@ -334,10 +373,10 @@ function Payments() {
     setUnpaidPagination((prev) => ({ ...prev, page: 1 }));
   }, [selectedYear, selectedMonth, unpaidSearch]);
 
-  useEffect(() => {
-    if (!addModal) return;
-    loadInitialStudents();
-  }, [addModal]);
+  // useEffect(() => {
+  //   if (!addModal) return;
+  //   loadInitialStudents();
+  // }, [addModal]);
 
   useEffect(() => {
     const updateCount = async () => {
@@ -367,116 +406,6 @@ function Payments() {
     }
   }, [showUnpaid, selectedYear, selectedMonth]);
 
-  const addPayment = async (e) => {
-    e.preventDefault();
-
-    // Tanlangan guruhlar sonini tekshirish
-    if (selectedGroups.length === 0) {
-      toast.error("Kamida bitta guruh tanlang");
-      return;
-    }
-
-    // Loading state
-    toast.loading("To'lovlar qo'shilmoqda...", { id: "add-payment" });
-
-    try {
-      let successCount = 0;
-      let errorCount = 0;
-      const errors = [];
-
-      // Har bir tanlangan guruh uchun alohida to'lov yaratish
-      for (const groupId of selectedGroups) {
-        const group = groups.find(g => g.id === groupId);
-
-        // Guruhning asl to'lov miqdori
-        const originalAmount = Number(calculatePaymentAmount(
-          group,
-          formData.for_which_month,
-          formData.came_in_school
-        ));
-
-        // Chegirma qo'llangan to'lov miqdori
-        let paymentAmount = originalAmount;
-        let discountInfo = "";
-
-        if (groupDiscounts[groupId]) {
-          paymentAmount = groupDiscounts[groupId].finalAmount || originalAmount;
-          discountInfo = ` (Chegirma: ${groupDiscounts[groupId].percent}% / ${groupDiscounts[groupId].amount} so'm)`;
-        }
-
-        const response = await fetch(
-          `${API_URL}/create_payment`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              pupil_id: formData.pupil_id,
-              payment_type: formData.payment_type,
-              received: formData.received,
-              for_which_month: formData.for_which_month,
-              comment: formData.comment ?
-                `${formData.comment} (Guruh: ${group?.group_subject}${discountInfo})` :
-                `Guruh: ${group?.group_subject}${discountInfo}`,
-              payments: [
-                {
-                  group_id: groupId,
-                  payment_amount: Number(paymentAmount),
-                  shouldBeConsideredAsPaid: formData.shouldBeConsideredAsPaid,
-                }
-              ]
-            }),
-            credentials: "include"
-          }
-        );
-
-        if (response.ok) {
-          successCount++;
-        } else {
-          errorCount++;
-          const errorData = await response.json();
-          errors.push(`${group?.group_subject}: ${errorData.message}`);
-        }
-      }
-
-      // Loadingni yopish
-      toast.dismiss("add-payment");
-
-      // Natijalarni ko'rsatish
-      if (successCount > 0) {
-        await fetchData();
-        toast.success(`${successCount} ta to'lov muvaffaqiyatli qo'shildi`);
-
-        if (errorCount > 0) {
-          toast.error(`${errorCount} ta to'lovda xatolik: ${errors.join(', ')}`);
-        }
-
-        // Formani tozalash
-        setFormData({
-          group_id: "",
-          pupil_id: "",
-          payment_amount: "",
-          payment_type: "",
-          received: "",
-          for_which_month: currentMonth,
-          comment: "",
-          shouldBeConsideredAsPaid: false,
-        });
-        setStudentSearch("");
-        setSearchTerm("");
-        setShowDropdown(false);
-        setSelectedGroups([]);
-        setGroupDiscounts({});
-        setTotalAmount(0);
-        setAddModal(false);
-      } else {
-        toast.error(`To'lov qo'shilmadi: ${errors.join(', ')}`);
-      }
-
-    } catch (err) {
-      toast.dismiss("add-payment");
-      toast.error(`Xatolik yuz berdi: ${err.message}`);
-    }
-  };
 
   const updatePayment = async (e) => {
     e.preventDefault();
@@ -564,7 +493,7 @@ function Payments() {
       pupil_id: payment.pupil_id,
       payment_amount: payment.payment_amount,
       payment_type: payment.payment_type,
-      received: payment.received,
+      received: payment.received || user?.username || "",
       for_which_month: payment.for_which_month,
       comment: payment.comment,
       came_in_school: student?.came_in_school || "",
@@ -601,118 +530,272 @@ function Payments() {
   };
 
   const handleGroupToggle = (groupId) => {
-    setSelectedGroups(prev => {
-      if (prev.includes(groupId)) {
-        // Guruhni olib tashlash
-        const newSelected = prev.filter(id => id !== groupId);
-        // Guruhni olib tashlaganda discountlardan ham o'chirish
-        setGroupDiscounts(prevDiscounts => {
+    setSelectedGroups((prev) => {
+      const exists = prev.includes(groupId);
+
+      if (exists) {
+        const newSelected = prev.filter((id) => id !== groupId);
+        setGroupDiscounts((prevDiscounts) => {
           const newDiscounts = { ...prevDiscounts };
           delete newDiscounts[groupId];
           return newDiscounts;
         });
         return newSelected;
-      } else {
-        // Guruhni qo'shish
-        return [...prev, groupId];
       }
+
+      const group = groups.find((g) => g.id === groupId);
+
+      // autoCalculate true bo'lsa — hisoblangan summa, false bo'lsa — oylik to'lov
+      const finalAmount = autoCalculate
+        ? Number(calculatePaymentAmount(group, formData.for_which_month, formData.came_in_school)) || 0
+        : Number(group?.payment_amount) || 0;
+
+      setGroupDiscounts((prevDiscounts) => ({
+        ...prevDiscounts,
+        [groupId]: {
+          percent: 0,
+          amount: 0,
+          originalAmount: finalAmount,
+          finalAmount,
+        },
+      }));
+
+      return [...prev, groupId];
     });
   };
-
-  // Foiz bo'yicha chegirma o'zgartirish
   const handlePercentDiscount = (groupId, percentValue) => {
-    const group = groups.find(g => g.id === groupId);
+    const group = groups.find((g) => g.id === groupId);
     if (!group) return;
 
-    // Guruhning asl to'lov miqdori
-    const originalAmount = Number(calculatePaymentAmount(
-      group,
-      formData.for_which_month,
-      formData.came_in_school
-    ));
+    // autoCalculate false bo'lsa — asl oylik summa, true bo'lsa — hisoblangan summa
+    const originalAmount = groupDiscounts[group.id]?.originalAmount
+      ?? (autoCalculate
+        ? Number(calculatePaymentAmount(group, formData.for_which_month, formData.came_in_school))
+        : Number(group?.payment_amount) || 0);
 
-    // Foizni 0-100 oralig'ida cheklash
-    let percent = percentValue === "" ? 0 : Math.min(100, Math.max(0, parseInt(percentValue) || 0));
+    let percent =
+      percentValue === ""
+        ? 0
+        : Math.min(100, Math.max(0, parseInt(percentValue) || 0));
 
-    // Chegirma summasini hisoblash
-    const discountAmount = Math.round(originalAmount * percent / 100);
+    const discountAmount = Math.round((originalAmount * percent) / 100);
     const finalAmount = originalAmount - discountAmount;
 
-    setGroupDiscounts(prev => ({
+    setGroupDiscounts((prev) => ({
       ...prev,
       [groupId]: {
-        percent: percent,
+        percent,
         amount: discountAmount,
-        finalAmount: finalAmount
-      }
+        originalAmount,
+        finalAmount,
+      },
     }));
   };
 
-  // Summa bo'yicha to'lanadigan miqdorni o'zgartirish
   const handleAmountDiscount = (groupId, amountValue) => {
-    const group = groups.find(g => g.id === groupId);
+    const group = groups.find((g) => g.id === groupId);
     if (!group) return;
 
-    // Guruhning asl to'lov miqdori
-    const originalAmount = Number(calculatePaymentAmount(
-      group,
-      formData.for_which_month,
-      formData.came_in_school
-    ));
+    // autoCalculate false bo'lsa — asl oylik summa, true bo'lsa — hisoblangan summa
+    const originalAmount = groupDiscounts[group.id]?.originalAmount
+      ?? (autoCalculate
+        ? Number(calculatePaymentAmount(group, formData.for_which_month, formData.came_in_school))
+        : Number(group?.payment_amount) || 0);
 
-    // To'lanadigan summani 0 - originalAmount oralig'ida cheklash
-    let finalAmount = amountValue === "" ? originalAmount : Math.min(originalAmount, Math.max(0, parseInt(amountValue) || 0));
+    let finalAmount =
+      amountValue === ""
+        ? originalAmount
+        : Math.min(originalAmount, Math.max(0, parseInt(amountValue) || 0));
 
-    // Agar 0 kiritilsa, originalAmount ga tenglashtirish
     if (finalAmount === 0) finalAmount = originalAmount;
 
-    // Chegirma summasini hisoblash
     const discountAmount = originalAmount - finalAmount;
+    const percent =
+      originalAmount > 0
+        ? Math.round((discountAmount * 100) / originalAmount)
+        : 0;
 
-    // Foizni hisoblash
-    const percent = originalAmount > 0 ? Math.round(discountAmount * 100 / originalAmount) : 0;
-
-    setGroupDiscounts(prev => ({
+    setGroupDiscounts((prev) => ({
       ...prev,
       [groupId]: {
-        percent: percent,
+        percent,
         amount: discountAmount,
-        finalAmount: finalAmount
-      }
+        originalAmount,
+        finalAmount,
+      },
     }));
   };
 
-  const isOverdue = (studentId) => {
-    const studentPayments = payments.filter((p) => p.pupil_id === studentId);
-    const currentOrNextMonthPaid = studentPayments.some(
-      (p) =>
-        [currentMonth, nextMonth].includes(p.for_which_month) &&
-        new Date(p.created_at) >=
-        new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1) // new Date() ishlatildi
-    );
-    return !currentOrNextMonthPaid && studentResults.find((s) => s.id === studentId);
+  useEffect(() => {
+    if (!selectedGroups.length) return;
+
+    setGroupDiscounts((prev) => {
+      const next = { ...prev };
+
+      selectedGroups.forEach((groupId) => {
+        const group = groups.find((g) => g.id === groupId);
+        if (!group) return;
+
+        // autoCalculate asosida summa tanlanadi
+        const finalAmount = autoCalculate
+          ? Number(calculatePaymentAmount(group, formData.for_which_month, formData.came_in_school)) || 0
+          : Number(group?.payment_amount) || 0;
+
+        next[groupId] = {
+          percent: 0,
+          amount: 0,
+          originalAmount: finalAmount,
+          finalAmount,
+        };
+      });
+
+      return next;
+    });
+  }, [
+    autoCalculate,
+    selectedGroups,
+    groups,
+    formData.for_which_month,
+    formData.came_in_school,
+  ]);
+
+  const addPayment = async (e) => {
+    e.preventDefault();
+
+    if (selectedGroups.length === 0) {
+      toast.error("Kamida bitta guruh tanlang");
+      return;
+    }
+
+    toast.loading("To'lovlar qo'shilmoqda.", { id: "add-payment" });
+
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (const groupId of selectedGroups) {
+        const group = groups.find((g) => g.id === groupId);
+
+        const originalAmount =
+          Number(
+            calculatePaymentAmount(
+              group,
+              formData.for_which_month,
+              formData.came_in_school
+            )
+          ) || 0;
+
+        let paymentAmount = originalAmount;
+
+        if (!autoCalculate) {
+          paymentAmount = Number(
+            groupDiscounts[groupId]?.finalAmount ?? originalAmount
+          );
+        }
+
+        let discountInfo = "";
+        if (groupDiscounts[groupId]) {
+          discountInfo = ` (Chegirma: ${groupDiscounts[groupId].percent}% / ${groupDiscounts[groupId].amount} so'm)`;
+        }
+
+        const response = await fetch(`${API_URL}/create_payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            pupil_id: formData.pupil_id,
+            payment_type: formData.payment_type,
+            received: formData.received,
+            for_which_month: formData.for_which_month,
+            comment: formData.comment
+              ? `${formData.comment} (Guruh: ${group?.group_subject}${discountInfo})`
+              : `Guruh: ${group?.group_subject}${discountInfo}`,
+            payments: [
+              {
+                group_id: groupId,
+                payment_amount: Number(paymentAmount),
+                shouldBeConsideredAsPaid: formData.shouldBeConsideredAsPaid,
+              },
+            ],
+          }),
+        });
+
+        if (response.ok) {
+          successCount++;
+        } else {
+          errorCount++;
+          const errorData = await response.json();
+          errors.push(`${group?.group_subject}: ${errorData.message}`);
+        }
+      }
+
+      toast.dismiss("add-payment");
+
+      if (successCount > 0) {
+        await fetchData();
+        toast.success(`${successCount} ta to'lov muvaffaqiyatli qo'shildi`);
+
+        if (errorCount > 0) {
+          toast.error(`${errorCount} ta to'lovda xatolik: ${errors.join(", ")}`);
+        }
+
+        setFormData({
+          group_id: "",
+          pupil_id: "",
+          payment_amount: "",
+          payment_type: "Naqd",
+          received: "",
+          for_which_month: currentMonth,
+          comment: "",
+          shouldBeConsideredAsPaid: false,
+        });
+        closeAddModal();
+      } else {
+        toast.error(`To'lov qo'shilmadi: ${errors.join(", ")}`);
+      }
+    } catch (err) {
+      toast.dismiss("add-payment");
+      toast.error(`Xatolik yuz berdi: ${err.message}`);
+    }
   };
 
   const calculateTotalAmount = () => {
     return selectedGroups.reduce((sum, groupId) => {
-      const group = groups.find(g => g.id === groupId);
+      const group = groups.find((g) => g.id === groupId);
       if (!group) return sum;
 
-      // 1. Asl summani hisoblaymiz
-      const rawAmount = calculatePaymentAmount(
-        group,
-        formData.for_which_month,
-        formData.came_in_school
-      );
-      let amount = Number(rawAmount) || 0;
+      const originalAmount = Number(
+        calculatePaymentAmount(group, formData.for_which_month, formData.came_in_school)
+      ) || 0;
 
-      // 2. Agar ushbu guruh uchun chegirma bor bo'lsa → finalAmount ni olamiz
-      if (groupDiscounts[groupId] && groupDiscounts[groupId].finalAmount !== undefined) {
-        amount = Number(groupDiscounts[groupId].finalAmount) || amount;
+      if (groupDiscounts[groupId]?.finalAmount !== undefined) {
+        return sum + Number(groupDiscounts[groupId].finalAmount || 0);
       }
 
-      return sum + amount;
+      return sum + originalAmount;
     }, 0);
+  };
+
+  const closeAddModal = () => {
+    setAddModal(false);
+    setSelectedGroups([]);
+    setGroupDiscounts({});
+    setTotalAmount(0);
+    setStudentSearch("");
+    setStudentResults([]);
+    setAutoCalculate(true);
+    setFormData({
+      group_id: "",
+      pupil_id: "",
+      payment_amount: "",
+      payment_type: "",
+      received: user?.username || "",
+      for_which_month: currentMonth,
+      comment: "",
+      shouldBeConsideredAsPaid: false,
+      came_in_school: "",
+    });
   };
 
   useEffect(() => {
@@ -751,36 +834,40 @@ function Payments() {
   const filteredPayments = payments
 
   useEffect(() => {
-    if (formData.pupil_id && groups.length > 0) {
-      const studentGroups = getStudentGroups(formData.pupil_id);
-      const selectedGroup = groups.find(
-        (group) => group.id === formData.group_id
-      );
+    if (!autoCalculate) return;
+    if (!selectedGroups.length) return;
 
-      if (selectedGroup && studentGroups.includes(selectedGroup.id)) {
-        const calculatedAmount = calculatePaymentAmount(
-          selectedGroup,
-          formData.for_which_month,
-          formData.came_in_school
-        );
+    setGroupDiscounts((prev) => {
+      const next = { ...prev };
 
-        setFormData((prev) => ({
-          ...prev,
-          payment_amount: calculatedAmount,
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          payment_amount: "",
-          group_id: "",
-        }));
-      }
-    }
-  }, [formData.pupil_id, formData.group_id, formData.for_which_month, groups, formData.shouldBeConsideredAsPaid]);
+      selectedGroups.forEach((groupId) => {
+        const group = groups.find((g) => g.id === groupId);
+        if (!group) return;
+
+        const originalAmount = Number(
+          calculatePaymentAmount(group, formData.for_which_month, formData.came_in_school)
+        ) || 0;
+
+        next[groupId] = {
+          percent: 0,
+          amount: 0,
+          finalAmount: originalAmount,
+        };
+      });
+
+      return next;
+    });
+  }, [
+    autoCalculate,
+    selectedGroups,
+    groups,
+    formData.for_which_month,
+    formData.came_in_school,
+  ]);
 
   useEffect(() => {
     fetchData();
-  }, [paymentsPagination.page, searchTerm, selectedPaymentYear, monthFilter]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (studentSearch) {
@@ -893,6 +980,13 @@ function Payments() {
     );
   };
 
+  const handleSearch = () => {
+    const q = paymentSearchInput.trim();
+
+    setSearchTerm(q);
+    setPaymentsPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center gap-2 pl-6 pr-6 mb-6">
@@ -917,10 +1011,11 @@ function Payments() {
           </button>
           <button
             onClick={() => {
+              setFormData((prev) => ({
+                ...prev,
+                received: user?.username || "",
+              }));
               setAddModal(true);
-              setSelectedGroups([]);
-              setGroupDiscounts({});
-              setTotalAmount(0);
             }}
             className="px-5 py-2.5 bg-[#104292] hover:bg-[#104292]/80 active:bg-[#104292]/80 text-white font-medium shadow-sm transition-all duration-200 flex items-center gap-2"
           >
@@ -1246,7 +1341,7 @@ function Payments() {
                       setEditFormData(prev => ({
                         ...prev,
                         group_id: groupId,
-                        payment_amount: calculatedAmount || prev.payment_amount
+                        payment_amount: calculatedAmount ?? prev.payment_amount
                       }));
                     }}
                     required
@@ -1350,7 +1445,7 @@ function Payments() {
 
             <div className="p-5 space-y-4">
               <div className="flex items-center">
-                <div className="bg-[#104292] p-3 rounded-full">
+                <div className="bg-[#104292]/20 p-3 rounded-full">
                   <User size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
@@ -1362,8 +1457,8 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-[#104292] p-3 rounded-full">
-                  <DollarSign size={20} className="text-green-600" />
+                <div className="bg-[#104292]/20 p-3 rounded-full">
+                  <DollarSign size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">To'lov miqdori</p>
@@ -1376,8 +1471,8 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-[#104292] p-3 rounded-full">
-                  <CreditCard size={20} className="text-purple-600" />
+                <div className="bg-[#104292]/20 p-3 rounded-full">
+                  <CreditCard size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">To'lov turi</p>
@@ -1386,8 +1481,8 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-[#104292] p-3 rounded-full">
-                  <User size={20} className="text-amber-600" />
+                <div className="bg-[#104292]/20 p-3 rounded-full">
+                  <User size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">Qabul qilgan mas'ul</p>
@@ -1396,8 +1491,8 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-[#104292] p-3 rounded-full">
-                  <Calendar size={20} className="text-rose-600" />
+                <div className="bg-[#104292]/20 p-3 rounded-full">
+                  <Calendar size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">Qaysi oy uchun</p>
@@ -1406,8 +1501,8 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-[#104292] p-3 rounded-full">
-                  <Users size={20} className="text-indigo-600" />
+                <div className="bg-[#104292]/20 p-3 rounded-full">
+                  <Users size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">Guruh</p>
@@ -1418,8 +1513,8 @@ function Payments() {
               </div>
 
               <div className="flex items-center">
-                <div className="bg-[#104292] p-3 rounded-full">
-                  <Calendar size={20} className="text-gray-600" />
+                <div className="bg-[#104292]/20 p-3 rounded-full">
+                  <Calendar size={20} className="text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">Sana</p>
@@ -1433,7 +1528,7 @@ function Payments() {
 
               {selectedPayment.comment && (
                 <div className="flex items-start">
-                  <div className="bg-[#104292] p-3 rounded-full mt-1">
+                  <div className="bg-[#104292]/20 p-3 rounded-full mt-1">
                     <MessageSquare size={20} className="text-blue-600" />
                   </div>
                   <div className="ml-4">
@@ -1460,10 +1555,7 @@ function Payments() {
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={() => {
-            setAddModal(false);
-            setSelectedGroups([]);
-            setGroupDiscounts({});
-            setTotalAmount(0);
+            closeAddModal();
           }}
         >
           <div
@@ -1475,12 +1567,7 @@ function Payments() {
               <h3 className="text-lg font-semibold">Yangi to'lov qo'shish</h3>
               <button
                 onClick={() => {
-                  setAddModal(false);
-                  setSelectedGroups([]);
-                  setGroupDiscounts({});
-                  setTotalAmount(0);
-                  setStudentSearch("");
-                  setStudentResults([]);
+                  closeAddModal();
                 }}
                 className="text-white text-2xl leading-none hover:opacity-80"
               >
@@ -1550,8 +1637,7 @@ function Payments() {
                           <div key={group.id} className="mb-3 border overflow-hidden">
                             {/* Guruh tanlash qismi */}
                             <div
-                              className={`p-3 cursor-pointer transition-colors flex items-center justify-between ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
-                                }`}
+                              className={`p-3 cursor-pointer transition-colors flex items-center justify-between ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                               onClick={() => handleGroupToggle(group.id)}
                             >
                               <div className="flex items-center">
@@ -1563,9 +1649,16 @@ function Payments() {
                                 />
                                 <span className="ml-2 font-medium">{group.group_subject}</span>
                               </div>
-                              <span className="text-sm font-medium text-gray-600">
-                                {originalAmount.toLocaleString()} so'm
-                              </span>
+                              <div className="flex flex-col items-end">
+                                <span className="text-sm font-medium text-gray-600">
+                                  {Number(group?.payment_amount || 0).toLocaleString()} so'm
+                                </span>
+                                {isSelected && groupDiscount.finalAmount !== groupDiscount.originalAmount && (
+                                  <span className="text-xs text-green-600">
+                                    To'lanadi: {groupDiscount.finalAmount.toLocaleString()} so'm
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             {/* Chegirma qismi - faqat tanlangan guruhlar uchun ko'rsatiladi */}
@@ -1590,14 +1683,16 @@ function Payments() {
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="block text-xs text-gray-600 mb-1">To'lanadigan summa</label>
+                                  <label className="block text-xs text-gray-600 mb-1">
+                                    {autoCalculate ? "To'lanadigan summa (auto, o'zgartirish mumkin)" : "To'lanadigan summa (manual)"}
+                                  </label>
                                   <div className="relative">
                                     <input
                                       type="text"
                                       inputMode="numeric"
                                       pattern="[0-9]*"
                                       className="w-full px-2 py-1.5 text-sm border border-gray-300 focus:ring-1 focus:ring-blue-500"
-                                      value={groupDiscount.finalAmount || ""}
+                                      value={groupDiscount.finalAmount ?? ""}
                                       onChange={(e) => {
                                         const value = e.target.value.replace(/[^0-9]/g, '');
                                         handleAmountDiscount(group.id, value);
@@ -1610,7 +1705,7 @@ function Payments() {
                                 {groupDiscount.percent > 0 && (
                                   <div className="col-span-2 text-xs text-green-600 mt-1">
                                     Chegirma: {groupDiscount.percent}% ({groupDiscount.amount.toLocaleString()} so'm)
-                                    <span className="text-gray-500 ml-2">asl: {originalAmount.toLocaleString()} so'm</span>
+                                    <span className="text-gray-500 ml-2">asl: {groupDiscount.originalAmount.toLocaleString()} so'm</span>
                                   </div>
                                 )}
                               </div>
@@ -1626,12 +1721,6 @@ function Payments() {
                       </p>
                     )}
                   </div>
-                  {selectedGroups.length > 0 && (
-                    <div className="mt-3 p-3 bg-blue-50">
-                      <p className="text-sm font-medium text-gray-700">Umumiy to'lov: {totalAmount.toLocaleString()} so'm</p>
-                      <p className="text-xs text-gray-500 mt-1">Tanlangan guruhlar: {selectedGroups.length} ta</p>
-                    </div>
-                  )}
                 </div>
 
                 {/* To'lov miqdori va chegirma */}
@@ -1686,6 +1775,24 @@ function Payments() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="sm:col-span-2 flex items-center gap-3 p-3 bg-gray-50 border">
+                  <input
+                    id="autoCalculate"
+                    type="checkbox"
+                    checked={autoCalculate}
+                    onChange={(e) => setAutoCalculate(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <label htmlFor="autoCalculate" className="text-sm font-medium text-gray-700">
+                    Avtomatik hisoblash
+                  </label>
+                  {autoCalculate && formData.pupil_id && formData.for_which_month && formData.came_in_school && (
+                    <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 border border-blue-200">
+                      {getPaymentDateRange(formData.for_which_month, formData.came_in_school) ?? "—"}
+                    </span>
+                  )}
                 </div>
 
                 {/* To'lov turi */}
@@ -1812,12 +1919,7 @@ function Payments() {
               <button
                 type="button"
                 onClick={() => {
-                  setAddModal(false);
-                  setSelectedGroups([]);
-                  setGroupDiscounts({});
-                  setTotalAmount(0);
-                  setStudentSearch("");
-                  setStudentResults([]);
+                  closeAddModal();
                 }}
                 className="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
               >
@@ -1837,25 +1939,13 @@ function Payments() {
 
       <div className="card">
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h3 className="text-[1.2rem] font-bold">
-            To'lov qilganlar ({filteredPayments.length}) —{" "}
-            {selectedPaymentYear === "all"
-              ? "Barcha yillar"
-              : `${selectedPaymentYear}-yil`}
-            {monthFilter !== "all" && `, ${monthFilter}`}
-          </h3>
-
           <div className="flex flex-col gap-3 sm:flex-row">
             {/* Search */}
-            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
-              <input
-                type="text"
-                className="w-full outline-none text-sm"
-                placeholder="O'quvchi ismini kiriting..."
-                value={paymentSearchInput}
-                onChange={(e) => setPaymentSearchInput(e.target.value)}
-              />
-            </div>
+            <PaymentSearchInput
+              value={paymentSearchInput}
+              onChange={setPaymentSearchInput}
+              onSearch={handleSearch}
+            />
 
             {/* Year filter */}
             <select

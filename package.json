@@ -84,6 +84,7 @@
     "tailwindcss-animate": "^1.0.7",
     "terser": "latest",
     "tsx": "latest",
+    "use-debounce": "^10.1.0",
     "vaul": "^0.9.6",
     "vite": "latest",
     "xlsx": "^0.18.5",
