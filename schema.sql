@@ -317,3 +317,47 @@ CREATE TABLE feedbacks (
         REFERENCES branches(id)
         ON DELETE SET NULL
 );
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type
+    WHERE typname = 'enum_platform_reviews_actor_type'
+  ) THEN
+    CREATE TYPE enum_platform_reviews_actor_type AS ENUM ('teacher', 'user');
+  END IF;
+END
+$$;
+
+CREATE TABLE IF NOT EXISTS platform_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  actor_type enum_platform_reviews_actor_type NOT NULL,
+  actor_id UUID NOT NULL,
+
+  rating NUMERIC(2,1) NOT NULL CHECK (rating >= 1 AND rating <= 5),
+
+  comment TEXT NULL,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_platform_reviews_actor
+ON platform_reviews (actor_type, actor_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_platform_reviews_actor
+ON platform_reviews (actor_type, actor_id);
+
+ALTER TABLE users
+ADD COLUMN platform_review_shown_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN platform_review_submitted_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN platform_review_dismissed_at TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE teachers
+ADD COLUMN platform_review_shown_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN platform_review_submitted_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN platform_review_dismissed_at TIMESTAMP WITH TIME ZONE;

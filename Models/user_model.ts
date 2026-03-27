@@ -61,6 +61,18 @@ User.init(
         key: 'id',
       },
     },
+    platform_review_shown_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    platform_review_submitted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    platform_review_dismissed_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,

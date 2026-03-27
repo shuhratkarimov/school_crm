@@ -33,7 +33,8 @@ import { startAttendanceMissingNotifier } from './Utils/missing-classes.cron';
 import { startDailyReportNotifier } from './Utils/daily-report.cron';
 import { startWeeklyReportNotifier } from './Utils/weekly-report.cron';
 import { ReportsRouter } from './router/reports.routes';
-import {router as FeedbackRouter} from './router/feedback.routes';
+import PlatformReviewRouter from './router/platform_review.routes';
+import { router as FeedbackRouter } from './router/feedback.routes';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -82,6 +83,7 @@ app.use(SettingsRouter)
 app.use(UserNotificationRouter)
 app.use(ReportsRouter)
 app.use(FeedbackRouter)
+app.use(PlatformReviewRouter)
 
 startDailyReportNotifier();
 startWeeklyReportNotifier();

@@ -3,23 +3,6 @@ import { User } from "../Models/index";
 import { NextFunction, Request, Response, RequestHandler } from "express";
 import { BaseError } from "../Utils/base_error";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        role: string;
-        first_name: string;
-        branch_id: string;
-      };
-      scope?: {
-        branchIds: string[];
-        all?: boolean;
-      };
-    }
-  }
-}
-
 export const authMiddleware: RequestHandler = async (
   req: Request,
   res: Response,

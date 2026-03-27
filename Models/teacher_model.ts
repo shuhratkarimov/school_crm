@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.config';
 
-class Teacher extends Model {}
+class Teacher extends Model { }
 
 Teacher.init(
   {
@@ -56,6 +56,18 @@ Teacher.init(
         model: 'branches',
         key: 'id',
       },
+    },
+    platform_review_shown_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    platform_review_submitted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    platform_review_dismissed_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {

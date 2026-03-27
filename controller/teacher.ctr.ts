@@ -256,6 +256,7 @@ async function teacherLogin(
 
     const payload = {
       id: teacher.dataValues.id,
+      role: "teacher",
       username: teacher.dataValues.username,
     }
     const token = jwt.sign(payload, process.env.ACCESS_SECRET_KEY as string, {
