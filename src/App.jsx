@@ -9,7 +9,7 @@ import "./i18n";
 import Expenses from "./pages/Expenses";
 import Notes from "./pages/Notes";
 import Achievements from "./pages/Achievements";
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import API_URL from "./conf/api";
 import NewStudents from "./pages/NewStudents";
 
@@ -227,16 +227,17 @@ function App() {
             fontSize: "14px",
             borderRadius: "12px",
             padding: "12px 16px",
+            zIndex: 999999,
           },
           success: {
             duration: 2500,
             style: {
               background: "#e6ffed",
               color: "#047857",
-              border: "1px solid #34d399",
+              border: "1px solid rgb(12, 150, 24)",
             },
             iconTheme: {
-              primary: "#10b981",
+              primary: "rgb(12, 150, 24)",
               secondary: "#fff",
             },
           },
@@ -245,10 +246,10 @@ function App() {
             style: {
               background: "#fee2e2",
               color: "#b91c1c",
-              border: "1px solid #f87171",
+              border: "1px solid rgb(248, 113, 113)",
             },
             iconTheme: {
-              primary: "#ef4444",
+              primary: "rgb(248, 113, 113)",
               secondary: "#fff",
             },
           },

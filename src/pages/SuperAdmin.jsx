@@ -56,6 +56,11 @@ export default function SuperAdmin() {
   const directors = useMemo(() => users.filter(u => u.role === "director"), [users]);
   const managers = useMemo(() => users.filter(u => u.role === "manager"), [users]);
 
+  const [platformReviews, setPlatformReviews] = useState([]);
+  const [platformReviewsLoading, setPlatformReviewsLoading] = useState(false);
+  const [selectedPlatformReview, setSelectedPlatformReview] = useState(null);
+  const [platformReviewTypeFilter, setPlatformReviewTypeFilter] = useState("all");
+
   const fetchAllData = async () => {
     setLoading(true);
     try {
@@ -103,6 +108,27 @@ export default function SuperAdmin() {
       toast.error(err.message || "Feedbacklarni yuklashda xato");
     } finally {
       setFeedbackLoading(false);
+    }
+  };
+
+  const fetchPlatformReviews = async () => {
+    try {
+      setPlatformReviewsLoading(true);
+
+      const res = await fetch(`${API_URL}/superadmin/platform-reviews`, {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Platform baholarini yuklab bo'lmadi");
+      }
+
+      const data = await res.json();
+      setPlatformReviews(data.reviews || []);
+    } catch (err) {
+      toast.error(err.message || "Platform baholarini yuklashda xato");
+    } finally {
+      setPlatformReviewsLoading(false);
     }
   };
 
@@ -266,6 +292,7 @@ export default function SuperAdmin() {
   useEffect(() => {
     fetchAllData();
     fetchFeedbacks();
+    fetchPlatformReviews();
   }, []);
   // ─────────────────────────────────────────────
   //              CRUD OPERATIONS
@@ -442,6 +469,27 @@ export default function SuperAdmin() {
     return result;
   }, [feedbacks, feedbackStatusFilter, searchQuery]);
 
+  const filteredPlatformReviews = useMemo(() => {
+    let result = [...platformReviews];
+
+    if (platformReviewTypeFilter !== "all") {
+      result = result.filter((r) => r.actor_type === platformReviewTypeFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+
+      result = result.filter((r) =>
+        r.comment?.toLowerCase().includes(q) ||
+        r.actor?.username?.toLowerCase().includes(q) ||
+        r.actor?.email?.toLowerCase().includes(q) ||
+        r.actor_type?.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [platformReviews, platformReviewTypeFilter, searchQuery]);
+
   const markFeedbackViewed = async (id) => {
     try {
       setLoading(true);
@@ -512,6 +560,12 @@ export default function SuperAdmin() {
     }
   };
 
+  const averagePlatformRating = useMemo(() => {
+    if (!platformReviews.length) return 0;
+    const total = platformReviews.reduce((sum, item) => sum + Number(item.rating || 0), 0);
+    return (total / platformReviews.length).toFixed(1);
+  }, [platformReviews]);
+
   // ─────────────────────────────────────────────
   //              RENDER
   // ─────────────────────────────────────────────
@@ -550,6 +604,8 @@ export default function SuperAdmin() {
           <StatCard icon={<School />} title="Filiallar" value={branches.length} color="indigo" />
           <StatCard icon={<UserCog />} title="Directorlar" value={directors.length} color="purple" />
           <StatCard icon={<Users />} title="Managerlar" value={managers.length} color="green" />
+          <StatCard icon={<MessageSquare />} title="Platform baholari" value={platformReviews.length} color="indigo" />
+          <StatCard icon={<CheckCircle2 />} title="O‘rtacha baho" value={averagePlatformRating} color="green" />
         </div>
 
         {/* Search */}
@@ -851,6 +907,114 @@ export default function SuperAdmin() {
             </div>
           )}
         </div>
+
+        <div className="bg-white rounded-2xl shadow mt-10 mb-10 overflow-hidden">
+          <div className="p-6 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <MessageSquare size={22} className="text-violet-600" />
+              <div>
+                <h2 className="text-xl font-semibold">Platform baholari</h2>
+                <p className="text-sm text-gray-500">
+                  O‘rtacha baho: <span className="font-semibold text-gray-800">{averagePlatformRating}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setPlatformReviewTypeFilter("all")}
+                className={`px-4 py-2 rounded-lg text-sm ${platformReviewTypeFilter === "all"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-700"
+                  }`}
+              >
+                Barchasi
+              </button>
+              <button
+                onClick={() => setPlatformReviewTypeFilter("user")}
+                className={`px-4 py-2 rounded-lg text-sm ${platformReviewTypeFilter === "user"
+                  ? "bg-blue-600 text-white"
+                  : "bg-blue-50 text-blue-700"
+                  }`}
+              >
+                User
+              </button>
+              <button
+                onClick={() => setPlatformReviewTypeFilter("teacher")}
+                className={`px-4 py-2 rounded-lg text-sm ${platformReviewTypeFilter === "teacher"
+                  ? "bg-purple-600 text-white"
+                  : "bg-purple-50 text-purple-700"
+                  }`}
+              >
+                Teacher
+              </button>
+            </div>
+          </div>
+
+          {platformReviewsLoading ? (
+            <div className="p-10 text-center text-gray-500">Platform baholari yuklanmoqda...</div>
+          ) : filteredPlatformReviews.length === 0 ? (
+            <div className="p-10 text-center text-gray-500">
+              Hozircha platform baholari yo‘q
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filteredPlatformReviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="p-5 hover:bg-gray-50 transition cursor-pointer"
+                  onClick={() => setSelectedPlatformReview(review)}
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${review.actor_type === "teacher"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-blue-100 text-blue-700"
+                            }`}
+                        >
+                          {review.actor_type === "teacher" ? "Teacher" : "User"}
+                        </span>
+
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                          ⭐ {Number(review.rating).toFixed(1)}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-semibold text-gray-800 truncate">
+                        {review.actor?.username || "Noma'lum foydalanuvchi"}
+                      </h3>
+
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                        {review.comment || "Izoh qoldirilmagan"}
+                      </p>
+
+                      <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
+                        <span>ID: {review.id}</span>
+                        <span>
+                          Sana: {new Date(review.created_at).toLocaleString("ru-RU")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPlatformReview(review);
+                        }}
+                        className="px-4 py-2 rounded-lg bg-violet-100 text-violet-700 hover:bg-violet-200 text-sm"
+                      >
+                        Ko‘rish
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedFeedback && (
@@ -934,6 +1098,56 @@ export default function SuperAdmin() {
         </Modal>
       )}
 
+      {selectedPlatformReview && (
+        <Modal
+          title="Platform bahosi ma'lumotlari"
+          isOpen={!!selectedPlatformReview}
+          onClose={() => setSelectedPlatformReview(null)}
+        >
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-2">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${selectedPlatformReview.actor_type === "teacher"
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-blue-100 text-blue-700"
+                  }`}
+              >
+                {selectedPlatformReview.actor_type === "teacher" ? "Teacher" : "User"}
+              </span>
+
+              <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                ⭐ {Number(selectedPlatformReview.rating).toFixed(1)}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InfoItem label="Username" value={selectedPlatformReview.actor?.username} />
+              <InfoItem label="Email" value={selectedPlatformReview.actor?.email} />
+              <InfoItem label="Yuboruvchi turi" value={selectedPlatformReview.actor_type} />
+              <InfoItem
+                label="Sana"
+                value={new Date(selectedPlatformReview.created_at).toLocaleString("ru-RU")}
+              />
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-gray-500 mb-2">Izoh</p>
+              <p className="text-gray-800 whitespace-pre-wrap leading-7">
+                {selectedPlatformReview.comment || "Izoh qoldirilmagan"}
+              </p>
+            </div>
+
+            <div className="pt-4 border-t">
+              <button
+                onClick={() => setSelectedPlatformReview(null)}
+                className="w-full bg-gray-200 hover:bg-gray-300 py-3 rounded-xl"
+              >
+                Yopish
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Yangi User Modal */}
       {isUserModalOpen && (

@@ -19,8 +19,18 @@ import {
   LineChart
 } from "recharts";
 import API_URL from "../conf/api";
+import { usePlatformReview } from "../hooks/usePlatformReview";
+import PlatformReviewModal from "../components/PlatformReviewModal";
 
 function Dashboard() {
+  const {
+    open,
+    setOpen,
+    checking,
+    submitting,
+    handleSubmit,
+    handleDismiss,
+  } = usePlatformReview();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,6 +52,7 @@ function Dashboard() {
   const [animatedMonthAttendance, setAnimatedMonthAttendance] = useState(0);
   const [monthlySalaries, setMonthlySalaries] = useState([]);
   const [dailyPayments, setDailyPayments] = useState([]);
+ 
   const animateValue = (start, end, duration, setValue) => {
     let startTimestamp = null;
 
@@ -581,6 +592,13 @@ function Dashboard() {
           </div>
         </div>
       </div>
+      <PlatformReviewModal
+        open={open}
+        loading={submitting}
+        onClose={() => setOpen(false)}
+        onSubmit={handleSubmit}
+        onDismiss={handleDismiss}
+      />
     </div>
   );
 }

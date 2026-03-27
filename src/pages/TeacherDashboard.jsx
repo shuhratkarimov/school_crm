@@ -9,7 +9,6 @@ import {
   Users,
   Calendar,
   Clock,
-  TrendingUp,
   CheckCircle,
   ChevronRight,
   GraduationCap,
@@ -32,7 +31,8 @@ import {
 import LottieLoading from "../components/Loading";
 import API_URL from "../conf/api";
 import FeedbackModal from "../components/FeedbackModal";
-
+import { usePlatformReview } from "../hooks/usePlatformReview";
+import PlatformReviewModal from "../components/PlatformReviewModal";
 const monthsUZ = [
   "yanvar", "fevral", "mart", "aprel", "may", "iyun",
   "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr"
@@ -57,6 +57,14 @@ function TeacherDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const {
+    open,
+    setOpen,
+    checking,
+    submitting,
+    handleSubmit,
+    handleDismiss,
+  } = usePlatformReview();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -446,6 +454,13 @@ function TeacherDashboard() {
         open={showSupportModal}
         onClose={() => setShowSupportModal(false)}
         senderType="teacher"
+      />
+      <PlatformReviewModal
+        open={open}
+        loading={submitting}
+        onClose={() => setOpen(false)}
+        onSubmit={handleSubmit}
+        onDismiss={handleDismiss}
       />
     </>
   );

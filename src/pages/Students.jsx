@@ -25,6 +25,32 @@ const monthsInUzbek = {
 };
 import API_URL from "../conf/api";
 
+const StudentSearchInput = ({ value, onChange, onSearch }) => {
+  return (
+    <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
+      <input
+        type="text"
+        className="w-full outline-none text-sm"
+        placeholder="O'quvchi ismini kiriting..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onSearch();
+          }
+        }}
+      />
+
+      <button
+        onClick={onSearch}
+        className="px-3 py-1 bg-[#104292] text-white text-sm"
+      >
+        Qidirish
+      </button>
+    </div>
+  );
+};
+
 const InfoRow = ({ label, value }) => (
   <div className="flex">
     <span className="text-sm font-medium text-gray-600 w-1/3">{label}:</span>
@@ -69,6 +95,7 @@ function Students() {
 
   });
 
+  const [studentSearch, setStudentSearch] = useState("");
   const [editModal, setEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -373,7 +400,7 @@ function Students() {
       groups: studentGroups,
       group_ids: studentGroups.map((group) => group.id),
       birth_date: student.birth_date ? new Date(student.birth_date).toISOString().split("T")[0] : "",
-      came_in_school: student.came_in_school ? new Date(student.came_in_school).toISOString().split("T")[0] : "",
+      came_in_school: student.came_in_school ? student.came_in_school : new Date(student.came_in_school).toISOString().split("T")[0],
     });
     setEditModal(true);
   };
@@ -722,17 +749,12 @@ function Students() {
             Bizning o'quvchilar ({pagination.totalItems} nafar)
           </h3>
           <div style={{ display: "flex", gap: "10px" }}>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center", border: "1px solid #ccc", padding: "5px" }}>
-              <Search size={22} color="#104292" style={{ marginLeft: "12px" }} />
-              <input
-                type="text"
-                className="input"
-                style={{ width: "200px", border: "none", outline: "none" }}
-                placeholder="O'quvchilarni qidirish..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+
+            <StudentSearchInput
+              value={studentSearch}
+              onChange={setStudentSearch}
+              onSearch={() => fetchStudents(currentPage, studentSearch, paymentFilter, monthFilter, yearFilter)}
+            />
             <select
               className="select"
               value={paymentFilter}
