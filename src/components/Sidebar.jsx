@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import API_URL from "../conf/api";
 import FeedbackModal from "./FeedbackModal";
+import { useAppContext } from "../context/AppContext";
 
 function Sidebar() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function Sidebar() {
   const [unansweredRequests, setUnansweredRequests] = useState(0);
   const [notInterviewedStudents, setNotInterviewedStudents] = useState(0);
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const { user } = useAppContext();
 
   useEffect(() => {
     const savedState = localStorage.getItem("sidebarCollapsed");
@@ -156,15 +158,14 @@ function Sidebar() {
   return (
     <>
       <div
-        className={`fixed left-0 top-0 z-50 flex h-screen flex-col bg-gradient-to-b from-blue-900 to-blue-800 p-4 text-white transition-all duration-300 ${
-          isCollapsed ? "w-16" : "w-64"
-        } ${expandedWidth ? "!w-64 shadow-xl" : ""}`}
+        className={`fixed left-0 top-0 z-50 flex h-screen flex-col bg-gradient-to-b from-blue-900 to-blue-800 p-4 text-white transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"
+          } ${expandedWidth ? "!w-64 shadow-xl" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <div className="relative mb-6 flex items-center justify-center border-b border-blue-700 pb-4">
           <h2 className="whitespace-nowrap text-center text-xl font-semibold">
-            Progress | Admin
+            {user?.username ? `${user?.username?.toUpperCase()} | Progress` : "Manager | Progress"}
           </h2>
         </div>
 
@@ -179,11 +180,10 @@ function Sidebar() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`relative mb-1 flex min-h-10 items-center p-2 transition-all duration-200 ${
-                    isActive
-                      ? "bg-gradient-to-r from-blue-500 to-blue-600 shadow-md"
-                      : "hover:bg-blue-700"
-                  } ${isCollapsed && !expandedWidth ? "justify-center" : "justify-start"}`}
+                  className={`relative mb-1 flex min-h-10 items-center p-2 transition-all duration-200 ${isActive
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 shadow-md"
+                    : "hover:bg-blue-700"
+                    } ${isCollapsed && !expandedWidth ? "justify-center" : "justify-start"}`}
                 >
                   <Icon size={18} className={isCollapsed && !expandedWidth ? "" : "mr-3"} />
                   {(!isCollapsed || expandedWidth) && <span>{item.label}</span>}
@@ -200,9 +200,8 @@ function Sidebar() {
               <div key={item.label} className="mb-2">
                 <div
                   onClick={() => toggleMenu(item.label)}
-                  className={`flex cursor-pointer items-center p-2 transition-all duration-200 ${
-                    isMenuOpen ? "bg-blue-700" : "hover:bg-blue-700"
-                  } ${isCollapsed && !expandedWidth ? "justify-center" : "justify-between"}`}
+                  className={`flex cursor-pointer items-center p-2 transition-all duration-200 ${isMenuOpen ? "bg-blue-700" : "hover:bg-blue-700"
+                    } ${isCollapsed && !expandedWidth ? "justify-center" : "justify-between"}`}
                 >
                   <div className="flex items-center">
                     <Icon size={18} className={isCollapsed && !expandedWidth ? "" : "mr-3"} />
@@ -217,9 +216,8 @@ function Sidebar() {
                         </span>
                       )}
                       <div
-                        className={`transform transition-transform duration-200 ${
-                          isMenuOpen ? "rotate-180" : ""
-                        }`}
+                        className={`transform transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""
+                          }`}
                       >
                         <ChevronDown size={16} />
                       </div>
@@ -237,9 +235,8 @@ function Sidebar() {
                         <Link
                           key={sub.path}
                           to={sub.path}
-                          className={`mb-1 flex min-h-8 items-center p-2 transition-all duration-200 ${
-                            isSubActive ? "bg-blue-600 shadow-md" : "hover:bg-blue-700"
-                          }`}
+                          className={`mb-1 flex min-h-8 items-center p-2 transition-all duration-200 ${isSubActive ? "bg-blue-600 shadow-md" : "hover:bg-blue-700"
+                            }`}
                         >
                           <SubIcon size={16} className="mr-2" />
                           <span>{sub.label}</span>
@@ -266,9 +263,8 @@ function Sidebar() {
         <div className="mt-4 space-y-2 border-t border-blue-700 pt-4">
           <button
             onClick={openSupportModal}
-            className={`w-full border border-blue-500/40 bg-white/10 px-3 py-3 shadow-sm transition-all duration-200 hover:bg-white/15 ${
-              isCollapsed && !expandedWidth ? "flex justify-center" : "flex justify-start"
-            } items-center`}
+            className={`w-full border border-blue-500/40 bg-white/10 px-3 py-3 shadow-sm transition-all duration-200 hover:bg-white/15 ${isCollapsed && !expandedWidth ? "flex justify-center" : "flex justify-start"
+              } items-center`}
           >
             <HelpCircle size={18} className={isCollapsed && !expandedWidth ? "" : "mr-3"} />
             {(!isCollapsed || expandedWidth) && (
