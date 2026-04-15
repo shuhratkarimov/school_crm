@@ -351,6 +351,7 @@ async function createPayment(req: any, res: Response, next: NextFunction) {
           comment,
           shouldBeConsideredAsPaid,
           branch_id: studentBranchId,
+          reserve_data: student
         },
         { transaction: t }
       );
@@ -604,7 +605,7 @@ async function deletePayment(req: Request, res: Response, next: NextFunction): P
 
     const foundGroup = await StudentGroup.findOne({
       where: {
-        student_id: payment.dataValues.pupil_id,
+        student_id: payment.dataValues.pupil_id || payment.dataValues.reserve_data?.id,
         group_id: payment.dataValues.group_id,
         month: payment.dataValues.for_which_month,
         year: new Date().getFullYear(),
@@ -617,6 +618,7 @@ async function deletePayment(req: Request, res: Response, next: NextFunction): P
       await foundGroup.update({ paid: false });
     }
     const groupTeacher = await Group.findByPk(foundGroup.dataValues.group_id);
+
     if (!groupTeacher) {
       return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
     }

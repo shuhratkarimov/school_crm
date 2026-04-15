@@ -62,6 +62,10 @@ Payment.init(
     branch_id: {
       type: DataTypes.UUID,
       allowNull: false
+    },
+    reserve_data: {
+      type: DataTypes.JSON,
+      allowNull: true
     }
   },
   {

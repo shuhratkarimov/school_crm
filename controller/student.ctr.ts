@@ -795,7 +795,6 @@ async function deleteStudent(
         where: { pupil_id: student.dataValues.id },
       });
       await Appeal.destroy({ where: { pupil_id: student.dataValues.id } });
-      await Payment.destroy({ where: { pupil_id: student.dataValues.id } });
 
       await student.destroy({ transaction: t });
       await t.commit();
