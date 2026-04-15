@@ -102,7 +102,6 @@ export default function SuperAdmin() {
       }
 
       const data = await res.json();
-      console.log(data);
       setFeedbacks(data.feedbacks || data || []);
     } catch (err) {
       toast.error(err.message || "Feedbacklarni yuklashda xato");

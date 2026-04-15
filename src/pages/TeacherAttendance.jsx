@@ -99,7 +99,6 @@ function TeacherAttendance() {
       const data = await res.json();
       if (!data.group) throw new Error("Guruh topilmadi");
       setGroup(data.group);
-      console.log(data.group);
     } catch (err) {
       toast.error("Guruh olinmadi");
     } finally {

@@ -398,8 +398,6 @@ export default function DirectorPanelLayout() {
     if (handleDirectorLogout && typeof handleDirectorLogout === 'function') {
       handleDirectorLogout();
     } else {
-      // Fallback logout
-      console.log('Logout clicked');
       localStorage.clear();
       window.location.href = '/login';
     }

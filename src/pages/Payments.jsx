@@ -314,6 +314,7 @@ function Payments() {
 
       if (paymentsResponse.ok) {
         const paymentsData = await paymentsResponse.json();
+
         setPayments(paymentsData.data || []);
         setPaymentsPagination((prev) => ({
           ...prev,
@@ -335,7 +336,6 @@ function Payments() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       const q = studentSearch.trim();
-      console.log(q);
 
       if (q.length < 3) {
         setStudentResults([]);
@@ -353,7 +353,6 @@ function Payments() {
         if (!res.ok) throw new Error("Studentlarni qidirishda xatolik");
 
         const data = await res.json();
-        console.log(data);
         setStudentResults(data.data || []);
       } catch (err) {
         setStudentResults([]);
@@ -480,7 +479,7 @@ function Payments() {
         toast.success(`To'lov muvaffaqiyatli o'chirildi`);
       }
     } catch (err) {
-      toast.error(`${err.message}`);
+      toast.error("To'lovni o'chirishda xatolik");
     }
   };
 
@@ -1451,7 +1450,7 @@ function Payments() {
                 <div className="ml-4">
                   <p className="text-sm text-gray-500">O'quvchi</p>
                   <p className="font-medium">
-                    {`${selectedPayment.student?.first_name || ""} ${selectedPayment.student?.last_name || ""}`.trim() || "N/A"}
+                    {`${selectedPayment.student?.first_name || ""} ${selectedPayment.student?.last_name || ""}`.trim() || selectedPayment.reserve_data?.first_name + " " + selectedPayment.reserve_data?.last_name}
                   </p>
                 </div>
               </div>
@@ -2023,7 +2022,11 @@ function Payments() {
                         </td>
 
                         <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-900">
-                          {`${payment.student?.first_name || ""} ${payment.student?.last_name || ""}`.trim() || "N/A"}
+                          {payment.student &&
+                            `${payment.student.first_name} ${payment.student.last_name}` ||
+                            (payment.reserve_data &&
+                              `${payment.reserve_data.first_name} ${payment.reserve_data.last_name}`) ||
+                            "Yo'q"}
                         </td>
 
                         <td className="border border-gray-300 px-4 py-3 text-center font-medium text-gray-800">

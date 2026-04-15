@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
@@ -20,9 +20,53 @@ import {
 import API_URL from "../conf/api";
 import FeedbackModal from "./FeedbackModal";
 import { useAppContext } from "../context/AppContext";
+import { motion, AnimatePresence } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0, height: 0 },
+  show: {
+    opacity: 1,
+    height: "auto",
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.02,
+    },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: {
+      when: "afterChildren",
+      staggerChildren: 0.02,
+      staggerDirection: -1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  show: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -10 },
+};
+
+const sliderVariants = {
+  initial: (dir) => ({
+    opacity: 0,
+    x: dir > 0 ? 20 : -20,
+  }),
+  animate: {
+    opacity: 1,
+    x: 0,
+  },
+  exit: (dir) => ({
+    opacity: 0,
+    x: dir > 0 ? -20 : 20,
+  }),
+};
 
 function Sidebar() {
   const location = useLocation();
+  const [direction, setDirection] = useState(1);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openMenus, setOpenMenus] = useState({});
   const [isHovered, setIsHovered] = useState(false);
@@ -153,6 +197,15 @@ function Sidebar() {
     },
   ];
 
+  const prevPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    if (prevPathRef.current !== location.pathname) {
+      setDirection(location.pathname > prevPathRef.current ? 1 : -1);
+      prevPathRef.current = location.pathname;
+    }
+  }, [location.pathname]);
+
   const expandedWidth = isHovered && isCollapsed;
 
   return (
@@ -216,7 +269,7 @@ function Sidebar() {
                         </span>
                       )}
                       <div
-                        className={`transform transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""
+                        className={`transform transition-transform duration-200 ease-in-out ${isMenuOpen ? "rotate-180" : ""
                           }`}
                       >
                         <ChevronDown size={16} />
@@ -225,36 +278,44 @@ function Sidebar() {
                   )}
                 </div>
 
-                {isMenuOpen && (!isCollapsed || expandedWidth) && (
-                  <div className="ml-6 mt-1 border-l border-blue-700 pl-2">
-                    {item.children.map((sub) => {
-                      const SubIcon = sub.icon;
-                      const isSubActive = location.pathname === sub.path;
+                <AnimatePresence initial={false}>
+                  {isMenuOpen && (!isCollapsed || expandedWidth) && (
+                    <motion.div
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="show"
+                      exit="exit"
+                      className="ml-6 mt-1 border-l border-blue-700 pl-2 overflow-hidden"
+                    >
+                      {item.children.map((sub) => {
+                        const SubIcon = sub.icon;
+                        const isSubActive = location.pathname === sub.path;
 
-                      return (
-                        <Link
-                          key={sub.path}
-                          to={sub.path}
-                          className={`mb-1 flex min-h-8 items-center p-2 transition-all duration-200 ${isSubActive ? "bg-blue-600 shadow-md" : "hover:bg-blue-700"
-                            }`}
-                        >
-                          <SubIcon size={16} className="mr-2" />
-                          <span>{sub.label}</span>
+                        return (
+                          <motion.div
+                            key={sub.path}
+                            variants={itemVariants}
+                          >
+                            <Link
+                              to={sub.path}
+                              className={`mb-1 flex min-h-8 items-center p-2 transition-all duration-200 ${isSubActive ? "bg-blue-600 shadow-md" : "hover:bg-blue-700"
+                                }`}
+                            >
+                              <SubIcon size={16} className="mr-2" />
+                              <span>{sub.label}</span>
 
-                          {sub.badge > 0 && (
-                            <span className="ml-1 rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
-                              {sub.badge}
-                            </span>
-                          )}
-
-                          {isSubActive && (
-                            <div className="ml-2 h-2 w-2 rounded-full bg-white animate-pulse" />
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                              {sub.badge > 0 && (
+                                <span className="ml-1 rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+                                  {sub.badge}
+                                </span>
+                              )}
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}

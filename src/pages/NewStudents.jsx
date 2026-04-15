@@ -154,7 +154,6 @@ export default function NewStudents() {
             const res = await fetch(`${API_URL}/get_reserve_students`, { credentials: "include" });
             if (!res.ok) throw new Error("Zaxiradagi o'quvchilarni yuklashda xato");
             const data = await res.json();
-            console.log(data);
             setReserveStudents(data);
         } catch (err) {
             toast.error("Zaxiradagi o'quvchilarni yuklashda xato");
