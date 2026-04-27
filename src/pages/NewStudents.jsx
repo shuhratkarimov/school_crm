@@ -168,7 +168,7 @@ export default function NewStudents() {
             const res = await fetch(`${API_URL}/get_groups`, { credentials: "include" });
             if (res.ok) {
                 const data = await res.json();
-                setGroups(data);
+                setGroups(Array.isArray(data) ? data : (data.data || []));
             }
         } catch (err) {
             console.error("Guruhlar yuklanmadi", err);

@@ -102,7 +102,7 @@ function AdminTestResults() {
       );
 
       setTests(testsWithTeachers);
-      setGroups(groupsData);
+      setGroups(Array.isArray(groupsData) ? groupsData : (groupsData.data || []));
     } catch (err) {
       toast.error(`Ma'lumotlarni olishda xatolik: ${err.message}`);
     } finally {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Trash2, GraduationCap, Plus, Pen, X, Euro, Search, DollarSign } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import { toast } from "react-hot-toast";
@@ -31,6 +31,13 @@ function Teachers() {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [teacherGroups, setTeacherGroups] = useState([]);
   const [teacherBalances, setTeacherBalances] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTeachers, setTotalTeachers] = useState(0);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+  const TEACHERS_PER_PAGE = 10;
+  const searchDebounceRef = useRef(null);
+  const isFirstSearchRender = useRef(true);
 
   const openDetailModal = async (teacher) => {
     setSelectedTeacher(teacher);
@@ -126,61 +133,66 @@ function Teachers() {
   const formatMoney = (amount) =>
     `${Number(amount).toLocaleString("ru-RU")} so'm`;
 
+  const fetchTeachersPage = async (page, search, subject, salary) => {
+    try {
+      setTeachersLoading(true);
+      setTeachersError("");
+      const params = new URLSearchParams({ page: String(page), limit: String(TEACHERS_PER_PAGE) });
+      if (search) params.set("search", search);
+      if (subject && subject !== "all") params.set("subject", subject);
+      if (salary && salary !== "all") params.set("salary", salary);
+
+      const res = await fetch(`${API_URL}/get_teachers?${params}`, { credentials: "include" });
+      if (!res.ok) {
+        setTeachers([]);
+        setTeachersError("Ustozlar hali mavjud emas");
+        setTotalPages(1);
+        setTotalTeachers(0);
+        return;
+      }
+      const json = await res.json();
+      const list = Array.isArray(json) ? json : (json.data || []);
+      setTeachers(list);
+      setTotalPages(json.totalPages || 1);
+      setTotalTeachers(json.total || 0);
+
+      const balancePromises = list.map(async (teacher) => {
+        const balance = await fetchTeacherBalance(teacher.id);
+        return { id: teacher.id, balance };
+      });
+      const balances = await Promise.all(balancePromises);
+      setTeacherBalances((prev) => ({
+        ...prev,
+        ...balances.reduce((acc, { id, balance }) => { acc[id] = balance; return acc; }, {}),
+      }));
+    } catch {
+      setTeachers([]);
+      setTeachersError("Ustozlar hali mavjud emas");
+    } finally {
+      setTeachersLoading(false);
+    }
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
       setGroupsError("");
-      setTeachersError("");
 
-      const [
-        groupsResponse,
-        teachersResponse,
-        studentsResponse,
-      ] = await Promise.all([
-        fetch(`${API_URL}/get_groups`, {
+      const [groupsResponse, studentsResponse] = await Promise.all([
+        fetch(`${API_URL}/get_groups?limit=500`, {
           credentials: "include"
-        }).catch(() => ({
-          ok: false,
-        })),
-        fetch(`${API_URL}/get_teachers`, {
-          credentials: "include"
-        }).catch(() => ({
-          ok: false,
-        })),
+        }).catch(() => ({ ok: false })),
         fetch(`${API_URL}/get_students`, {
           credentials: "include"
-        }).catch(() => ({
-          ok: false,
-        })),
+        }).catch(() => ({ ok: false })),
       ]);
 
       if (groupsResponse.ok) {
-        const groupsData = await groupsResponse.json();
-        setGroups(groupsData);
+        const groupsJson = await groupsResponse.json();
+        setGroups(Array.isArray(groupsJson) ? groupsJson : (groupsJson.data || []));
       } else {
         setGroups([]);
         setGroupsError("Guruhlar hali mavjud emas");
-        toast.error(`Guruhlar yuklanmadi: ${groupsResponse.status}`);
-      }
-
-      if (teachersResponse.ok) {
-        const teachersData = await teachersResponse.json();
-        setTeachers(teachersData);
-
-        const balancePromises = teachersData.map(async (teacher) => {
-          const balance = await fetchTeacherBalance(teacher.id);
-          return { id: teacher.id, balance };
-        });
-        const balances = await Promise.all(balancePromises);
-        const balanceMap = balances.reduce((acc, { id, balance }) => {
-          acc[id] = balance;
-          return acc;
-        }, {});
-        setTeacherBalances(balanceMap);
-      } else {
-        setTeachers([]);
-        setTeachersError("Ustozlar hali mavjud emas");
-        toast.error(`Ustozlar yuklanmadi: ${teachersResponse.status}`);
       }
 
       if (studentsResponse.ok) {
@@ -188,14 +200,10 @@ function Teachers() {
         setStudents(studentsData.data);
       } else {
         setStudents([]);
-        toast.error(`O'quvchilar yuklanmadi: ${studentsResponse.status}`);
       }
     } catch (err) {
       setGroups([]);
-      setTeachers([]);
       setStudents([]);
-      setGroupsError("Guruhlar hali mavjud emas");
-      setTeachersError("Ustozlar hali mavjud emas");
       toast.error(`Ma'lumotlarni yuklashda umumiy xatolik yuz berdi: ${err.message}`);
     } finally {
       setLoading(false);
@@ -230,13 +238,6 @@ function Teachers() {
 
       if (response.ok) {
         const newTeacher = await response.json();
-        setTeachers([...teachers, newTeacher]);
-        // Yangi o'qituvchi uchun balansni olish
-        const balance = await fetchTeacherBalance(newTeacher.id);
-        setTeacherBalances((prev) => ({
-          ...prev,
-          [newTeacher.id]: balance,
-        }));
         setFormData({
           first_name: "",
           last_name: "",
@@ -250,7 +251,7 @@ function Teachers() {
           password: "",
         });
         setIsAddModalOpen(false);
-        fetchData(); // Refresh data after add
+        fetchTeachersPage(currentPage, searchTerm, subjectFilter, salaryFilter);
         toast.success("Yangi ustoz muvaffaqiyatli qo'shildi!");
       } else {
         toast.error(`Ustoz qo'shishda xatolik: ${response.status}`);
@@ -295,8 +296,8 @@ function Teachers() {
         toast.error(`Xatolik yuz berdi: ${response.status}`);
       }
       else {
-        fetchData();
-        toast.success("O‘qituvchi ma’lumotlari yangilandi");
+        fetchTeachersPage(currentPage, searchTerm, subjectFilter, salaryFilter);
+        toast.success("O’qituvchi ma’lumotlari yangilandi");
       }
       setIsEditModalOpen(false);
     } catch (error) {
@@ -317,13 +318,7 @@ function Teachers() {
 
       if (response.ok) {
         toast.success("Ustoz muvaffaqiyatli o'chirildi");
-        setTeachers(teachers.filter((t) => t.id !== id));
-        setTeacherBalances((prev) => {
-          const newBalances = { ...prev };
-          delete newBalances[id];
-          return newBalances;
-        });
-        toast.success("Ustoz muvaffaqiyatli o'chirildi");
+        fetchTeachersPage(currentPage, searchTerm, subjectFilter, salaryFilter);
       } else {
         toast.error(`Ustoz o'chirishda xatolik: ${response.status}`);
       }
@@ -458,25 +453,28 @@ function Teachers() {
     setIsEditModalOpen(true);
   };
 
-  const filteredTeachers = teachers.filter((teacher) => {
-    const nameMatch = `${teacher.first_name} ${teacher.last_name} ${teacher.father_name || ""
-      }`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-
-    const subjectMatch =
-      subjectFilter === "all" || teacher.subject === subjectFilter;
-    const salaryMatch =
-      salaryFilter === "all" ||
-      (salaryFilter === "paid" && teacher.got_salary_for_this_month) ||
-      (salaryFilter === "unpaid" && !teacher.got_salary_for_this_month);
-
-    return nameMatch && subjectMatch && salaryMatch;
-  });
-
   useEffect(() => {
     fetchData();
+    fetchTeachersPage(1, "", "all", "all");
   }, []);
+
+  useEffect(() => {
+    if (isFirstSearchRender.current) {
+      isFirstSearchRender.current = false;
+      return;
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      fetchTeachersPage(1, searchTerm, subjectFilter, salaryFilter);
+    }, 400);
+    return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current); };
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchTeachersPage(1, searchTerm, subjectFilter, salaryFilter);
+  }, [subjectFilter, salaryFilter]);
 
   useEffect(() => {
     if (success) {
@@ -1203,7 +1201,7 @@ function Teachers() {
           className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5"
         >
           <h3 className="font-bold text-[1.2rem]">
-            Bizning ustozlar ({filteredTeachers.length} nafar)
+            Bizning ustozlar ({totalTeachers} nafar)
           </h3>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -1262,7 +1260,7 @@ function Teachers() {
               </thead>
 
               <tbody>
-                {filteredTeachers.length === 0 ? (
+                {teachers.length === 0 ? (
                   <tr>
                     <td
                       colSpan="7"
@@ -1274,7 +1272,7 @@ function Teachers() {
                     </td>
                   </tr>
                 ) : (
-                  filteredTeachers.map((teacher, index) => {
+                  teachers.map((teacher, index) => {
                     const groupsCount = groups.filter(
                       (g) => g.teacher_id === teacher.id
                     ).length;
@@ -1286,7 +1284,7 @@ function Teachers() {
                         className="hover:bg-gray-50 cursor-pointer"
                       >
                         <td className="border border-gray-300 px-4 py-3 text-center font-medium">
-                          {index + 1}
+                          {(currentPage - 1) * TEACHERS_PER_PAGE + index + 1}
                         </td>
 
                         <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-900">

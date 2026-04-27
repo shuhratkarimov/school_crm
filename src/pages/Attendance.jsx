@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Trash2,
   Pen,
@@ -102,6 +102,13 @@ export default function Attendance() {
   const [smsText, setSmsText] = useState("");
   const [smsModalOpen, setSmsModalOpen] = useState(false);
   const [missedAttendanceDates, setMissedAttendanceDates] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalGroups, setTotalGroups] = useState(0);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const GROUPS_PER_PAGE = 5;
+  const searchDebounceRef = useRef(null);
+  const isFirstSearchRender = useRef(true);
 
   const daysOfWeek = [
     "DUSHANBA",
@@ -337,20 +344,75 @@ export default function Attendance() {
     return months[thisMonth] || "";
   };
 
+  const fetchGroupsPage = async (page, search = "") => {
+    try {
+      setGroupsLoading(true);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(GROUPS_PER_PAGE),
+      });
+      if (search) params.set("search", search);
+
+      const res = await fetch(`${API_URL}/get_groups?${params}`, { credentials: "include" });
+
+      if (!res.ok) {
+        setGroups([]);
+        setErrors((prev) => ({ ...prev, groups: "Guruhlar mavjud emas" }));
+        setTotalPages(1);
+        setTotalGroups(0);
+        return;
+      }
+
+      const { data: groupsData, total, totalPages: tp } = await res.json();
+      const todayStr = formatDate(new Date());
+
+      const groupsWithStatus = await Promise.all(
+        (groupsData || []).map(async (group) => {
+          let status = "no_attendance";
+          let records = [];
+          try {
+            const resAtt = await fetch(
+              `${API_URL}/get_attendance_by_date/${group.id}?date=${todayStr}`,
+              { credentials: "include" }
+            );
+            if (resAtt.status === 404) {
+              status = "no_attendance";
+            } else if (resAtt.ok) {
+              const attData = await resAtt.json();
+              status = attData.records?.length > 0 ? "done" : "no_attendance";
+              records = attData.records || [];
+            } else {
+              status = "error";
+            }
+          } catch {
+            status = "error";
+          }
+          return {
+            ...group,
+            todayStatus: status,
+            todayRecords: records,
+            days: group.days ? group.days.toUpperCase() : "",
+          };
+        })
+      );
+
+      setGroups(groupsWithStatus);
+      setTotalPages(tp || 1);
+      setTotalGroups(total || 0);
+    } catch {
+      toast.error("Guruhlarni yuklashda xatolik");
+      setGroups([]);
+    } finally {
+      setGroupsLoading(false);
+    }
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
       setErrors({ groups: "", teachers: "", students: "", rooms: "" });
 
-      const [
-        groupsResponse,
-        teachersResponse,
-        studentsResponse,
-        roomsResponse,
-      ] = await Promise.all([
-        fetch(`${API_URL}/get_groups`, {
-          credentials: "include",
-        }).catch(() => ({ ok: false })),
+      const [teachersResponse, studentsResponse, roomsResponse] = await Promise.all([
         fetch(`${API_URL}/get_teachers`, {
           credentials: "include",
         }).catch(() => ({ ok: false })),
@@ -361,50 +423,6 @@ export default function Attendance() {
           credentials: "include",
         }).catch(() => ({ ok: false })),
       ]);
-
-      if (groupsResponse.ok) {
-        const groupsData = await groupsResponse.json();
-
-        const groupsWithStatus = await Promise.all(
-          groupsData.map(async (group) => {
-            const dateStr = formatDate(new Date());
-            let status = "loading";
-            let records = [];
-
-            try {
-              const resAtt = await fetch(
-                `${API_URL}/get_attendance_by_date/${group.id}?date=${dateStr}`,
-                { credentials: "include" }
-              );
-
-              if (resAtt.status === 404) {
-                status = "no_attendance";
-              } else if (resAtt.ok) {
-                const attData = await resAtt.json();
-                status = attData.records?.length > 0 ? "done" : "no_attendance";
-                records = attData.records || [];
-              } else {
-                status = "error";
-              }
-            } catch {
-              status = "error";
-            }
-
-            return {
-              ...group,
-              todayStatus: status,
-              todayRecords: records,
-              days: group.days ? group.days.toUpperCase() : "",
-            };
-          })
-        );
-
-        setGroups(groupsWithStatus);
-      } else {
-        setGroups([]);
-        setErrors((prev) => ({ ...prev, groups: "Guruhlar mavjud emas" }));
-        toast.error("Guruhlar mavjud emas");
-      }
 
       if (teachersResponse.ok) {
         setTeachers(await teachersResponse.json());
@@ -417,7 +435,6 @@ export default function Attendance() {
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
         setStudents(studentsData.data);
-
       } else {
         setStudents([]);
         setErrors((prev) => ({ ...prev, students: "O'quvchilar mavjud emas" }));
@@ -432,12 +449,11 @@ export default function Attendance() {
         toast.error("Xonalar mavjud emas");
       }
     } catch (err) {
-      setGroups([]);
       setTeachers([]);
       setStudents([]);
       setRooms([]);
       setErrors({
-        groups: "Guruhlar mavjud emas",
+        groups: "",
         teachers: "O'qituvchilar mavjud emas",
         students: "O'quvchilar mavjud emas",
         rooms: "Xonalar mavjud emas",
@@ -723,9 +739,6 @@ export default function Attendance() {
     return { studentsAmount, paidStudentsAmount, unpaidStudentsAmount };
   };
 
-  const filteredGroups = groups.filter((group) =>
-    group.group_subject?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const formatDate = (d) => {
     const year = d.getFullYear();
@@ -771,46 +784,7 @@ export default function Attendance() {
     return classDays.includes(date.getDay());
   };
 
-  const fetchGroups = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/get_groups`, { credentials: "include" });
-      if (!res.ok) throw new Error("Guruhlarni yuklashda xatolik");
-      const data = await res.json();
-
-      const groupsWithStatus = await Promise.all(data.map(async (group) => {
-        const dateStr = formatDate(new Date());
-        let status = "loading";
-        let records = [];
-
-        try {
-          const resAtt = await fetch(
-            `${API_URL}/get_attendance_by_date/${group.id}?date=${dateStr}`,
-            { credentials: "include" }
-          );
-          if (resAtt.status === 404) {
-            status = "no_attendance";
-          } else {
-            const attData = await resAtt.json();
-            setAttendance(attData.records);
-            setAttendanceTime(attData.created_at);
-            status = attData.records?.length > 0 ? "done" : "no_attendance";
-            records = attData.records || [];
-          }
-        } catch {
-          status = "error";
-        }
-
-        return { ...group, todayStatus: status, todayRecords: records, days: group.days.toUpperCase() };
-      }));
-
-      setGroups(groupsWithStatus);
-    } catch {
-      toast.error("Guruhlarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchGroups = () => fetchGroupsPage(currentPage, searchTerm);
 
   const fetchStudents = async (groupId) => {
     try {
@@ -985,7 +959,23 @@ export default function Attendance() {
 
   useEffect(() => {
     fetchData();
+    fetchGroupsPage(1, "");
   }, []);
+
+  useEffect(() => {
+    if (isFirstSearchRender.current) {
+      isFirstSearchRender.current = false;
+      return;
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      fetchGroupsPage(1, searchTerm);
+    }, 400);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchTerm]);
 
   useEffect(() => {
     if (success) {
@@ -1008,22 +998,21 @@ export default function Attendance() {
     }
   }, [success, errors]);
 
-  if (loading && groups.length === 0) return <LottieLoading />;
+  if ((loading || groupsLoading) && groups.length === 0) return <LottieLoading />;
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen">
       {/* Header */}
       <div
-        className="mb-8"
+        className="mb-2"
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-[#104292] p-3 shadow-lg">
-              <Calendar className="text-white" size={32} />
+          <div className="flex items-center gap-2 ml-5">
+            <div>
+              <Calendar className="text-[#104292]" size={24} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Guruhlar va davomat tizimi</h1>
-              <p className="text-gray-600 mt-1">Guruhlarni boshqaring va davomatni kuzating</p>
+              <h1 className="text-2xl font-bold text-gray-800">Guruhlar va davomat tizimi</h1>
             </div>
           </div>
         </div>
@@ -1061,7 +1050,7 @@ export default function Attendance() {
             </div>
 
             <AnimatePresence>
-              {filteredGroups.map((group, index) => {
+              {groups.map((group, index) => {
                 const todayClass = isClassOnDate(group, new Date());
                 let statusEl, statusClass, statusIcon;
 
@@ -1176,10 +1165,47 @@ export default function Attendance() {
               })}
             </AnimatePresence>
 
-            {filteredGroups.length === 0 && (
+            {groupsLoading && (
+              <div className="flex justify-center py-6">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
+            {!groupsLoading && groups.length === 0 && (
               <div className="text-center py-12 text-gray-500">
                 <Users size={48} className="mx-auto mb-3 text-gray-300" />
                 <p>{searchTerm ? "Bunday guruh topilmadi" : errors.groups || "Hali guruh mavjud emas"}</p>
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                <button
+                  disabled={currentPage === 1 || groupsLoading}
+                  onClick={() => {
+                    const newPage = currentPage - 1;
+                    setCurrentPage(newPage);
+                    fetchGroupsPage(newPage, searchTerm);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-600 disabled:opacity-40 hover:bg-gray-200 transition-colors rounded"
+                >
+                  ← Oldingi
+                </button>
+                <span className="text-sm text-gray-500">
+                  {currentPage} / {totalPages}
+                  <span className="text-gray-400 ml-1">({totalGroups} ta guruh)</span>
+                </span>
+                <button
+                  disabled={currentPage === totalPages || groupsLoading}
+                  onClick={() => {
+                    const newPage = currentPage + 1;
+                    setCurrentPage(newPage);
+                    fetchGroupsPage(newPage, searchTerm);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-600 disabled:opacity-40 hover:bg-gray-200 transition-colors rounded"
+                >
+                  Keyingi →
+                </button>
               </div>
             )}
           </div>

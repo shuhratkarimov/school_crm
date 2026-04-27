@@ -301,7 +301,8 @@ function Payments() {
       ]);
 
       if (groupsResponse.ok) {
-        const groupsData = await groupsResponse.json();
+        const groupsJson = await groupsResponse.json();
+        const groupsData = Array.isArray(groupsJson) ? groupsJson : (groupsJson.data || []);
         const groupsWithAmount = groupsData.map((group) => ({
           ...group,
           payment_amount: group.monthly_fee,

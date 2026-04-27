@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Trash2, Pen, Users, X, Search, Plus, CreditCard, AlertCircle } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import { DatePicker } from 'react-datepicker';
@@ -96,6 +96,10 @@ function Students() {
   });
 
   const [studentSearch, setStudentSearch] = useState("");
+  const [groupSearchAdd, setGroupSearchAdd] = useState("");
+  const [groupSearchEdit, setGroupSearchEdit] = useState("");
+  const [dropdownGroups, setDropdownGroups] = useState([]);
+  const [groupDropdownLoading, setGroupDropdownLoading] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -201,15 +205,40 @@ function Students() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(`${API_URL}/get_groups`, {
+      const response = await fetch(`${API_URL}/get_groups?limit=50`, {
         credentials: "include"
       });
       if (!response.ok) throw new Error("Guruhlar ma'lumotlarini olishda muammo yuzaga keldi!");
-      const data = await response.json();
-      setGroups(data);
+      const json = await response.json();
+      const list = Array.isArray(json) ? json : (json.data || []);
+      setGroups(list);
+      setDropdownGroups(list);
     } catch (err) {
       setError("Guruhlar ma'lumotlarini olishda muammo yuzaga keldi!");
       toast.error("Guruhlar ma'lumotlarini olishda xatolik yuz berdi!");
+    }
+  };
+
+  const fetchGroupsForDropdown = async (search) => {
+    try {
+      setGroupDropdownLoading(true);
+      const params = new URLSearchParams({ limit: "50" });
+      if (search) params.set("search", search);
+      const res = await fetch(`${API_URL}/get_groups?${params}`, { credentials: "include" });
+      if (!res.ok) return;
+      const json = await res.json();
+      const list = Array.isArray(json) ? json : (json.data || []);
+      setDropdownGroups(list);
+      // Tanlangan guruhlarni cache ga qo'shib qo'yamiz
+      setGroups((prev) => {
+        const merged = [...prev];
+        list.forEach((g) => { if (!merged.find((x) => x.id === g.id)) merged.push(g); });
+        return merged;
+      });
+    } catch {
+      // silent
+    } finally {
+      setGroupDropdownLoading(false);
     }
   };
 
@@ -278,6 +307,7 @@ function Students() {
         came_in_school: "",
       });
       setAddModal(false);
+      setGroupSearchAdd("");
     } catch (err) {
       toast.error("O'quvchini qo'shishda muammo yuzaga keldi. Iltimos, barcha maydonlar kiritilganligiga e'tibor bering!");
       setError("O'quvchini qo'shishda muammo yuzaga keldi. Iltimos, barcha maydonlar kiritilganligiga e'tibor bering!");
@@ -384,6 +414,7 @@ function Students() {
       setSuccess("Student successfully updated");
       toast.success("O'quvchi ma'lumotlari muvaffaqiyatli yangilandi!");
       setEditModal(false);
+      setGroupSearchEdit("");
       setSelectedStudent(null);
     } catch (err) {
       setError("Failed to update student. Please check the form data.");
@@ -456,6 +487,20 @@ function Students() {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (!addModal) return;
+    const delay = groupSearchAdd ? 300 : 0;
+    const timer = setTimeout(() => fetchGroupsForDropdown(groupSearchAdd), delay);
+    return () => clearTimeout(timer);
+  }, [groupSearchAdd, addModal]);
+
+  useEffect(() => {
+    if (!editModal) return;
+    const delay = groupSearchEdit ? 300 : 0;
+    const timer = setTimeout(() => fetchGroupsForDropdown(groupSearchEdit), delay);
+    return () => clearTimeout(timer);
+  }, [groupSearchEdit, editModal]);
 
   if (loading) {
     return <LottieLoading />;
@@ -535,7 +580,7 @@ function Students() {
               <h2 className="text-2xl font-bold">Yangi o'quvchi qo'shish</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
-                onClick={() => setAddModal(false)}
+                onClick={() => { setAddModal(false); setGroupSearchAdd(""); }}
               >
                 <X size={24} />
               </button>
@@ -658,28 +703,51 @@ function Students() {
                   Guruhlar <span className="text-red-500">*</span>
                 </label>
 
-                <select
-                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
-                  value=""
-                  onChange={(e) => {
-                    const selectedGroupId = e.target.value;
-                    if (selectedGroupId && !formData.group_ids.includes(selectedGroupId)) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        group_ids: [...prev.group_ids, selectedGroupId],
-                      }));
-                    }
-                  }}
-                >
-                  <option value="">Guruhni tanlang</option>
-                  {groups
-                    .filter((group) => !formData.group_ids.includes(group.id))
-                    .map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.group_subject}
-                      </option>
-                    ))}
-                </select>
+                <div className="relative mb-3">
+                  <div className="flex items-center border border-gray-300 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                    <Search size={16} className="text-gray-400 mr-2 flex-shrink-0" />
+                    <input
+                      type="text"
+                      className="w-full outline-none text-sm"
+                      placeholder="Guruhni qidirish..."
+                      value={groupSearchAdd}
+                      onChange={(e) => setGroupSearchAdd(e.target.value)}
+                    />
+                  </div>
+                  {groupDropdownLoading ? (
+                    <div className="border border-t-0 border-gray-300 bg-white px-4 py-2 text-sm text-gray-400 flex items-center gap-2">
+                      <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      Qidirilmoqda...
+                    </div>
+                  ) : (() => {
+                    const filtered = dropdownGroups.filter((g) => !formData.group_ids.includes(g.id));
+                    return filtered.length > 0 ? (
+                      <div className="border border-t-0 border-gray-300 bg-white max-h-48 overflow-y-auto">
+                        {filtered.map((group) => (
+                          <div
+                            key={group.id}
+                            className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setFormData((prev) => ({
+                                ...prev,
+                                group_ids: [...prev.group_ids, group.id],
+                              }));
+                              setGroups((prev) => prev.find((x) => x.id === group.id) ? prev : [...prev, group]);
+                              setGroupSearchAdd("");
+                            }}
+                          >
+                            {group.group_subject}
+                          </div>
+                        ))}
+                      </div>
+                    ) : groupSearchAdd ? (
+                      <div className="border border-t-0 border-gray-300 bg-white px-4 py-2 text-sm text-gray-400">
+                        Guruh topilmadi
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                   {formData.group_ids.map((groupId) => {
@@ -718,7 +786,7 @@ function Students() {
                 <button
                   type="button"
                   className="px-5 py-2 btn btn-secondary text-gray-700  hover:bg-gray-400 transition-colors"
-                  onClick={() => setAddModal(false)}
+                  onClick={() => { setAddModal(false); setGroupSearchAdd(""); }}
                 >
                   Bekor qilish
                 </button>
@@ -998,7 +1066,7 @@ function Students() {
               <h2 className="text-2xl font-bold">O'quvchi ma'lumotlarini tahrirlash</h2>
               <button
                 className="p-2 rounded-full hover:bg-blue-600 transition-colors"
-                onClick={() => setEditModal(false)}
+                onClick={() => { setEditModal(false); setGroupSearchEdit(""); }}
               >
                 <X size={24} />
               </button>
@@ -1122,28 +1190,51 @@ function Students() {
                   Guruhlar <span className="text-red-500">*</span>
                 </label>
 
-                <select
-                  className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
-                  value=""
-                  onChange={(e) => {
-                    const selectedGroupId = e.target.value;
-                    if (selectedGroupId && !editFormData.group_ids.includes(selectedGroupId)) {
-                      setEditFormData((prev) => ({
-                        ...prev,
-                        group_ids: [...prev.group_ids, selectedGroupId],
-                      }));
-                    }
-                  }}
-                >
-                  <option value="">Guruhni tanlang</option>
-                  {groups
-                    .filter((group) => !editFormData.group_ids.includes(group.id))
-                    .map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.group_subject}
-                      </option>
-                    ))}
-                </select>
+                <div className="relative mb-3">
+                  <div className="flex items-center border border-gray-300 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                    <Search size={16} className="text-gray-400 mr-2 flex-shrink-0" />
+                    <input
+                      type="text"
+                      className="w-full outline-none text-sm"
+                      placeholder="Guruhni qidirish..."
+                      value={groupSearchEdit}
+                      onChange={(e) => setGroupSearchEdit(e.target.value)}
+                    />
+                  </div>
+                  {groupDropdownLoading ? (
+                    <div className="border border-t-0 border-gray-300 bg-white px-4 py-2 text-sm text-gray-400 flex items-center gap-2">
+                      <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      Qidirilmoqda...
+                    </div>
+                  ) : (() => {
+                    const filtered = dropdownGroups.filter((g) => !editFormData.group_ids.includes(g.id));
+                    return filtered.length > 0 ? (
+                      <div className="border border-t-0 border-gray-300 bg-white max-h-48 overflow-y-auto">
+                        {filtered.map((group) => (
+                          <div
+                            key={group.id}
+                            className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setEditFormData((prev) => ({
+                                ...prev,
+                                group_ids: [...prev.group_ids, group.id],
+                              }));
+                              setGroups((prev) => prev.find((x) => x.id === group.id) ? prev : [...prev, group]);
+                              setGroupSearchEdit("");
+                            }}
+                          >
+                            {group.group_subject}
+                          </div>
+                        ))}
+                      </div>
+                    ) : groupSearchEdit ? (
+                      <div className="border border-t-0 border-gray-300 bg-white px-4 py-2 text-sm text-gray-400">
+                        Guruh topilmadi
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                   {editFormData.group_ids.map((groupId) => {
@@ -1182,7 +1273,7 @@ function Students() {
                 <button
                   type="button"
                   className="px-5 py-2 btn btn-secondary text-gray-700  hover:bg-gray-400 transition-colors"
-                  onClick={() => setEditModal(false)}
+                  onClick={() => { setEditModal(false); setGroupSearchEdit(""); }}
                 >
                   Bekor qilish
                 </button>
