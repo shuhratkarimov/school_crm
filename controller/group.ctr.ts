@@ -827,9 +827,16 @@ async function getGroups(
   next: NextFunction
 ): Promise<Response | void> {
   try {
-    const lang = "uz";
-    const groups = await Group.findAll({
-      where: withBranchScope(req),
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const search = ((req.query.search as string) || "").trim();
+    const offset = (page - 1) * limit;
+
+    const searchWhere = search ? { group_subject: { [Op.iLike]: `%${search}%` } } : {};
+    const whereClause = withBranchScope(req, searchWhere);
+
+    const { count, rows: groups } = await Group.findAndCountAll({
+      where: whereClause,
       include: [
         {
           model: Teacher,
@@ -844,7 +851,7 @@ async function getGroups(
         },
         {
           model: Schedule,
-          as: "groupSchedules", // Yangi alias
+          as: "groupSchedules",
           include: [{ model: Room, as: "room", attributes: ["id", "name"] }],
         },
         {
@@ -853,15 +860,19 @@ async function getGroups(
           attributes: ["id", "name", "capacity"],
         },
       ],
+      limit,
+      offset,
+      order: [["created_at", "DESC"]],
+      distinct: true,
     });
 
-    if (groups.length === 0) {
-      return next(
-        BaseError.BadRequest(404, i18next.t("groups_not_found", { lng: lang }))
-      );
-    }
-
-    res.json(groups)
+    res.json({
+      data: groups,
+      total: count,
+      page,
+      limit,
+      totalPages: count > 0 ? Math.ceil(count / limit) : 1,
+    });
   } catch (error: any) {
     next(error);
   }

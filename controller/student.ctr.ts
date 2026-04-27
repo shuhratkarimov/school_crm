@@ -470,6 +470,23 @@ async function createStudent(
       );
     }
 
+    const existingStudent = await Student.findOne({
+      where: {
+        first_name,
+        last_name,
+        branch_id: branchId,
+      },
+    });
+    
+    if (existingStudent) {
+      return next(
+        BaseError.BadRequest(
+          400,
+          "Bu ism va familiyadagi o'quvchi allaqachon mavjud"
+        )
+      );
+    }
+
     const t = await sequelize.transaction();
     let student: Student;
     let groupNames: string[] = [];
@@ -1218,7 +1235,7 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
     const classEnd = DateTime.fromObject(
       { year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: endHours, minute: endMinutes },
       { zone: "Asia/Tashkent" }
-    ).plus({ hours: 1 }); // 1 soat qo'shimcha
+    ).plus({ hours: 2 }); // 2 soat qo'shimcha
 
     const now = DateTime.now().setZone("Asia/Tashkent");
 
@@ -1254,7 +1271,7 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
         return next(
           BaseError.BadRequest(
             400,
-            `Dars tugagach bir soat qo'shimcha vaqtdan ${hours} soat ${minutes} daqiqa o'tdi. Yo'qlama qilish mumkin emas. Admin bilan bog'laning`
+            `Dars tugagach ikki soat qo'shimcha vaqtdan ${hours} soat ${minutes} daqiqa o'tdi. Yo'qlama qilish mumkin emas. Admin bilan bog'laning`
           )
         );
       }
@@ -1301,13 +1318,6 @@ async function makeAttendance(req: Request, res: Response, next: NextFunction) {
           },
           { transaction: t }
         );
-
-        if (status === "present") {
-          await foundStudent.update(
-            { came_in_school: now.toISO() },
-            { transaction: t }
-          );
-        }
       }
 
       await t.commit();

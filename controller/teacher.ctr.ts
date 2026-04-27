@@ -19,17 +19,42 @@ async function getTeachers(
   next: NextFunction
 ): Promise<Response | void> {
   try {
-    const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-    const teachers = await Teacher.findAll({ where: withBranchScope(req) });
-    if (teachers.length === 0) {
-      return next(
-        BaseError.BadRequest(
-          404,
-          i18next.t("TEACHERS_NOT_FOUND", { lng: lang })
-        )
-      );
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const search = ((req.query.search as string) || "").trim();
+    const subject = ((req.query.subject as string) || "").trim();
+    const salary = (req.query.salary as string) || "";
+    const offset = (page - 1) * limit;
+
+    const baseWhere: any = {};
+
+    if (search) {
+      baseWhere[Op.or] = [
+        { first_name: { [Op.iLike]: `%${search}%` } },
+        { last_name: { [Op.iLike]: `%${search}%` } },
+        { father_name: { [Op.iLike]: `%${search}%` } },
+      ];
     }
-    res.status(200).json(teachers);
+    if (subject) baseWhere.subject = subject;
+    if (salary === "paid") baseWhere.got_salary_for_this_month = true;
+    else if (salary === "unpaid") baseWhere.got_salary_for_this_month = false;
+
+    const whereClause = withBranchScope(req, baseWhere);
+
+    const { count, rows: teachers } = await Teacher.findAndCountAll({
+      where: whereClause,
+      limit,
+      offset,
+      order: [["created_at", "DESC"]],
+    });
+
+    res.status(200).json({
+      data: teachers,
+      total: count,
+      page,
+      limit,
+      totalPages: count > 0 ? Math.ceil(count / limit) : 1,
+    });
   } catch (error: any) {
     next(error);
   }
@@ -260,7 +285,7 @@ async function teacherLogin(
       username: teacher.dataValues.username,
     }
     const token = jwt.sign(payload, process.env.ACCESS_SECRET_KEY as string, {
-      expiresIn: "1h",
+      expiresIn: "1d",
     });
 
     const refreshtoken = jwt.sign(payload, process.env.REFRESH_SECRET_KEY as string, {
@@ -273,7 +298,7 @@ async function teacherLogin(
       httpOnly: true,
       secure: isSecure,
       sameSite: "lax",
-      maxAge: 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.cookie("refreshtoken", refreshtoken, {
