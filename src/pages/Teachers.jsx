@@ -35,9 +35,48 @@ function Teachers() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalTeachers, setTotalTeachers] = useState(0);
   const [teachersLoading, setTeachersLoading] = useState(false);
+  const [pageInput, setPageInput] = useState("");
   const TEACHERS_PER_PAGE = 10;
   const searchDebounceRef = useRef(null);
   const isFirstSearchRender = useRef(true);
+
+  const getVisiblePages = (current, total) => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = 1; i <= total; i++) {
+      if (
+        i === 1 ||
+        i === total ||
+        (i >= current - delta && i <= current + delta)
+      ) {
+        range.push(i);
+      }
+    }
+
+    let prev = null;
+    for (const page of range) {
+      if (prev !== null) {
+        if (page - prev === 2) {
+          rangeWithDots.push(prev + 1);
+        } else if (page - prev > 2) {
+          rangeWithDots.push("...");
+        }
+      }
+      rangeWithDots.push(page);
+      prev = page;
+    }
+
+    return rangeWithDots;
+  };
+
+  const handlePageInputSubmit = () => {
+    const page = Number(pageInput);
+    if (!page || page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    setPageInput("");
+  };
 
   const openDetailModal = async (teacher) => {
     setSelectedTeacher(teacher);
@@ -475,6 +514,15 @@ function Teachers() {
     setCurrentPage(1);
     fetchTeachersPage(1, searchTerm, subjectFilter, salaryFilter);
   }, [subjectFilter, salaryFilter]);
+
+  const isFirstPageRender = useRef(true);
+  useEffect(() => {
+    if (isFirstPageRender.current) {
+      isFirstPageRender.current = false;
+      return;
+    }
+    fetchTeachersPage(currentPage, searchTerm, subjectFilter, salaryFilter);
+  }, [currentPage]);
 
   useEffect(() => {
     if (success) {
@@ -1348,6 +1396,96 @@ function Teachers() {
             </table>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-8 border border-gray-200 bg-white px-4 py-4 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="text-center text-sm text-gray-600 lg:text-left">
+                Jami{" "}
+                <span className="font-semibold text-[#104292]">
+                  {totalTeachers}
+                </span>{" "}
+                nafar ustoz,
+                <span className="mx-1 font-semibold text-[#104292]">
+                  {currentPage}
+                </span>
+                / {totalPages} sahifa
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className={`border px-4 py-2 text-sm font-medium transition ${currentPage > 1
+                    ? "border-[#104292]/20 bg-white text-[#104292] hover:border-[#104292] hover:bg-[#104292] hover:text-white"
+                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                    }`}
+                >
+                  « Oldingi
+                </button>
+
+                {getVisiblePages(currentPage, totalPages).map((item, index) =>
+                  item === "..." ? (
+                    <span
+                      key={`dots-${index}`}
+                      className="flex h-10 min-w-[40px] items-center justify-center px-2 text-sm font-semibold text-gray-500"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setCurrentPage(item)}
+                      className={`h-10 min-w-[40px] border px-3 text-sm font-semibold transition ${currentPage === item
+                        ? "border-[#104292] bg-[#104292] text-white shadow-sm"
+                        : "border-gray-200 bg-white text-[#104292] hover:bg-[#104292]/10"
+                        }`}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className={`border px-4 py-2 text-sm font-medium transition ${currentPage < totalPages
+                    ? "border-[#104292]/20 bg-white text-[#104292] hover:border-[#104292] hover:bg-[#104292] hover:text-white"
+                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                    }`}
+                >
+                  Keyingi »
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-2 lg:justify-end">
+              <span className="text-sm text-gray-500">Sahifaga o‘tish:</span>
+
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handlePageInputSubmit();
+                  }
+                }}
+                placeholder="Masalan 12"
+                className="w-28 border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#104292] focus:ring-2 focus:ring-[#104292]/20"
+              />
+
+              <button
+                onClick={handlePageInputSubmit}
+                className="bg-[#104292] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0d3677]"
+              >
+                O‘tish
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

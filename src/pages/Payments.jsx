@@ -292,7 +292,7 @@ function Payments() {
       const paymentsUrl = `${API_URL}/get_payments?page=${paymentsPagination.page}&limit=${paymentsPagination.limit}&search=${encodeURIComponent(searchTerm)}&year=${selectedPaymentYear}&month=${monthFilter}`;
 
       const [groupsResponse, paymentsResponse] = await Promise.all([
-        fetch(`${API_URL}/get_groups`, {
+        fetch(`${API_URL}/get_groups?limit=1000`, {
           credentials: "include",
         }).catch(() => ({ ok: false })),
         fetch(paymentsUrl, {
