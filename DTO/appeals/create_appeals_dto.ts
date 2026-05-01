@@ -5,4 +5,4 @@ export interface ICreateAppealsDTO {
     is_seen: Boolean;
     is_answered: Boolean;
     answer?: string
-}
+} 
