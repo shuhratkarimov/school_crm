@@ -8,6 +8,7 @@ const resources = {
   uz: { translation: uz },
   en: { translation: en },
 };
+ 
 
 i18n
   .use(initReactI18next)
