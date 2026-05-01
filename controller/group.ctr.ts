@@ -828,7 +828,7 @@ async function getGroups(
 ): Promise<Response | void> {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit as string) || 10));
     const search = ((req.query.search as string) || "").trim();
     const offset = (page - 1) * limit;
 
