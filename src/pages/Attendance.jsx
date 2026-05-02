@@ -1004,34 +1004,34 @@ export default function Attendance() {
     <div className="min-h-screen">
       {/* Header */}
       <div
-        className="mb-2"
+        className="mb-2 px-2 sm:px-4"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 ml-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
             <div>
               <Calendar className="text-[#104292]" size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Guruhlar va davomat tizimi</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Guruhlar va davomat tizimi</h1>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3 px-2 sm:px-0">
         <div className="lg:col-span-1 lg:sticky lg:top-6 h-fit self-start">
           <div className="bg-white/80 backdrop-blur-sm shadow-xl p-6 max-h-[calc(100vh-48px)] overflow-y-auto border border-white/20">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-700 flex items-center gap-2">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-700 flex items-center gap-2">
                 <Users className="text-blue-600" size={20} />
                 Guruhlar
               </h2>
               <button
-                className="bg-[#104292] text-white px-4 py-2 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-[#104292] text-white px-3 sm:px-4 py-2 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg"
                 onClick={() => setAddModal(true)}
               >
                 <Plus size={18} />
-                Yangi guruh
+                <span className="hidden sm:inline">Yangi guruh</span>
               </button>
             </div>
 

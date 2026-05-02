@@ -269,18 +269,18 @@ function Dashboard() {
   const today = new Date();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex items-center gap-2 flex-wrap">
         <ChartLine size={24} color="#104292" />
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-base sm:text-2xl font-bold text-gray-800">
           {today.getDate().toString().padStart(2, "0")}-{monthsInUzbek[today.getMonth() + 1]}
           <span> holatiga raqamli statistika:</span>
         </h1>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-2">
-        <div className="bg-gradient-to-br from-blue-100 to-blue-50 shadow p-6 flex items-center justify-between border border-blue-300 hover:shadow-lg transition">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="bg-gradient-to-br from-blue-100 to-blue-50 shadow p-4 sm:p-6 flex items-center justify-between border border-blue-300 hover:shadow-lg transition rounded-lg">
           <div>
             <div className="text-3xl font-bold text-gray-800">{animatedStudents} nafar</div>
             <div className="text-sm text-gray-600 font-medium">Jami o'quvchilar</div>
@@ -357,8 +357,8 @@ function Dashboard() {
           label="O'qituvchilar"
           color="purple"
         />
-        <div className="bg-white shadow p-6 flex items-center border border-green-300 hover:shadow-lg transition">
-          <div className="w-20 h-20">
+        <div className="bg-white shadow p-4 sm:p-6 flex items-center border border-green-300 hover:shadow-lg transition rounded-lg">
+          <div className="w-20 h-20 flex-shrink-0">
             <CircularProgressbar
               value={animatedRoomPercent}
               text={`${animatedRoomPercent}%`}
@@ -413,7 +413,7 @@ function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="bg-white shadow p-6 flex items-center border border-purple-300">
+        <div className="bg-white shadow p-4 sm:p-6 flex items-center border border-purple-300 rounded-lg">
           <div className="w-20 h-20">
             <CircularProgressbar
               value={animatedWeekAttendance}
@@ -429,7 +429,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white shadow p-6 flex items-center border border-cyan-300">
+        <div className="bg-white shadow p-4 sm:p-6 flex items-center border border-cyan-300 rounded-lg">
           <div className="w-20 h-20">
             <CircularProgressbar
               value={animatedMonthAttendance}
@@ -446,17 +446,17 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white shadow p-6 border border-blue-400">
-        <h3 className="font-bold text-lg mb-2 text-gray-700">
+      <div className="bg-white shadow p-3 sm:p-6 border border-blue-400 rounded-lg">
+        <h3 className="font-bold text-base sm:text-lg mb-2 text-gray-700">
           Yillik tushumlar va xarajatlar
         </h3>
 
         {/* Bar Chart */}
-        <div className="p-1">
+        <div className="p-1 -mx-2 sm:mx-0">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
               data={combinedData}
-              margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
+              margin={{ top: 20, right: 10, bottom: 20, left: 10 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="monthName" />
@@ -478,11 +478,11 @@ function Dashboard() {
             Kunlik tushumlar (shu oy)
           </h3>
 
-          <div className="p-1">
+          <div className="p-1 -mx-2 sm:mx-0">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart
                 data={dailyPayments}
-                margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
+                margin={{ top: 20, right: 10, bottom: 20, left: 10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
@@ -509,9 +509,9 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white shadow p-6 border border-blue-400">
-          <h3 className="font-bold text-lg mb-4 text-black-700 text-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white shadow p-3 sm:p-6 border border-blue-400 rounded-lg">
+          <h3 className="font-bold text-base sm:text-lg mb-4 text-black-700 text-center">
             So'nggi qo'shilgan o'quvchilar
           </h3>
           <div className="overflow-x-auto">
@@ -554,8 +554,8 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white shadow p-6 border border-blue-400">
-          <h3 className="font-bold text-lg mb-4 text-black-700 text-center">So'nggi to'lovlar</h3>
+        <div className="bg-white shadow p-3 sm:p-6 border border-blue-400 rounded-lg">
+          <h3 className="font-bold text-base sm:text-lg mb-4 text-black-700 text-center">So'nggi to'lovlar</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-[#104292] text-white">
@@ -612,13 +612,13 @@ function Card({ icon, value, label, color }) {
   };
   return (
     <div
-      className={`bg-gradient-to-br ${colors[color]} shadow p-6 flex items-center justify-between border hover:shadow-lg transition`}
+      className={`bg-gradient-to-br ${colors[color]} shadow p-4 sm:p-6 flex items-center justify-between border hover:shadow-lg transition rounded-lg`}
     >
       <div>
-        <div className="text-3xl font-bold text-gray-800">{value}</div>
-        <div className="text-sm text-gray-600 font-medium">{label}</div>
+        <div className="text-2xl sm:text-3xl font-bold text-gray-800 break-words">{value}</div>
+        <div className="text-xs sm:text-sm text-gray-600 font-medium">{label}</div>
       </div>
-      {icon}
+      <div className="flex-shrink-0 ml-2">{icon}</div>
     </div>
   );
 }

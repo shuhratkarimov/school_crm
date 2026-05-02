@@ -173,27 +173,28 @@ export default function LinkGenerator() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 px-2 sm:px-4">
         <div className="mx-auto">
-          <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
+          <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <Link size={28} color="#104292" />
-              <h1 className="text-2xl font-bold text-gray-800">
+              <Link size={26} color="#104292" />
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-800">
                 Ro‘yxatdan o‘tish havolalari
               </h1>
             </div>
 
             <button
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 bg-[#104292] text-white px-4 py-2 hover:bg-[#104292]/90 transition"
+              className="inline-flex items-center gap-2 bg-[#104292] text-white px-3 sm:px-4 py-2 hover:bg-[#104292]/90 transition rounded-lg"
             >
               <Plus size={18} />
-              Yangi havola
+              <span className="hidden sm:inline">Yangi havola</span>
+              <span className="sm:hidden">Qo'shish</span>
             </button>
           </div>
 
-          <div className="bg-white shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Yaratilgan havolalar</h2>
+          <div className="bg-white shadow p-3 sm:p-6 rounded-lg">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4">Yaratilgan havolalar</h2>
 
             <div className="space-y-4">
               <AnimatePresence>
@@ -209,7 +210,7 @@ export default function LinkGenerator() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border border-gray-200 p-4 hover:shadow-md transition"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-gray-200 p-3 sm:p-4 hover:shadow-md transition rounded-lg"
                     >
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-800">{link.subject}</p>

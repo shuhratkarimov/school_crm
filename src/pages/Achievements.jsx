@@ -253,36 +253,37 @@ function Achievements() {
   if (loading) return <LottieLoading />;
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-screen px-2 sm:px-4">
       {/* Sarlavha va qo'shish tugmasi */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <div className="flex items-center gap-3">
           <div>
             <Trophy size={24} className="text-[#104292]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Yutuqlar</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Yutuqlar</h1>
           </div>
         </div>
 
         <button
-          className="flex items-center gap-2 bg-[#104292] hover:bg-blue-700 text-white px-4 py-3 transition-colors shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 bg-[#104292] hover:bg-blue-700 text-white px-3 sm:px-4 py-2 sm:py-3 transition-colors shadow-md hover:shadow-lg rounded-lg"
           onClick={() => setAddModal(true)}
         >
           <Plus size={20} />
-          Yutuq qo'shish
+          <span className="hidden sm:inline">Yutuq qo'shish</span>
+          <span className="sm:hidden">Qo'shish</span>
         </button>
       </div>
 
       <div className="mb-6 relative">
-        <div className="relative max-w-md">
+        <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
             placeholder="Yutuq yoki ism bo'yicha qidirish..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-lg"
           />
         </div>
       </div>
@@ -290,15 +291,15 @@ function Achievements() {
       {/* Tur selector */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Yutuq turi</label>
-        <div className="flex bg-gray-100 p-1 w-fit">
+        <div className="flex bg-gray-100 p-1 w-full sm:w-fit rounded-lg">
           <button
-            className={`px-4 py-2 transition-colors ${selectedType === "student" ? "bg-white shadow-sm" : "text-gray-500"}`}
+            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 transition-colors rounded-md text-sm sm:text-base ${selectedType === "student" ? "bg-white shadow-sm" : "text-gray-500"}`}
             onClick={() => setSelectedType("student")}
           >
             O'quvchilar yutuqlari
           </button>
           <button
-            className={`px-4 py-2 transition-colors ${selectedType === "teacher" ? "bg-white shadow-sm" : "text-gray-500"}`}
+            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 transition-colors rounded-md text-sm sm:text-base ${selectedType === "teacher" ? "bg-white shadow-sm" : "text-gray-500"}`}
             onClick={() => setSelectedType("teacher")}
           >
             Ustozlar yutuqlari
@@ -307,7 +308,7 @@ function Achievements() {
       </div>
 
       {/* Yutuqlar ro'yxati */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {sortedEntities.filter(({ entity }) => {
           // Ensure we're filtering by the correct type
           const isStudent = students.some(s => s.id === entity.id);

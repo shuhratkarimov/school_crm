@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LogOut, Settings, X, KeyRound, User, Mail, Eye, EyeOff, Edit, Save } from "lucide-react";
+import { LogOut, Settings, X, KeyRound, User, Mail, Eye, EyeOff, Edit, Save, Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import API_URL from "../conf/api";
+import { useAppContext } from "../context/AppContext";
 
 function Header({ setIsAuthenticated }) {
+  const { setMobileSidebarOpen } = useAppContext();
   const { t, i18n } = useTranslation();
   const [theme, setTheme] = useState("light");
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -136,40 +138,43 @@ function Header({ setIsAuthenticated }) {
   };
 
   return (
-    <div className="header flex justify-between items-center">
-      {/* Logo va sarlavha */}
-      <div className="flex items-center h-[1rem]">
-        <div className="relative w-48 h-48 mr-4 overflow-hidden">
+    <div className="header flex justify-between items-center gap-3 flex-wrap rounded-xl">
+      {/* Mobile hamburger + Logo */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <button
+          className="md:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-700"
+          onClick={() => setMobileSidebarOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu size={22} />
+        </button>
+        <div className="relative w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 flex-shrink-0 overflow-hidden">
           <img
             src="/logo.png"
             alt="logo"
-            className="absolute inset-0 w-48 h-48 object-contain"
+            className="absolute inset-0 w-full h-full object-contain"
           />
         </div>
-        <div>
-          <h1 className="text-[1.50rem] text-gray-800 font-bold">
-            "Intellectual Progress Star" o'quv markazi CRM tizimi
-          </h1>
-        </div>
+        <h1 className="text-base sm:text-lg lg:text-xl text-gray-800 font-bold truncate">
+          <span className="hidden sm:inline">"Intellectual Progress Star" o'quv markazi CRM tizimi</span>
+          <span className="sm:hidden">Progress CRM</span>
+        </h1>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Settings button */}
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
         <button
-          className="btn flex items-center gap-2 bg-[#104292] hover:bg-[#104292]/80 transition text-white px-4 py-2 shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 bg-[#104292] hover:bg-[#104292]/80 transition text-white px-3 sm:px-4 py-2 shadow-md hover:shadow-lg rounded-lg"
           onClick={() => setShowProfileModal(true)}
         >
           <Settings size={18} />
-          Sozlamalar
+          <span className="hidden sm:inline">Sozlamalar</span>
         </button>
-
-        {/* Logout button */}
         <button
-          className="btn flex items-center gap-2 bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 transition text-white px-3 sm:px-4 py-2 shadow-md hover:shadow-lg rounded-lg"
           onClick={handleLogout}
         >
-          <LogOut size={24} />
-          Chiqish
+          <LogOut size={20} />
+          <span className="hidden sm:inline">Chiqish</span>
         </button>
       </div>
 

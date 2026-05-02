@@ -175,27 +175,28 @@ export default function Notes() {
 
   return (
     <>
-      <div className="bg-gray-50 min-h-screen pb-6">
-        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="bg-gray-50 min-h-screen pb-6 px-2 sm:px-4">
+        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 flex-wrap">
           <div className="flex items-center gap-2">
             <Book size={24} color="#104292" />
-            <h1 className="text-2xl font-bold">Qaydlar</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Qaydlar</h1>
           </div>
 
           <button
             onClick={openAddModal}
-            className="inline-flex items-center gap-2 bg-[#104292] text-white px-4 py-2 hover:bg-[#104292]/90 transition"
+            className="inline-flex items-center gap-2 bg-[#104292] text-white px-3 sm:px-4 py-2 hover:bg-[#104292]/90 transition rounded-lg"
           >
             <Plus size={18} />
-            Yangi qayd
+            <span className="hidden sm:inline">Yangi qayd</span>
+            <span className="sm:hidden">Qo'shish</span>
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
           <input
             type="text"
             placeholder="Qidirish..."
-            className="border px-3 py-2 flex-1 rounded-md outline-none focus:ring-2 focus:ring-[#104292]"
+            className="border px-3 py-2 flex-1 rounded-lg outline-none focus:ring-2 focus:ring-[#104292]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -206,12 +207,12 @@ export default function Notes() {
             endDate={endDate}
             onChange={(update) => setDateRange(update)}
             isClearable={true}
-            className="border px-3 py-2 w-full sm:w-64 rounded-md outline-none focus:ring-2 focus:ring-[#104292]"
+            className="border px-3 py-2 w-full sm:w-64 rounded-lg outline-none focus:ring-2 focus:ring-[#104292]"
             placeholderText="Sana oralig'i"
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredRecords.length > 0 ? (
             filteredRecords.map((record) => (
               <div

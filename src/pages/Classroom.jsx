@@ -383,14 +383,14 @@ const RoomManagement = () => {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 px-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-6">
         <div className="flex items-center gap-2">
           <School size={24} color="#104292" />
-          <h1 className="text-2xl font-bold">Xonalar va darslar jadvali</h1>
+          <h1 className="text-lg sm:text-2xl font-bold">Xonalar va darslar jadvali</h1>
         </div>
 
         <button
-          className="flex items-center gap-2 bg-[#104292] px-4 py-2 text-white transition hover:bg-[#0d3677]"
+          className="flex items-center gap-2 bg-[#104292] px-3 sm:px-4 py-2 text-white transition hover:bg-[#0d3677] rounded-lg"
           onClick={() => {
             setSelectedRoom(null);
             setFormData({ name: "", capacity: "" });
@@ -399,7 +399,8 @@ const RoomManagement = () => {
           }}
         >
           <Plus size={18} />
-          Yangi xona qo'shish
+          <span className="hidden sm:inline">Yangi xona qo'shish</span>
+          <span className="sm:hidden">Qo'shish</span>
         </button>
       </div>
       {/* Xona qo‘shish formasi */}

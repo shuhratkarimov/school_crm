@@ -10,7 +10,7 @@ import { useAppContext } from "../context/AppContext";
 
 const PaymentSearchInput = ({ value, onChange, onSearch }) => {
   return (
-    <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
+    <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white w-full sm:min-w-[280px] sm:w-auto rounded-lg">
       <input
         type="text"
         className="w-full outline-none text-sm"
@@ -989,15 +989,15 @@ function Payments() {
 
   return (
     <div>
-      <div className="flex justify-between items-center gap-2 pl-6 pr-6 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-6 mb-6">
         <div className="flex items-center gap-2">
           <BookOpen size={24} color="#104292" />
-          <h1 className="text-2xl font-bold">To'lovlar</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">To'lovlar</h1>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button
             onClick={() => setShowUnpaid(!showUnpaid)}
-            className={`px-5 py-2.5 font-medium text-white shadow-sm transition-all duration-200 relative
+            className={`px-4 sm:px-5 py-2 sm:py-2.5 font-medium text-white shadow-sm transition-all duration-200 relative rounded-lg
       ${showUnpaid
                 ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
                 : 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700'}`}
@@ -1017,10 +1017,11 @@ function Payments() {
               }));
               setAddModal(true);
             }}
-            className="px-5 py-2.5 bg-[#104292] hover:bg-[#104292]/80 active:bg-[#104292]/80 text-white font-medium shadow-sm transition-all duration-200 flex items-center gap-2"
+            className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#104292] hover:bg-[#104292]/80 active:bg-[#104292]/80 text-white font-medium shadow-sm transition-all duration-200 flex items-center gap-2 rounded-lg"
           >
             <Plus size={20} />
-            To'lov qo'shish
+            <span className="hidden sm:inline">To'lov qo'shish</span>
+            <span className="sm:hidden">Qo'shish</span>
           </button>
         </div>
       </div>
@@ -1586,8 +1587,7 @@ function Payments() {
                   </label>
                   <input
                     type="text"
-                    className="input"
-                    style={{ width: "300px" }}
+                    className="input w-full max-w-[300px]"
                     placeholder="O'quvchi ismini kiriting..."
                     value={studentSearch}
                     onChange={(e) => setStudentSearch(e.target.value)}
@@ -1951,7 +1951,7 @@ function Payments() {
             <select
               value={selectedPaymentYear}
               onChange={(e) => setSelectedPaymentYear(e.target.value)}
-              className="min-w-[150px] border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:border-[#104292]"
+              className="w-full sm:min-w-[150px] sm:w-auto border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:border-[#104292] rounded-lg"
             >
               <option value="all">Barcha yillar</option>
               {years.map((y) => (
@@ -1965,7 +1965,7 @@ function Payments() {
             <select
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
-              className="min-w-[150px] border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:border-[#104292]"
+              className="w-full sm:min-w-[150px] sm:w-auto border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:border-[#104292] rounded-lg"
             >
               <option value="all">Barcha oylar</option>
               {allMonths.map((month) => (

@@ -223,23 +223,23 @@
     }
 
     return (
-      <div>
+      <div className="px-2 sm:px-0">
         <div className="flex items-center gap-2">
           <MessageSquare size={24} color="#104292" />
-          <h1 className="text-2xl font-bold">Murojaatlar</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Murojaatlar</h1>
         </div>
         {/* Filtrlash paneli */}
-        <div style={{ marginBottom: "20px", display: "flex", gap: "20px" }}>
+        <div className="mb-5 mt-5 flex flex-wrap gap-3">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ padding: "8px", borderRadius: "4px", border: "1px solid blue", marginLeft: "20px", marginTop: "20px" }}
+            className="px-3 py-2 border border-blue-500 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ padding: "8px", borderRadius: "4px", cursor: "pointer", border: "1px solid blue", marginTop: "20px" }}
+            className="px-3 py-2 border border-blue-500 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             <option value="all">Barcha murojaatlar</option>
             <option value="answered">Javob berilganlar</option>
@@ -258,7 +258,8 @@
               Bugun murojaatlar yo‘q
             </div>
           ) : (
-            <table className="table">
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <table className="table min-w-[700px]">
               <thead>
                 <tr>
                   <th>№</th>
@@ -302,6 +303,7 @@
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 
@@ -316,7 +318,8 @@
               Kecha va undan oldin murojaat qilinmagan...
             </div>
           ) : (
-            <table className="table">
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <table className="table min-w-[700px]">
               <thead>
                 <tr>
                   <th>№</th>
@@ -360,6 +363,7 @@
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

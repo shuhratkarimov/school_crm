@@ -6,9 +6,26 @@
   body {
     @apply antialiased;
   }
+
+  /* Global default border-radius — kvadrat elementlarni yumshatish */
+  button:not(.no-radius):not([class*="rounded-"]):not([class*="rounded"]),
+  input:not(.no-radius):not([class*="rounded-"]):not([class*="rounded"]):not([type="radio"]):not([type="checkbox"]),
+  select:not(.no-radius):not([class*="rounded-"]):not([class*="rounded"]),
+  textarea:not(.no-radius):not([class*="rounded-"]):not([class*="rounded"]) {
+    border-radius: 0.5rem;
+  }
+
+  table:not(.no-radius) {
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
 }
 
-@layer utilities {}
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
 
 /* Smooth transitions */
 * {
@@ -571,24 +588,60 @@ body.dark .sidebar-item.active {
   box-shadow: 1px 1px 15px 5px rgba(253, 250, 250, 0.3);
 }
 
-.main-content {
-  margin-left: 250px;
-  padding: 20px;
-  transition: margin-left 0.3s ease;
-  flex-grow: 1;
-  /* Sidebar yonida qolgan joyni egallaydi */
-  background: #f9fafb;
-  /* fon rangi */
-  min-width: 0;
+:root {
+  --sidebar-width: 256px;
 }
 
-.sidebar.collapsed+.main-content {
-  margin-left: 70px;
+.main-content {
+  margin-left: var(--sidebar-width);
+  padding: 20px;
+  transition: margin-left 0.3s ease, width 0.3s ease;
+  flex-grow: 1;
+  background: #f9fafb;
+  min-width: 0;
+  width: calc(100% - var(--sidebar-width));
+  overflow-x: hidden;
+}
+
+body.dark .main-content {
+  background: #0a0a0a;
 }
 
 .app-layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Mobile: sidebar off-canvas, main-content full width */
+@media (max-width: 767px) {
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 12px;
+  }
+
+  .header {
+    padding: 12px 16px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .main-content {
+    padding: 16px;
+  }
+}
+
+/* Cards va modal'larga uniform border-radius */
+.card,
+.modal-content,
+.stat-card {
+  border-radius: 1rem;
 }
 
 .header {
@@ -769,4 +822,418 @@ body.dark .stat-label {
   justify-content: center;
   width: 32px;
   height: 32px;
+}
+
+/* ============================================================
+   ADMIN PAGES — DARK MODE OVERRIDES
+   Scoped to `.app-layout` so teacher/director/superadmin
+   layouts (which have their own theming) are not affected.
+   ============================================================ */
+
+/* Backgrounds — neutral surfaces */
+body.dark .app-layout .main-content .bg-white,
+body.dark .app-layout .main-content .bg-gray-50,
+body.dark .app-layout .main-content .bg-gray-100,
+body.dark .app-layout .main-content .bg-slate-50,
+body.dark .app-layout .main-content .bg-slate-100,
+body.dark .app-layout .main-content .bg-zinc-50,
+body.dark .app-layout .main-content .bg-zinc-100,
+body.dark .app-layout .main-content .bg-neutral-50,
+body.dark .app-layout .main-content .bg-neutral-100 {
+  background-color: #111111;
+}
+
+body.dark .app-layout .main-content .bg-gray-200,
+body.dark .app-layout .main-content .bg-slate-200 {
+  background-color: #1f1f1f;
+}
+
+body.dark .app-layout .main-content .bg-gray-300,
+body.dark .app-layout .main-content .bg-slate-300 {
+  background-color: #2a2a2a;
+}
+
+/* Pastel tinted backgrounds — keep slight tint, but darker */
+body.dark .app-layout .main-content .bg-blue-50,
+body.dark .app-layout .main-content .bg-blue-100 {
+  background-color: #0d2748;
+}
+body.dark .app-layout .main-content .bg-indigo-50,
+body.dark .app-layout .main-content .bg-indigo-100 {
+  background-color: #1e1b4b;
+}
+body.dark .app-layout .main-content .bg-green-50,
+body.dark .app-layout .main-content .bg-green-100,
+body.dark .app-layout .main-content .bg-emerald-50,
+body.dark .app-layout .main-content .bg-emerald-100 {
+  background-color: #052e1a;
+}
+body.dark .app-layout .main-content .bg-red-50,
+body.dark .app-layout .main-content .bg-red-100,
+body.dark .app-layout .main-content .bg-rose-50,
+body.dark .app-layout .main-content .bg-rose-100 {
+  background-color: #3b0d0d;
+}
+body.dark .app-layout .main-content .bg-yellow-50,
+body.dark .app-layout .main-content .bg-yellow-100,
+body.dark .app-layout .main-content .bg-amber-50,
+body.dark .app-layout .main-content .bg-amber-100 {
+  background-color: #3a2a05;
+}
+body.dark .app-layout .main-content .bg-purple-50,
+body.dark .app-layout .main-content .bg-purple-100,
+body.dark .app-layout .main-content .bg-violet-50,
+body.dark .app-layout .main-content .bg-violet-100 {
+  background-color: #2a1255;
+}
+body.dark .app-layout .main-content .bg-pink-50,
+body.dark .app-layout .main-content .bg-pink-100,
+body.dark .app-layout .main-content .bg-fuchsia-50,
+body.dark .app-layout .main-content .bg-fuchsia-100 {
+  background-color: #3b0a26;
+}
+body.dark .app-layout .main-content .bg-orange-50,
+body.dark .app-layout .main-content .bg-orange-100 {
+  background-color: #3b1a05;
+}
+body.dark .app-layout .main-content .bg-cyan-50,
+body.dark .app-layout .main-content .bg-cyan-100,
+body.dark .app-layout .main-content .bg-sky-50,
+body.dark .app-layout .main-content .bg-sky-100,
+body.dark .app-layout .main-content .bg-teal-50,
+body.dark .app-layout .main-content .bg-teal-100 {
+  background-color: #08384a;
+}
+body.dark .app-layout .main-content .bg-lime-50,
+body.dark .app-layout .main-content .bg-lime-100 {
+  background-color: #1a2a05;
+}
+
+/* Gradient cards used on Dashboard — replace gradient with flat dark surface */
+body.dark .app-layout .main-content [class*="from-blue-50"],
+body.dark .app-layout .main-content [class*="from-blue-100"],
+body.dark .app-layout .main-content [class*="from-indigo-50"],
+body.dark .app-layout .main-content [class*="from-indigo-100"],
+body.dark .app-layout .main-content [class*="from-green-50"],
+body.dark .app-layout .main-content [class*="from-green-100"],
+body.dark .app-layout .main-content [class*="from-emerald-50"],
+body.dark .app-layout .main-content [class*="from-emerald-100"],
+body.dark .app-layout .main-content [class*="from-purple-50"],
+body.dark .app-layout .main-content [class*="from-purple-100"],
+body.dark .app-layout .main-content [class*="from-violet-50"],
+body.dark .app-layout .main-content [class*="from-violet-100"],
+body.dark .app-layout .main-content [class*="from-pink-50"],
+body.dark .app-layout .main-content [class*="from-pink-100"],
+body.dark .app-layout .main-content [class*="from-yellow-50"],
+body.dark .app-layout .main-content [class*="from-yellow-100"],
+body.dark .app-layout .main-content [class*="from-amber-50"],
+body.dark .app-layout .main-content [class*="from-amber-100"],
+body.dark .app-layout .main-content [class*="from-red-50"],
+body.dark .app-layout .main-content [class*="from-red-100"],
+body.dark .app-layout .main-content [class*="from-rose-50"],
+body.dark .app-layout .main-content [class*="from-rose-100"],
+body.dark .app-layout .main-content [class*="from-orange-50"],
+body.dark .app-layout .main-content [class*="from-orange-100"],
+body.dark .app-layout .main-content [class*="from-cyan-50"],
+body.dark .app-layout .main-content [class*="from-cyan-100"],
+body.dark .app-layout .main-content [class*="from-sky-50"],
+body.dark .app-layout .main-content [class*="from-sky-100"],
+body.dark .app-layout .main-content [class*="from-teal-50"],
+body.dark .app-layout .main-content [class*="from-teal-100"] {
+  background-image: none;
+  background-color: #111111;
+}
+
+/* Text colors — gray scale */
+body.dark .app-layout .main-content .text-gray-900,
+body.dark .app-layout .main-content .text-gray-800,
+body.dark .app-layout .main-content .text-slate-900,
+body.dark .app-layout .main-content .text-slate-800,
+body.dark .app-layout .main-content .text-zinc-900,
+body.dark .app-layout .main-content .text-zinc-800,
+body.dark .app-layout .main-content .text-neutral-900,
+body.dark .app-layout .main-content .text-neutral-800,
+body.dark .app-layout .main-content .text-black,
+body.dark .app-layout .main-content .text-black-700 {
+  color: #f3f4f6;
+}
+
+body.dark .app-layout .main-content .text-gray-700,
+body.dark .app-layout .main-content .text-gray-600,
+body.dark .app-layout .main-content .text-slate-700,
+body.dark .app-layout .main-content .text-slate-600,
+body.dark .app-layout .main-content .text-zinc-700,
+body.dark .app-layout .main-content .text-zinc-600,
+body.dark .app-layout .main-content .text-neutral-700,
+body.dark .app-layout .main-content .text-neutral-600 {
+  color: #d1d5db;
+}
+
+body.dark .app-layout .main-content .text-gray-500,
+body.dark .app-layout .main-content .text-gray-400,
+body.dark .app-layout .main-content .text-slate-500,
+body.dark .app-layout .main-content .text-slate-400,
+body.dark .app-layout .main-content .text-zinc-500,
+body.dark .app-layout .main-content .text-zinc-400,
+body.dark .app-layout .main-content .text-neutral-500,
+body.dark .app-layout .main-content .text-neutral-400 {
+  color: #9ca3af;
+}
+
+/* Borders */
+body.dark .app-layout .main-content .border,
+body.dark .app-layout .main-content .border-t,
+body.dark .app-layout .main-content .border-b,
+body.dark .app-layout .main-content .border-l,
+body.dark .app-layout .main-content .border-r,
+body.dark .app-layout .main-content .border-x,
+body.dark .app-layout .main-content .border-y {
+  border-color: #2d2d2d;
+}
+
+body.dark .app-layout .main-content .border-gray-100,
+body.dark .app-layout .main-content .border-gray-200,
+body.dark .app-layout .main-content .border-gray-300,
+body.dark .app-layout .main-content .border-slate-100,
+body.dark .app-layout .main-content .border-slate-200,
+body.dark .app-layout .main-content .border-slate-300,
+body.dark .app-layout .main-content .border-zinc-200,
+body.dark .app-layout .main-content .border-zinc-300,
+body.dark .app-layout .main-content .border-neutral-200,
+body.dark .app-layout .main-content .border-neutral-300 {
+  border-color: #2d2d2d;
+}
+
+/* Coloured borders softened in dark mode so cards still read */
+body.dark .app-layout .main-content .border-blue-100,
+body.dark .app-layout .main-content .border-blue-200,
+body.dark .app-layout .main-content .border-blue-300,
+body.dark .app-layout .main-content .border-blue-400 {
+  border-color: #1e3a8a;
+}
+body.dark .app-layout .main-content .border-indigo-100,
+body.dark .app-layout .main-content .border-indigo-200,
+body.dark .app-layout .main-content .border-indigo-300,
+body.dark .app-layout .main-content .border-indigo-400 {
+  border-color: #312e81;
+}
+body.dark .app-layout .main-content .border-green-100,
+body.dark .app-layout .main-content .border-green-200,
+body.dark .app-layout .main-content .border-green-300,
+body.dark .app-layout .main-content .border-green-400,
+body.dark .app-layout .main-content .border-emerald-100,
+body.dark .app-layout .main-content .border-emerald-200,
+body.dark .app-layout .main-content .border-emerald-300 {
+  border-color: #065f46;
+}
+body.dark .app-layout .main-content .border-red-100,
+body.dark .app-layout .main-content .border-red-200,
+body.dark .app-layout .main-content .border-red-300,
+body.dark .app-layout .main-content .border-red-400 {
+  border-color: #7f1d1d;
+}
+body.dark .app-layout .main-content .border-yellow-100,
+body.dark .app-layout .main-content .border-yellow-200,
+body.dark .app-layout .main-content .border-yellow-300,
+body.dark .app-layout .main-content .border-yellow-400,
+body.dark .app-layout .main-content .border-amber-100,
+body.dark .app-layout .main-content .border-amber-200,
+body.dark .app-layout .main-content .border-amber-300 {
+  border-color: #78350f;
+}
+body.dark .app-layout .main-content .border-purple-100,
+body.dark .app-layout .main-content .border-purple-200,
+body.dark .app-layout .main-content .border-purple-300,
+body.dark .app-layout .main-content .border-violet-100,
+body.dark .app-layout .main-content .border-violet-200,
+body.dark .app-layout .main-content .border-violet-300 {
+  border-color: #4c1d95;
+}
+body.dark .app-layout .main-content .border-cyan-100,
+body.dark .app-layout .main-content .border-cyan-200,
+body.dark .app-layout .main-content .border-cyan-300,
+body.dark .app-layout .main-content .border-sky-200,
+body.dark .app-layout .main-content .border-sky-300 {
+  border-color: #155e75;
+}
+
+/* Dividers (used in tables) */
+body.dark .app-layout .main-content .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+body.dark .app-layout .main-content .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+body.dark .app-layout .main-content .divide-gray-300 > :not([hidden]) ~ :not([hidden]),
+body.dark .app-layout .main-content .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+body.dark .app-layout .main-content .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #2d2d2d;
+}
+
+/* Hover states */
+body.dark .app-layout .main-content .hover\:bg-gray-50:hover,
+body.dark .app-layout .main-content .hover\:bg-gray-100:hover,
+body.dark .app-layout .main-content .hover\:bg-slate-50:hover,
+body.dark .app-layout .main-content .hover\:bg-slate-100:hover,
+body.dark .app-layout .main-content .hover\:bg-zinc-100:hover,
+body.dark .app-layout .main-content .hover\:bg-neutral-100:hover {
+  background-color: #1f1f1f;
+}
+
+body.dark .app-layout .main-content .hover\:bg-gray-200:hover,
+body.dark .app-layout .main-content .hover\:bg-slate-200:hover {
+  background-color: #2a2a2a;
+}
+
+body.dark .app-layout .main-content .hover\:text-gray-800:hover,
+body.dark .app-layout .main-content .hover\:text-gray-900:hover {
+  color: #f3f4f6;
+}
+
+body.dark .app-layout .main-content .hover\:text-gray-700:hover {
+  color: #e5e7eb;
+}
+
+/* Tables — most admin pages use raw <table> with bg-white headers/bodies */
+body.dark .app-layout .main-content table tbody.bg-white,
+body.dark .app-layout .main-content table thead.bg-white {
+  background-color: #111111;
+}
+
+body.dark .app-layout .main-content table tr.hover\:bg-gray-50:hover,
+body.dark .app-layout .main-content table tr.hover\:bg-gray-100:hover {
+  background-color: #1a1a1a;
+}
+
+/* Plain <table> elements without explicit dark styling — keep readable */
+body.dark .app-layout .main-content table {
+  color: #e5e7eb;
+}
+
+/* Inputs / selects / textareas with hardcoded white background */
+body.dark .app-layout .main-content input.bg-white,
+body.dark .app-layout .main-content select.bg-white,
+body.dark .app-layout .main-content textarea.bg-white,
+body.dark .app-layout .main-content input[type="text"]:not([class*="bg-"]),
+body.dark .app-layout .main-content input[type="number"]:not([class*="bg-"]),
+body.dark .app-layout .main-content input[type="email"]:not([class*="bg-"]),
+body.dark .app-layout .main-content input[type="password"]:not([class*="bg-"]),
+body.dark .app-layout .main-content input[type="search"]:not([class*="bg-"]),
+body.dark .app-layout .main-content input[type="date"]:not([class*="bg-"]),
+body.dark .app-layout .main-content input[type="tel"]:not([class*="bg-"]),
+body.dark .app-layout .main-content select:not([class*="bg-"]),
+body.dark .app-layout .main-content textarea:not([class*="bg-"]) {
+  background-color: #0a0a0a;
+  color: #e5e7eb;
+}
+
+body.dark .app-layout .main-content input::placeholder,
+body.dark .app-layout .main-content textarea::placeholder {
+  color: #6b7280;
+}
+
+/* Header search container: bg-white wrapper with input inside */
+body.dark .app-layout .main-content .border-gray-300 input,
+body.dark .app-layout .main-content .border-gray-200 input {
+  background-color: transparent;
+  color: #e5e7eb;
+}
+
+/* Modal overlays — Header profile/password modals use absolute positioning
+   with bg-white inner panels that need dark conversion */
+body.dark .app-layout .fixed.inset-0 .bg-white {
+  background-color: #1a1a1a;
+  color: #e5e7eb;
+}
+body.dark .app-layout .fixed.inset-0 .bg-gray-100,
+body.dark .app-layout .fixed.inset-0 .bg-gray-50 {
+  background-color: #262626;
+}
+body.dark .app-layout .fixed.inset-0 .text-gray-800,
+body.dark .app-layout .fixed.inset-0 .text-gray-900 {
+  color: #f3f4f6;
+}
+body.dark .app-layout .fixed.inset-0 .text-gray-700,
+body.dark .app-layout .fixed.inset-0 .text-gray-600 {
+  color: #d1d5db;
+}
+body.dark .app-layout .fixed.inset-0 .text-gray-500,
+body.dark .app-layout .fixed.inset-0 .text-gray-400 {
+  color: #9ca3af;
+}
+body.dark .app-layout .fixed.inset-0 .border-gray-200,
+body.dark .app-layout .fixed.inset-0 .border-gray-300 {
+  border-color: #404040;
+}
+body.dark .app-layout .fixed.inset-0 input,
+body.dark .app-layout .fixed.inset-0 select,
+body.dark .app-layout .fixed.inset-0 textarea {
+  background-color: #0a0a0a;
+  color: #e5e7eb;
+}
+body.dark .app-layout .fixed.inset-0 .hover\:bg-gray-200:hover,
+body.dark .app-layout .fixed.inset-0 .hover\:bg-gray-100:hover {
+  background-color: #2a2a2a;
+}
+
+/* Header itself uses bg-slate-100 hover inside its own classes */
+body.dark .app-layout .main-content .header .hover\:bg-slate-100:hover {
+  background-color: #1f1f1f;
+}
+body.dark .app-layout .main-content .header .text-slate-700,
+body.dark .app-layout .main-content .header .text-gray-800 {
+  color: #e5e7eb;
+}
+
+/* Recharts SVG text — dashboard charts use default dark text */
+body.dark .app-layout .main-content .recharts-wrapper text,
+body.dark .app-layout .main-content .recharts-cartesian-axis-tick-value,
+body.dark .app-layout .main-content .recharts-legend-item-text {
+  fill: #d1d5db;
+}
+body.dark .app-layout .main-content .recharts-cartesian-grid line {
+  stroke: #2d2d2d;
+}
+body.dark .app-layout .main-content .recharts-default-tooltip {
+  background-color: #1a1a1a !important;
+  border-color: #2d2d2d !important;
+  color: #e5e7eb !important;
+}
+body.dark .app-layout .main-content .recharts-tooltip-label,
+body.dark .app-layout .main-content .recharts-tooltip-item {
+  color: #e5e7eb !important;
+}
+
+/* react-datepicker popup */
+body.dark .app-layout .react-datepicker {
+  background-color: #1a1a1a;
+  border-color: #2d2d2d;
+  color: #e5e7eb;
+}
+body.dark .app-layout .react-datepicker__header {
+  background-color: #111111;
+  border-bottom-color: #2d2d2d;
+}
+body.dark .app-layout .react-datepicker__current-month,
+body.dark .app-layout .react-datepicker__day-name,
+body.dark .app-layout .react-datepicker__day {
+  color: #e5e7eb;
+}
+body.dark .app-layout .react-datepicker__day:hover {
+  background-color: #2a2a2a;
+}
+body.dark .app-layout .react-datepicker__day--disabled {
+  color: #4b5563;
+}
+
+/* Shadows — soften on dark backgrounds so cards remain visible */
+body.dark .app-layout .main-content .shadow,
+body.dark .app-layout .main-content .shadow-sm,
+body.dark .app-layout .main-content .shadow-md,
+body.dark .app-layout .main-content .shadow-lg,
+body.dark .app-layout .main-content .shadow-xl,
+body.dark .app-layout .main-content .shadow-2xl {
+  box-shadow: 0 1px 3px rgba(255, 255, 255, 0.06),
+              0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Tailwind .ring-* used for focus — keep visible on dark */
+body.dark .app-layout .main-content .focus\:ring-blue-500:focus {
+  --tw-ring-color: rgba(59, 130, 246, 0.5);
 }

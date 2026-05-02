@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Pen, Users, X, Search, Plus, CreditCard, AlertCircle } from "lucide-react";
+import { Trash2, Pen, Users, X, Search, Plus, CreditCard, AlertCircle, LogOut } from "lucide-react";
 import LottieLoading from "../components/Loading";
 import { DatePicker } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -27,7 +27,7 @@ import API_URL from "../conf/api";
 
 const StudentSearchInput = ({ value, onChange, onSearch }) => {
   return (
-    <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
+    <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white w-full sm:min-w-[280px] sm:w-auto rounded-lg">
       <input
         type="text"
         className="w-full outline-none text-sm"
@@ -69,6 +69,16 @@ function Students() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [addModal, setAddModal] = useState(false);
+  const todayLocalISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const [markLeftModal, setMarkLeftModal] = useState({
+    open: false,
+    id: null,
+    name: "",
+    date: todayLocalISO(),
+  });
   const [monthFilter, setMonthFilter] = useState(getCurrentMonth());
   const [yearFilter, setYearFilter] = useState(getCurrentYear());
   const [pagination, setPagination] = useState({
@@ -315,6 +325,40 @@ function Students() {
     }
   };
 
+  const markStudentAsLeft = async (id, leftDate) => {
+    try {
+      const response = await fetch(`${API_URL}/mark_student_left/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ left_school: leftDate }),
+      });
+      if (!response.ok) throw new Error("Belgilashda xatolik");
+      await fetchStudents(currentPage, debouncedSearch, paymentFilter, monthFilter, yearFilter);
+      toast.success("O'quvchi 'ketgan' deb belgilandi va alohida ro'yxatga ko'chirildi");
+      setSelectedStudent(null);
+    } catch (err) {
+      toast.error("Belgilashda xatolik yuz berdi");
+    }
+  };
+
+  const openMarkLeftModal = (id, name) => {
+    setMarkLeftModal({ open: true, id, name, date: todayLocalISO() });
+  };
+
+  const closeMarkLeftModal = () => {
+    setMarkLeftModal({ open: false, id: null, name: "", date: todayLocalISO() });
+  };
+
+  const confirmMarkLeft = async () => {
+    if (!markLeftModal.id || !markLeftModal.date) {
+      toast.error("Iltimos, ketish sanasini kiriting");
+      return;
+    }
+    await markStudentAsLeft(markLeftModal.id, markLeftModal.date);
+    closeMarkLeftModal();
+  };
+
   const deleteStudent = async (id) => {
     try {
       const response = await fetch(`${API_URL}/delete_student/${id}`, {
@@ -554,21 +598,19 @@ function Students() {
 
   return (
     <div>
-      <div className="flex justify-between gap-2 pl-6 pr-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-6 mb-4">
         <div className="flex items-center gap-2">
           <Users size={24} color="#104292" />
-          <span className="text-2xl font-bold">O'quvchilar</span>
+          <span className="text-xl sm:text-2xl font-bold">O'quvchilar</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <button
-            className="btn btn-primary"
-            onClick={() => setAddModal(true)}
-            style={{ display: "flex", alignItems: "center", gap: "8px" }}
-          >
-            <Plus size={20} />
-            Yangi o'quvchi qo'shish
-          </button>
-        </div>
+        <button
+          className="btn btn-primary flex items-center gap-2 rounded-lg px-4 py-2"
+          onClick={() => setAddModal(true)}
+        >
+          <Plus size={20} />
+          <span className="hidden sm:inline">Yangi o'quvchi qo'shish</span>
+          <span className="sm:hidden">Qo'shish</span>
+        </button>
       </div>
 
 
@@ -804,30 +846,20 @@ function Students() {
       )}
 
       <div className="card">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px",
-            gap: "20px",
-          }}
-        >
-          <h3 style={{ fontWeight: "bold", fontSize: "1.2rem" }}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+          <h3 className="font-bold text-lg sm:text-xl">
             Bizning o'quvchilar ({pagination.totalItems} nafar)
           </h3>
-          <div style={{ display: "flex", gap: "10px" }}>
-
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <StudentSearchInput
               value={studentSearch}
               onChange={setStudentSearch}
               onSearch={() => fetchStudents(currentPage, studentSearch, paymentFilter, monthFilter, yearFilter)}
             />
             <select
-              className="select"
+              className="select w-full sm:w-auto sm:min-w-[180px] rounded-lg"
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              style={{ minWidth: "180px" }}
             >
               <option value="all">Barcha o'quvchilar</option>
               <option value="fullyPaid">To'liq to'lagan</option>
@@ -835,13 +867,9 @@ function Students() {
               <option value="unpaid">Umuman to'lamagan</option>
             </select>
             <select
-              className="select"
+              className="select w-full sm:w-auto sm:min-w-[120px] rounded-lg"
               value={monthFilter}
-              onChange={(e) => {
-                setMonthFilter(e.target.value);
-                setCurrentPage(1); // Yangi oy tanlanganda paginationni reset qilish
-              }}
-              style={{ minWidth: "100px" }}
+              onChange={(e) => { setMonthFilter(e.target.value); setCurrentPage(1); }}
             >
               <option value={getCurrentMonth()}>Joriy oy</option>
               {Object.values(monthsInUzbek).map((month) => (
@@ -849,13 +877,9 @@ function Students() {
               ))}
             </select>
             <select
-              className="select"
+              className="select w-full sm:w-auto sm:min-w-[100px] rounded-lg"
               value={yearFilter}
-              onChange={(e) => {
-                setYearFilter(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              style={{ minWidth: "100px" }}
+              onChange={(e) => { setYearFilter(Number(e.target.value)); setCurrentPage(1); }}
             >
               {[getCurrentYear() - 1, getCurrentYear(), getCurrentYear() + 1].map((year) => (
                 <option key={year} value={year}>{year}</option>
@@ -945,15 +969,25 @@ function Students() {
                       >
                         <div className="flex justify-center gap-2">
                           <button
-                            className="h-9 w-9 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white"
+                            className="h-9 w-9 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                             onClick={() => openEditModal(student)}
+                            title="Tahrirlash"
                           >
                             <Pen size={16} />
                           </button>
 
                           <button
-                            className="h-9 w-9 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white"
+                            className="h-9 w-9 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-md"
+                            onClick={() => openMarkLeftModal(student.id, `${student.first_name} ${student.last_name}`)}
+                            title="Ketgan deb belgilash"
+                          >
+                            <LogOut size={16} />
+                          </button>
+
+                          <button
+                            className="h-9 w-9 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded-md"
                             onClick={() => showDeleteToast(student.id)}
+                            title="O'chirish"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -1719,6 +1753,70 @@ function Students() {
               >
                 <Pen size={16} />
                 Tahrirlash
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {markLeftModal.open && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeMarkLeftModal}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <LogOut size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  Ketgan deb belgilash
+                </h2>
+                <p className="text-xs text-gray-500">
+                  O'quvchi alohida "Ketgan o'quvchilar" sahifasiga o'tkaziladi.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-700 mb-4">
+              <span className="font-semibold">{markLeftModal.name}</span> ni ketgan deb belgilamoqchimisiz?
+            </p>
+
+            <label className="block mb-4">
+              <span className="block text-sm font-medium text-gray-700 mb-1">
+                Ketish sanasi
+              </span>
+              <input
+                type="date"
+                value={markLeftModal.date}
+                onChange={(e) =>
+                  setMarkLeftModal((prev) => ({ ...prev, date: e.target.value }))
+                }
+                max={todayLocalISO()}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
+              />
+              <span className="block text-xs text-gray-500 mt-1">
+                Bo'sh qoldirilsa, bugungi sana ishlatiladi.
+              </span>
+            </label>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors"
+                onClick={closeMarkLeftModal}
+              >
+                Bekor qilish
+              </button>
+              <button
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center gap-2"
+                onClick={confirmMarkLeft}
+              >
+                <LogOut size={16} />
+                Ketgan deb belgilash
               </button>
             </div>
           </div>

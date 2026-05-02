@@ -17,6 +17,7 @@ export const AppProvider = ({ children }) => {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [directorAuthenticated, setDirectorAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -157,6 +158,8 @@ export const AppProvider = ({ children }) => {
       applyLanguage,
       changeTheme,
       changeLanguage,
+      mobileSidebarOpen,
+      setMobileSidebarOpen,
     }),
     [
       darkMode,
@@ -169,6 +172,7 @@ export const AppProvider = ({ children }) => {
       applyLanguage,
       changeTheme,
       changeLanguage,
+      mobileSidebarOpen,
     ]
   );
 

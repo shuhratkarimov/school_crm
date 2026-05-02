@@ -237,33 +237,34 @@ export default function Expenses() {
 
   return (
     <>
-      <div className="bg-gray-50 min-h-screen pb-6">
-        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="bg-gray-50 min-h-screen pb-6 px-2 sm:px-4">
+        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 flex-wrap">
           <div className="flex items-center gap-2">
             <DollarSign size={24} color="#104292" />
-            <h1 className="text-2xl font-bold">Xarajatlar</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Xarajatlar</h1>
           </div>
 
           <button
             onClick={openAddModal}
-            className="inline-flex items-center gap-2 bg-[#104292] text-white px-4 py-2 hover:bg-[#104292]/90 transition"
+            className="inline-flex items-center gap-2 bg-[#104292] text-white px-3 sm:px-4 py-2 hover:bg-[#104292]/90 transition rounded-lg"
           >
             <Plus size={18} />
-            Yangi xarajat
+            <span className="hidden sm:inline">Yangi xarajat</span>
+            <span className="sm:hidden">Qo'shish</span>
           </button>
         </div>
 
-        <h1 className="text-[1.7rem] font-bold mb-6">
+        <h1 className="text-xl sm:text-[1.7rem] font-bold mb-4 sm:mb-6 break-words">
           Ushbu oyda jami: {total.toLocaleString()} so‘m
         </h1>
 
         <ExpensesChart expenses={filteredExpenses} />
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 mt-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-6 mt-6">
           <input
             type="text"
             placeholder="Qidirish..."
-            className="border px-3 py-2 flex-1 outline-none focus:ring-2 focus:ring-[#104292]"
+            className="border px-3 py-2 flex-1 outline-none focus:ring-2 focus:ring-[#104292] rounded-lg"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -272,7 +273,7 @@ export default function Expenses() {
             {["all", "day", "week", "month", "year"].map((f) => (
               <button
                 key={f}
-                className={`px-4 py-2 transition ${
+                className={`px-3 sm:px-4 py-2 transition rounded-lg text-sm sm:text-base ${
                   filter === f
                     ? "bg-[#104292] text-white"
                     : "bg-white shadow hover:bg-gray-100"
@@ -298,7 +299,7 @@ export default function Expenses() {
             endDate={endDate}
             onChange={(update) => setDateRange(update)}
             isClearable={true}
-            className="border px-3 py-2 w-full sm:w-64 outline-none focus:ring-2 focus:ring-[#104292]"
+            className="border px-3 py-2 w-full lg:w-64 outline-none focus:ring-2 focus:ring-[#104292] rounded-lg"
             placeholderText="Sana oralig'i"
           />
         </div>

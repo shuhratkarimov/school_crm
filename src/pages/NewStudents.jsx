@@ -593,61 +593,64 @@ export default function NewStudents() {
         <div className="min-h-screen bg-gray-50">
             <div>
                 {/* Header */}
-                <div className="flex flex-col gap-3 px-6 pt-6 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle className="text-blue-700" size={30} />
-                        <h1 className="text-2xl font-bold text-gray-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-6 pt-4 sm:pt-6">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <AlertCircle className="text-blue-700" size={26} />
+                        <h1 className="text-lg sm:text-2xl font-bold text-gray-800">
                             Yangi o'quvchilar (zaxira)
                         </h1>
                     </div>
 
-                    <div className="flex flex-col gap-3 sm:flex-row">
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                         <button
                             onClick={() => setImportModal(true)}
-                            className="flex items-center justify-center gap-2 bg-[#104292] px-5 py-2.5 text-white transition hover:bg-[#0d3677]"
+                            className="flex items-center justify-center gap-2 bg-[#104292] px-3 sm:px-5 py-2 sm:py-2.5 text-white transition hover:bg-[#0d3677] rounded-lg text-sm sm:text-base"
                         >
                             <Plus size={18} />
-                            Excel import
+                            <span className="hidden sm:inline">Excel import</span>
+                            <span className="sm:hidden">Excel</span>
                         </button>
 
                         <button
                             onClick={() => setAddModal(true)}
-                            className="flex items-center justify-center gap-2 bg-[#104292] px-5 py-2.5 text-white transition hover:bg-[#0d3677]"
+                            className="flex items-center justify-center gap-2 bg-[#104292] px-3 sm:px-5 py-2 sm:py-2.5 text-white transition hover:bg-[#0d3677] rounded-lg text-sm sm:text-base"
                         >
                             <Plus size={18} />
-                            Qo'lda qo'shish
+                            <span className="hidden sm:inline">Qo'lda qo'shish</span>
+                            <span className="sm:hidden">Qo'shish</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Bulk actions */}
                 {selectedStudentIds.length > 0 && (
-                    <div className="px-6 pt-5">
-                        <div className="border border-blue-200 bg-white px-4 py-4 shadow-sm">
+                    <div className="px-2 sm:px-6 pt-5">
+                        <div className="border border-blue-200 bg-white px-3 sm:px-4 py-4 shadow-sm rounded-lg">
                             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center bg-blue-100 text-blue-700">
+                                    <div className="flex h-10 w-10 items-center justify-center bg-blue-100 text-blue-700 rounded-lg flex-shrink-0">
                                         <Users size={20} />
                                     </div>
 
                                     <div>
-                                        <p className="font-semibold text-gray-800">
+                                        <p className="font-semibold text-gray-800 text-sm sm:text-base">
                                             {selectedStudentIds.length} ta o'quvchi tanlandi
                                         </p>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-xs sm:text-sm text-gray-500">
                                             Belgilangan o'quvchilar ustida ommaviy amal bajarishingiz mumkin
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap gap-3">
+                                <div className="flex flex-wrap gap-2 sm:gap-3">
                                     <button
                                         onClick={() => setBulkAssignModal(true)}
                                         disabled={bulkLoading}
-                                        className="flex items-center gap-2 bg-green-600 px-4 py-2.5 text-white transition hover:bg-green-700 disabled:opacity-50"
+                                        className="flex items-center gap-2 bg-green-600 px-3 sm:px-4 py-2 sm:py-2.5 text-white transition hover:bg-green-700 disabled:opacity-50 rounded-lg text-sm sm:text-base"
                                     >
                                         <Users size={18} />
-                                        Guruhga biriktirish
+                                        <span className="hidden sm:inline">Guruhga biriktirish</span>
+                                        <span className="sm:hidden">Biriktirish</span>
                                     </button>
 
                                     <button
@@ -660,7 +663,7 @@ export default function NewStudents() {
                                             })
                                         }
                                         disabled={bulkLoading || selectedStudentIds.length === 0}
-                                        className="flex items-center gap-2 bg-red-600 px-4 py-2.5 text-white transition hover:bg-red-700 disabled:opacity-50"
+                                        className="flex items-center gap-2 bg-red-600 px-3 sm:px-4 py-2 sm:py-2.5 text-white transition hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm sm:text-base"
                                     >
                                         <Trash2 size={18} />
                                         O'chirish
@@ -669,7 +672,7 @@ export default function NewStudents() {
                                     <button
                                         onClick={clearSelections}
                                         disabled={bulkLoading}
-                                        className="bg-gray-200 px-4 py-2.5 text-gray-700 transition hover:bg-gray-300"
+                                        className="bg-gray-200 px-3 sm:px-4 py-2 sm:py-2.5 text-gray-700 transition hover:bg-gray-300 rounded-lg text-sm sm:text-base"
                                     >
                                         Bekor qilish
                                     </button>
@@ -687,7 +690,7 @@ export default function NewStudents() {
                         </h3>
 
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[280px]">
+                            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white w-full sm:min-w-[280px] sm:w-auto rounded-lg">
                                 <Search size={18} color="#104292" />
                                 <input
                                     type="text"

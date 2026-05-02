@@ -544,18 +544,18 @@ function Teachers() {
 
   return (
     <div>
-      <div className="flex justify-between items-center gap-2 pl-6 pr-6 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-6 mb-6">
         <div className="flex items-center gap-2">
           <GraduationCap size={24} color="#104292" />
-          <h1 className="text-2xl font-bold">Ustozlar</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Ustozlar</h1>
         </div>
         <button
-          className="btn btn-primary bg-[#104292] hover:bg-[#104292]/80"
+          className="btn btn-primary bg-[#104292] hover:bg-[#104292]/80 rounded-lg flex items-center gap-2"
           onClick={() => setIsAddModalOpen(true)}
-          style={{ display: "flex", alignItems: "center", gap: "8px" }}
         >
           <Plus size={20} />
-          Yangi ustoz qo'shish
+          <span className="hidden sm:inline">Yangi ustoz qo'shish</span>
+          <span className="sm:hidden">Qo'shish</span>
         </button>
       </div>
 
@@ -1254,7 +1254,7 @@ function Teachers() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search */}
-            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white min-w-[240px]">
+            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 bg-white w-full sm:min-w-[240px] sm:w-auto rounded-lg">
               <Search size={18} color="#104292" />
               <input
                 type="text"
@@ -1267,7 +1267,7 @@ function Teachers() {
 
             {/* Subject filter */}
             <select
-              className="border border-gray-300 px-4 py-2 bg-white text-sm min-w-[180px] outline-none focus:border-[#104292]"
+              className="border border-gray-300 px-4 py-2 bg-white text-sm w-full sm:min-w-[180px] sm:w-auto outline-none focus:border-[#104292] rounded-lg"
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
             >
@@ -1281,7 +1281,7 @@ function Teachers() {
 
             {/* Salary filter */}
             <select
-              className="border border-gray-300 px-4 py-2 bg-white text-sm min-w-[180px] outline-none focus:border-[#104292]"
+              className="border border-gray-300 px-4 py-2 bg-white text-sm w-full sm:min-w-[180px] sm:w-auto outline-none focus:border-[#104292] rounded-lg"
               value={salaryFilter}
               onChange={(e) => setSalaryFilter(e.target.value)}
             >

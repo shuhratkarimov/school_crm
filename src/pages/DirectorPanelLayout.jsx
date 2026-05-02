@@ -26,8 +26,7 @@ import {
   CheckCheck,
   TestTube
 } from "lucide-react";
-import API_URL, { SOCKET_URL } from "../conf/api";
-import { io } from "socket.io-client";
+import API_URL from "../conf/api";
 
 export default function DirectorPanelLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -36,7 +35,6 @@ export default function DirectorPanelLayout() {
   const [notificationCount, setNotificationCount] = useState(0);
   const [notificationItems, setNotificationItems] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const socketRef = useRef(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -107,110 +105,27 @@ export default function DirectorPanelLayout() {
   useEffect(() => {
     if (!context?.user?.id) return;
 
-    if (!socketRef.current) {
-      socketRef.current = io(SOCKET_URL, {
-        withCredentials: true,
-        transports: ["websocket", "polling"],
-        path: "/socket.io/",
-      });
-    }
-
-    const socket = socketRef.current;
-
-    const handleConnect = () => {
-      console.log("Frontend socket connected:", socket.id);
-      console.log("Joining user room:", context.user.id);
-      socket.emit("join-user-room", String(context.user.id));
-    };
-
-    const handleNotification = (payload) => {
-      console.log("Realtime notification keldi:", payload);
-
-      setNotificationItems((prev) => {
-        const exists = prev.some((item) => item.id === payload.id);
-        if (exists) return prev;
-
-        const newItem = {
-          id: payload.id,
-          title: payload.title,
-          message: payload.message,
-          type: payload.type,
-          color:
-            payload.color ||
-            (payload.type === "success"
-              ? "green"
-              : payload.type === "warning"
-                ? "yellow"
-                : payload.type === "danger"
-                  ? "red"
-                  : "blue"),
-          isRead: Boolean(payload.isRead),
-          timeAgo: payload.timeAgo || "Hozirgina",
-          createdAt: payload.createdAt || new Date().toISOString(),
-          meta: payload.meta ?? null,
-        };
-
-        if (!newItem.isRead) {
-          setNotificationCount((count) => count + 1);
-        }
-
-        return [newItem, ...prev];
-      });
-
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(payload.title, {
-          body: payload.message,
-        });
-      }
-    };
-
-    const handleConnectError = (err) => {
-      console.error("Socket connect error:", err.message);
-    };
-
-    socket.off("connect", handleConnect);
-    socket.off("new-notification", handleNotification);
-    socket.off("connect_error", handleConnectError);
-
-    socket.on("connect", handleConnect);
-    socket.on("new-notification", handleNotification);
-    socket.on("connect_error", handleConnectError);
-
-    if (socket.connected) {
-      handleConnect();
-    }
-
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("new-notification", handleNotification);
-      socket.off("connect_error", handleConnectError);
-    };
-  }, [context?.user?.id]);
-
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!context?.user?.id) return;
-
-    fetch(`${API_URL}/director-panel/notifications`, {
-      credentials: "include",
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.message || "Xatolik");
-        return data;
+    const fetchNotifications = () => {
+      fetch(`${API_URL}/director-panel/notifications`, {
+        credentials: "include",
       })
-      .then((res) => {
-        setNotificationCount(res?.data?.unreadCount || 0);
-        setNotificationItems((prev) =>
-          mergeUniqueNotifications(prev, res?.data?.notifications || [])
-        );
-      })
-      .catch((err) => console.error("Notif fetch error:", err));
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.message || "Xatolik");
+          return data;
+        })
+        .then((res) => {
+          setNotificationCount(res?.data?.unreadCount || 0);
+          setNotificationItems((prev) =>
+            mergeUniqueNotifications(prev, res?.data?.notifications || [])
+          );
+        })
+        .catch((err) => console.error("Notif fetch error:", err));
+    };
+
+    fetchNotifications();
+    const intervalId = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(intervalId);
   }, [context?.user?.id]);
 
   const handleReadAllNotifications = async () => {

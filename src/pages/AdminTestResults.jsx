@@ -377,34 +377,34 @@ function AdminTestResults() {
   if (loading) return <LottieLoading />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 px-2 sm:px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <TestTubeDiagonal className="w-8 h-8 text-[#104292]" />
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <TestTubeDiagonal className="w-7 h-7 sm:w-8 sm:h-8 text-[#104292]" />
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800">Test natijalari</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Test natijalari</h1>
             </div>
           </div>
-          <p className="text-gray-600 mt-1 flex items-center">
-            <Clock size={16} className="mr-1" />
-            {monthsInUzbek[monthFilter]} {yearFilter} yil | Tahrirlash muddati: {editTimeLimit} soat
+          <p className="text-xs sm:text-sm text-gray-600 flex items-center w-full lg:w-auto order-3 lg:order-2">
+            <Clock size={14} className="mr-1 flex-shrink-0" />
+            <span className="truncate">{monthsInUzbek[monthFilter]} {yearFilter} yil | Tahrirlash: {editTimeLimit} soat</span>
           </p>
 
           {/* Sozlamalar tugmasi */}
           <button
             onClick={() => setSettingsModal(true)}
-            className="flex items-center gap-2 btn btn-primary"
+            className="flex items-center gap-2 btn btn-primary rounded-lg order-2 lg:order-3"
           >
             <Settings size={18} />
-            Sozlamalar
+            <span className="hidden sm:inline">Sozlamalar</span>
           </button>
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white shadow-sm p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white shadow-sm p-3 sm:p-6 mb-6 sm:mb-8 rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -412,14 +412,14 @@ function AdminTestResults() {
                 placeholder="Guruh qidirish..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-lg"
               />
             </div>
 
             <select
               value={groupFilter}
               onChange={(e) => setGroupFilter(e.target.value)}
-              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-lg"
             >
               <option value="">Barcha guruhlar</option>
               {groups.map((group) => (
@@ -432,7 +432,7 @@ function AdminTestResults() {
             <select
               value={monthFilter}
               onChange={(e) => setMonthFilter(Number(e.target.value))}
-              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-lg"
             >
               {Object.entries(monthsInUzbek).map(([key, value]) => (
                 <option key={key} value={key}>
@@ -444,7 +444,7 @@ function AdminTestResults() {
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(Number(e.target.value))}
-              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-lg"
             >
               {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map(
                 (year) => (
@@ -458,39 +458,39 @@ function AdminTestResults() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 shadow-sm border border-blue-200">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white p-4 sm:p-6 shadow-sm border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm mb-1">Jami testlar</p>
-                <h3 className="text-2xl font-bold text-gray-800">{tests.length}</h3>
+                <p className="text-gray-500 text-xs sm:text-sm mb-1">Jami testlar</p>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{tests.length}</h3>
               </div>
-              <div className="bg-blue-100 p-3">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="bg-blue-100 p-2 sm:p-3 rounded-lg">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 shadow-sm border border-green-200">
+          <div className="bg-white p-4 sm:p-6 shadow-sm border border-green-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm mb-1">Jami guruhlar</p>
-                <h3 className="text-2xl font-bold text-gray-800">{groups.length}</h3>
+                <p className="text-gray-500 text-xs sm:text-sm mb-1">Jami guruhlar</p>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{groups.length}</h3>
               </div>
-              <div className="bg-green-100 p-3">
-                <Users className="w-6 h-6 text-green-600" />
+              <div className="bg-green-100 p-2 sm:p-3 rounded-lg">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 shadow-sm border border-purple-200">
+          <div className="bg-white p-4 sm:p-6 shadow-sm border border-purple-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm mb-1">Filtrlangan testlar</p>
-                <h3 className="text-2xl font-bold text-gray-800">{filteredTests.length}</h3>
+                <p className="text-gray-500 text-xs sm:text-sm mb-1">Filtrlangan testlar</p>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{filteredTests.length}</h3>
               </div>
-              <div className="bg-purple-100 p-3">
-                <Filter className="w-6 h-6 text-purple-600" />
+              <div className="bg-purple-100 p-2 sm:p-3 rounded-lg">
+                <Filter className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               </div>
             </div>
           </div>

@@ -1,0 +1,1 @@
+import{j as o,ae as t}from"./index-Dwt9Qeog.js";const s=()=>o.jsx("div",{children:o.jsx(t,{src:"/animations/loginLoading.lottie",autoplay:!0,loop:!0,style:{width:32,height:32,display:"block"}})});export{s as L};
