@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const platform_review_ctr_1 = require("../controller/platform_review.ctr");
+const feedback_routes_1 = require("./feedback.routes");
+const platform_review_auth_1 = require("../middlewares/platform-review-auth");
+const platform_review_ctr_2 = require("../controller/platform_review.ctr");
+const platform_review_ctr_3 = require("../controller/platform_review.ctr");
+const auth_guard_middleware_1 = require("../middlewares/auth-guard.middleware");
+const admin_middleware_1 = require("../middlewares/admin.middleware");
+const platform_review_ctr_4 = require("../controller/platform_review.ctr");
+feedback_routes_1.router.get('/platform-review/should-show', platform_review_auth_1.platformReviewAuth, platform_review_ctr_1.shouldShowPlatformReview);
+feedback_routes_1.router.post('/platform-review', platform_review_auth_1.platformReviewAuth, platform_review_ctr_2.submitPlatformReview);
+feedback_routes_1.router.post('/platform-review/dismiss', platform_review_auth_1.platformReviewAuth, platform_review_ctr_3.dismissPlatformReview);
+feedback_routes_1.router.get("/superadmin/platform-reviews", auth_guard_middleware_1.authMiddleware, admin_middleware_1.superadminMiddleware, platform_review_ctr_4.getPlatformReviews);
+exports.default = feedback_routes_1.router;

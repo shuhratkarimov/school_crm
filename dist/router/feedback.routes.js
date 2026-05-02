@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.router = void 0;
+const express_1 = require("express");
+const feedback_ctr_1 = require("../controller/feedback.ctr");
+const auth_guard_middleware_1 = require("../middlewares/auth-guard.middleware");
+const teacher_auth_middleware_1 = require("../middlewares/teacher-auth.middleware");
+const admin_middleware_1 = require("../middlewares/admin.middleware");
+const router = (0, express_1.Router)();
+exports.router = router;
+router.post("/feedbacks/admin", auth_guard_middleware_1.authMiddleware, feedback_ctr_1.createFeedbackByAdmin);
+router.post("/feedbacks/teacher", teacher_auth_middleware_1.teacherAuthMiddleware, feedback_ctr_1.createFeedbackByTeacher);
+router.get("/get_feedbacks", auth_guard_middleware_1.authMiddleware, admin_middleware_1.superadminMiddleware, feedback_ctr_1.getFeedbacksBySuperadmin);
+router.put("/set_feedback_viewed", auth_guard_middleware_1.authMiddleware, admin_middleware_1.superadminMiddleware, feedback_ctr_1.markFeedbackAsViewed);
+router.put("/set_feedback_resolved", auth_guard_middleware_1.authMiddleware, admin_middleware_1.superadminMiddleware, feedback_ctr_1.markFeedbackAsResolved);
+router.get("/feedbacks/teacher/my", teacher_auth_middleware_1.teacherAuthMiddleware, feedback_ctr_1.getMyTeacherFeedbacks);
+router.get("/feedbacks/admin/my", auth_guard_middleware_1.authMiddleware, feedback_ctr_1.getMyAdminFeedbacks);

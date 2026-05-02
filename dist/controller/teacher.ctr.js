@@ -31,12 +31,40 @@ const sequelize_1 = require("sequelize");
 const branch_scope_helper_1 = require("../Utils/branch_scope.helper");
 async function getTeachers(req, res, next) {
     try {
-        const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
-        const teachers = await teacher_model_1.default.findAll({ where: (0, branch_scope_helper_1.withBranchScope)(req) });
-        if (teachers.length === 0) {
-            return next(base_error_1.BaseError.BadRequest(404, i18next_1.default.t("TEACHERS_NOT_FOUND", { lng: lang })));
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+        const search = (req.query.search || "").trim();
+        const subject = (req.query.subject || "").trim();
+        const salary = req.query.salary || "";
+        const offset = (page - 1) * limit;
+        const baseWhere = {};
+        if (search) {
+            baseWhere[sequelize_1.Op.or] = [
+                { first_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
+                { last_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
+                { father_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
+            ];
         }
-        res.status(200).json(teachers);
+        if (subject)
+            baseWhere.subject = subject;
+        if (salary === "paid")
+            baseWhere.got_salary_for_this_month = true;
+        else if (salary === "unpaid")
+            baseWhere.got_salary_for_this_month = false;
+        const whereClause = (0, branch_scope_helper_1.withBranchScope)(req, baseWhere);
+        const { count, rows: teachers } = await teacher_model_1.default.findAndCountAll({
+            where: whereClause,
+            limit,
+            offset,
+            order: [["created_at", "DESC"]],
+        });
+        res.status(200).json({
+            data: teachers,
+            total: count,
+            page,
+            limit,
+            totalPages: count > 0 ? Math.ceil(count / limit) : 1,
+        });
     }
     catch (error) {
         next(error);
@@ -196,10 +224,11 @@ async function teacherLogin(req, res, next) {
         }
         const payload = {
             id: teacher.dataValues.id,
+            role: "teacher",
             username: teacher.dataValues.username,
         };
         const token = jsonwebtoken_1.default.sign(payload, process.env.ACCESS_SECRET_KEY, {
-            expiresIn: "1h",
+            expiresIn: "1d",
         });
         const refreshtoken = jsonwebtoken_1.default.sign(payload, process.env.REFRESH_SECRET_KEY, {
             expiresIn: "7d",
@@ -209,7 +238,7 @@ async function teacherLogin(req, res, next) {
             httpOnly: true,
             secure: isSecure,
             sameSite: "lax",
-            maxAge: 60 * 60 * 1000,
+            maxAge: 24 * 60 * 60 * 1000,
         });
         res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,

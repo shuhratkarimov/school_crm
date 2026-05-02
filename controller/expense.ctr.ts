@@ -117,7 +117,7 @@ export const getMonthlyExpenses = async (req: any, res: Response, next: NextFunc
 
     const monthNames = [
       "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
-      "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"
+      "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"
     ];
 
     const result = Array.from({ length: 12 }, (_, i) => {

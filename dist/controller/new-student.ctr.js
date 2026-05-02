@@ -26,9 +26,9 @@ async function getNewStudents(req, res, next) {
 async function registerNewStudentPublic(req, res, next) {
     try {
         const { token } = req.params;
-        const { first_name, last_name, phone } = req.body;
+        const { first_name, last_name, father_name, birth_date, phone, parents_phone_number, came_in_school, } = req.body;
         if (!first_name?.trim() || !last_name?.trim() || !phone?.trim()) {
-            return next(base_error_1.BaseError.BadRequest(400, "Barcha maydonlar kiritilishi shart"));
+            return next(base_error_1.BaseError.BadRequest(400, "Ism, familiya va telefon majburiy"));
         }
         const link = await registration_link_model_1.RegistrationLink.findOne({
             where: { token },
@@ -39,7 +39,11 @@ async function registerNewStudentPublic(req, res, next) {
         const student = await newstudent_model_1.default.create({
             first_name: first_name.trim(),
             last_name: last_name.trim(),
+            father_name: father_name?.trim() || null,
+            birth_date: birth_date || null,
             phone,
+            parents_phone_number: parents_phone_number?.trim() || null,
+            came_in_school: came_in_school || null,
             subject: link.get("subject"),
             branch_id: link.get("branch_id"),
         });
@@ -52,14 +56,29 @@ async function registerNewStudentPublic(req, res, next) {
 async function updateNewStudent(req, res, next) {
     try {
         const { id } = req.params;
-        const { interviewed } = req.body;
+        const updates = {};
+        const allowed = [
+            "interviewed",
+            "approved",
+            "first_name",
+            "last_name",
+            "father_name",
+            "birth_date",
+            "phone",
+            "parents_phone_number",
+            "came_in_school",
+        ];
+        for (const key of allowed) {
+            if (req.body[key] !== undefined)
+                updates[key] = req.body[key];
+        }
         const student = await newstudent_model_1.default.findOne({
             where: (0, branch_scope_helper_1.withBranchScope)(req, { id }),
         });
         if (!student) {
             return next(base_error_1.BaseError.BadRequest(404, "Yangi o`quvchi topilmadi (yoki ruxsat yo‘q)"));
         }
-        await student.update({ interviewed });
+        await student.update(updates);
         res.json(student);
     }
     catch (error) {

@@ -67,6 +67,18 @@ User.init({
             key: 'id',
         },
     },
+    platform_review_shown_at: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
+    },
+    platform_review_submitted_at: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
+    },
+    platform_review_dismissed_at: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
+    },
 }, {
     sequelize: database_config_1.default,
     tableName: 'users',

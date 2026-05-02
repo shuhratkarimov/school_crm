@@ -303,8 +303,8 @@ const MONTH_UZ = {
     "06": "Iyun",
     "07": "Iyul",
     "08": "Avgust",
-    "09": "Sentabr",
-    "10": "Oktabr",
+    "09": "Sentyabr",
+    "10": "Oktyabr",
     "11": "Noyabr",
     "12": "Dekabr",
 };
@@ -427,8 +427,8 @@ async function getDashboardStats(req, res, next) {
         const totalRevenuePromise = index_1.Payment.sum("payment_amount", {
             where: {
                 ...whereScope,
-                shouldBeConsideredAsPaid: true,
-                for_which_month: uzMonth,
+                // shouldBeConsideredAsPaid: true,
+                // for_which_month: uzMonth,
                 created_at: {
                     [sequelize_1.Op.gte]: currentRange.start,
                     [sequelize_1.Op.lt]: currentRange.end,
@@ -438,8 +438,8 @@ async function getDashboardStats(req, res, next) {
         const totalPrevMonthRevenuePromise = index_1.Payment.sum("payment_amount", {
             where: {
                 ...whereScope,
-                shouldBeConsideredAsPaid: true,
-                for_which_month: prevUzMonth,
+                // shouldBeConsideredAsPaid: true,
+                // for_which_month: prevUzMonth,
                 created_at: {
                     [sequelize_1.Op.gte]: prevRange.start,
                     [sequelize_1.Op.lt]: prevRange.end,
@@ -452,15 +452,15 @@ async function getDashboardStats(req, res, next) {
         const curPaidCountPromise = index_1.Payment.count({
             where: {
                 ...whereScope,
-                shouldBeConsideredAsPaid: true,
+                // shouldBeConsideredAsPaid: true,
                 for_which_month: uzMonth,
             },
         });
         const prevPaidCountPromise = index_1.Payment.count({
             where: {
                 ...whereScope,
-                shouldBeConsideredAsPaid: true,
-                for_which_month: prevUzMonth,
+                // shouldBeConsideredAsPaid: true,
+                // for_which_month: prevUzMonth,
             },
         });
         const [totalStudents, totalGroups, activeBranches, totalRevenueRaw, totalPrevMonthRevenueRaw, currentMonthGroups, prevMonthGroups, curPaidCount, prevPaidCount, totalExpensesRaw, totalTeachers, currentDebtSnapshot, prevDebtSnapshot,] = await Promise.all([
@@ -558,9 +558,7 @@ async function getRevenueChart(req, res, next) {
             const amount = await index_1.Payment.sum("payment_amount", {
                 where: {
                     ...whereScope,
-                    shouldBeConsideredAsPaid: true,
-                    for_which_month: monthNameUz,
-                    created_at: { [sequelize_1.Op.gte]: start, [sequelize_1.Op.lt]: end }, // yil+oy aniqligi uchun
+                    created_at: { [sequelize_1.Op.gte]: start, [sequelize_1.Op.lt]: end },
                 },
             });
             return {
@@ -659,7 +657,6 @@ async function getBranchPerformance(req, res, next) {
             ],
             where: {
                 ...paymentWhere,
-                shouldBeConsideredAsPaid: true,
                 created_at: { [sequelize_1.Op.gte]: range.start, [sequelize_1.Op.lt]: range.end },
             },
             group: ["branch_id"],
@@ -677,7 +674,6 @@ async function getBranchPerformance(req, res, next) {
             ],
             where: {
                 ...paymentWhere,
-                shouldBeConsideredAsPaid: true,
                 created_at: { [sequelize_1.Op.gte]: prevRange.start, [sequelize_1.Op.lt]: prevRange.end },
             },
             group: ["branch_id"],
@@ -906,8 +902,6 @@ async function getBranchesFullAnalytics(req, res, next) {
                 const amount = await index_1.Payment.sum("payment_amount", {
                     where: {
                         branch_id: branchId,
-                        shouldBeConsideredAsPaid: true,
-                        for_which_month: monthNameUz,
                         created_at: {
                             [sequelize_1.Op.gte]: start,
                             [sequelize_1.Op.lt]: end,
@@ -1109,7 +1103,6 @@ async function getGroupsAnalytics(req, res, next) {
             attendanceMap.set(String(row.group_id), Number(pct.toFixed(1)));
         }
         // 4) revenue per group (current month)
-        // agar Payment da group_id bo‘lsa shuni ishlat
         const revenueAgg = await index_1.Payment.findAll({
             attributes: [
                 "group_id",
@@ -1117,7 +1110,6 @@ async function getGroupsAnalytics(req, res, next) {
             ],
             where: {
                 group_id: { [sequelize_1.Op.in]: groupIds },
-                shouldBeConsideredAsPaid: true,
                 for_which_month: monthNameUz,
             },
             group: ["group_id"],
@@ -1666,7 +1658,6 @@ async function getTeachersAnalytics(req, res, next) {
                 ],
                 where: {
                     group_id: { [sequelize_1.Op.in]: groupIds },
-                    shouldBeConsideredAsPaid: true,
                     for_which_month: monthNameUz,
                 },
                 group: ["group_id"],

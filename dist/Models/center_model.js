@@ -13,8 +13,6 @@ Center.init({
     address: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     owner: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     phone: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    login: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    password: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     paymentDate: { type: sequelize_1.DataTypes.DATE, allowNull: true },
     status: { type: sequelize_1.DataTypes.ENUM("blocked", "active"), allowNull: true },
     director_id: { type: sequelize_1.DataTypes.UUID, allowNull: true },

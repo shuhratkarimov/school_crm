@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from "express"
-import { getStudents, getOneStudent, createStudent, updateStudent, deleteStudent, getAttendanceByTeacher, getMonthlyStudentStats, makeAttendance, getOneGroupStudents, getTodayAttendanceStats, getAttendanceByDate, updateAttendance, extendAttendanceTime, getExtendAttendanceTime, getPaymentsByStudent, getGroupMissedAttendanceDates } from "../controller/student.ctr";
+import { getStudents, getOneStudent, createStudent, updateStudent, deleteStudent, getAttendanceByTeacher, getMonthlyStudentStats, makeAttendance, getOneGroupStudents, getTodayAttendanceStats, getAttendanceByDate, updateAttendance, extendAttendanceTime, getExtendAttendanceTime, getPaymentsByStudent, getGroupMissedAttendanceDates, markStudentAsLeft, restoreStudent } from "../controller/student.ctr";
 import { authMiddleware } from "../middlewares/auth-guard.middleware";
 import { roleMiddleware } from "../middlewares/role.middleware";
 import { accessScopeMiddleware } from "../middlewares/access-scope.middleware";
@@ -32,6 +32,12 @@ StudentsRouter.put("/update_student/:id", authMiddleware,
 StudentsRouter.delete("/delete_student/:id", authMiddleware,
     roleMiddleware("manager", "director", "superadmin"),
     accessScopeMiddleware, deleteStudent as RequestHandler)
+StudentsRouter.put("/mark_student_left/:id", authMiddleware,
+    roleMiddleware("manager", "director", "superadmin"),
+    accessScopeMiddleware, markStudentAsLeft as RequestHandler)
+StudentsRouter.put("/restore_student/:id", authMiddleware,
+    roleMiddleware("manager", "director", "superadmin"),
+    accessScopeMiddleware, restoreStudent as RequestHandler)
 StudentsRouter.get("/get_attendance_stats", authMiddleware,
     roleMiddleware("manager", "director", "superadmin"),
     accessScopeMiddleware, getTodayAttendanceStats as RequestHandler)

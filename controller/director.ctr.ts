@@ -374,8 +374,8 @@ const MONTH_UZ: Record<string, string> = {
     "06": "Iyun",
     "07": "Iyul",
     "08": "Avgust",
-    "09": "Sentabr",
-    "10": "Oktabr",
+    "09": "Sentyabr",
+    "10": "Oktyabr",
     "11": "Noyabr",
     "12": "Dekabr",
 };
@@ -694,9 +694,7 @@ async function getRevenueChart(req: Request, res: Response, next: NextFunction):
                 const amount = await Payment.sum("payment_amount", {
                     where: {
                         ...whereScope,
-                        shouldBeConsideredAsPaid: true,
-                        for_which_month: monthNameUz,
-                        created_at: { [Op.gte]: start, [Op.lt]: end }, // yil+oy aniqligi uchun
+                        created_at: { [Op.gte]: start, [Op.lt]: end },
                     },
                 });
 
@@ -813,7 +811,6 @@ async function getBranchPerformance(
             ],
             where: {
                 ...paymentWhere,
-                shouldBeConsideredAsPaid: true,
                 created_at: { [Op.gte]: range.start, [Op.lt]: range.end },
             },
             group: ["branch_id"],
@@ -834,7 +831,6 @@ async function getBranchPerformance(
             ],
             where: {
                 ...paymentWhere,
-                shouldBeConsideredAsPaid: true,
                 created_at: { [Op.gte]: prevRange.start, [Op.lt]: prevRange.end },
             },
             group: ["branch_id"],
@@ -1133,8 +1129,6 @@ async function getBranchesFullAnalytics(
                         const amount = await Payment.sum("payment_amount", {
                             where: {
                                 branch_id: branchId,
-                                shouldBeConsideredAsPaid: true,
-                                for_which_month: monthNameUz,
                                 created_at: {
                                     [Op.gte]: start,
                                     [Op.lt]: end,
@@ -1382,7 +1376,6 @@ async function getGroupsAnalytics(
         }
 
         // 4) revenue per group (current month)
-        // agar Payment da group_id bo‘lsa shuni ishlat
         const revenueAgg = await Payment.findAll({
             attributes: [
                 "group_id",
@@ -1390,7 +1383,6 @@ async function getGroupsAnalytics(
             ],
             where: {
                 group_id: { [Op.in]: groupIds },
-                shouldBeConsideredAsPaid: true,
                 for_which_month: monthNameUz,
             },
             group: ["group_id"],
@@ -2072,7 +2064,6 @@ async function getTeachersAnalytics(
                 ],
                 where: {
                     group_id: { [Op.in]: groupIds },
-                    shouldBeConsideredAsPaid: true,
                     for_which_month: monthNameUz,
                 },
                 group: ["group_id"],

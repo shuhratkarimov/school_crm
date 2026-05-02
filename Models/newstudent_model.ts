@@ -19,15 +19,35 @@ NewStudent.init(
       type: DataTypes.STRING,
       allowNull: false
     },
+    father_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    birth_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true
+    },
     phone: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    parents_phone_number: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    came_in_school: {
+      type: DataTypes.DATEONLY,
+      allowNull: true
     },
     subject: {
       type: DataTypes.STRING,
       allowNull: false
     },
     interviewed: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    approved: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },

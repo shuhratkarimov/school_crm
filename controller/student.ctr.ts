@@ -28,8 +28,8 @@ const monthsInUzbek: Record<number, string> = {
   6: "Iyun",
   7: "Iyul",
   8: "Avgust",
-  9: "Sentabr",
-  10: "Oktabr",
+  9: "Sentyabr",
+  10: "Oktyabr",
   11: "Noyabr",
   12: "Dekabr",
 };
@@ -93,10 +93,18 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
     const search = String(req.query.search || "").trim();
     const paymentFilter = String(req.query.paymentFilter || "all").trim();
     const simple = String(req.query.simple || "false") === "true";
+    const includeLeft = String(req.query.includeLeft || "false") === "true";
+    const onlyLeft = String(req.query.onlyLeft || "false") === "true";
 
     const studentWhere: any = {
       ...withBranchScope(req),
     };
+
+    if (onlyLeft) {
+      studentWhere.left_school = { [Op.ne]: null };
+    } else if (!includeLeft) {
+      studentWhere.left_school = { [Op.is]: null };
+    }
 
     if (search) {
       studentWhere[Op.or] = [
@@ -121,6 +129,7 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
           "last_name",
           "phone_number",
           "came_in_school",
+          "left_school",
           "created_at",
         ],
         include: [
@@ -266,24 +275,13 @@ async function getStudents(req: Request, res: Response, next: NextFunction) {
         },
       });
     }
-    const { count, rows } = await Student.findAndCountAll({
+    const allStudents = await Student.findAll({
       where: studentWhere,
-      attributes: ["id", "first_name", "last_name", "phone_number", "came_in_school"],
-      include: [
-        {
-          model: Group,
-          as: "groups",
-          attributes: ["id", "group_subject", "monthly_fee"],
-          through: { attributes: [] },
-          required: false,
-        },
-      ],
+      include: includeFull,
       order: [["created_at", "DESC"]],
-      limit,
-      offset,
     });
 
-    const studentsWithGroups = rows.map(mapStudent);
+    const studentsWithGroups = allStudents.map(mapStudent);
 
     const filteredStudents = studentsWithGroups.filter((student: any) => {
       const totalGroups = student.total_groups || 0;
@@ -824,6 +822,52 @@ async function deleteStudent(
     }
   } catch (error: any) {
     console.error("Error in deleteStudent:", error);
+    next(error);
+  }
+}
+
+async function markStudentAsLeft(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+    const student = await Student.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
+    if (!student) {
+      return next(
+        BaseError.BadRequest(404, i18next.t("student_not_found", { lng: lang }))
+      );
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const leftDate = req.body?.left_school || today;
+    await student.update({ left_school: leftDate });
+    res.status(200).json(student);
+  } catch (error: any) {
+    next(error);
+  }
+}
+
+async function restoreStudent(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+    const student = await Student.findOne({
+      where: withBranchScope(req, { id: req.params.id }),
+    });
+    if (!student) {
+      return next(
+        BaseError.BadRequest(404, i18next.t("student_not_found", { lng: lang }))
+      );
+    }
+    await student.update({ left_school: null });
+    res.status(200).json(student);
+  } catch (error: any) {
     next(error);
   }
 }
@@ -1865,5 +1909,7 @@ export {
   getAttendanceByTeacher,
   updateStudentPaymentStatus,
   monthsInUzbek,
-  getGroupMissedAttendanceDates
+  getGroupMissedAttendanceDates,
+  markStudentAsLeft,
+  restoreStudent
 };

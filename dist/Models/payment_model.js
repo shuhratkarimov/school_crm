@@ -66,6 +66,10 @@ Payment.init({
     branch_id: {
         type: sequelize_1.DataTypes.UUID,
         allowNull: false
+    },
+    reserve_data: {
+        type: sequelize_1.DataTypes.JSON,
+        allowNull: true
     }
 }, {
     sequelize: database_config_1.default,

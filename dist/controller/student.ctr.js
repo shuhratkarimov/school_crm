@@ -23,6 +23,9 @@ exports.getPaymentsByStudent = getPaymentsByStudent;
 exports.getOneGroupStudentsForTeacher = getOneGroupStudentsForTeacher;
 exports.getAttendanceByTeacher = getAttendanceByTeacher;
 exports.updateStudentPaymentStatus = updateStudentPaymentStatus;
+exports.getGroupMissedAttendanceDates = getGroupMissedAttendanceDates;
+exports.markStudentAsLeft = markStudentAsLeft;
+exports.restoreStudent = restoreStudent;
 const sequelize_1 = require("sequelize");
 const lang_1 = __importDefault(require("../Utils/lang"));
 const index_1 = require("../Models/index");
@@ -48,8 +51,8 @@ const monthsInUzbek = {
     6: "Iyun",
     7: "Iyul",
     8: "Avgust",
-    9: "Sentabr",
-    10: "Oktabr",
+    9: "Sentyabr",
+    10: "Oktyabr",
     11: "Noyabr",
     12: "Dekabr",
 };
@@ -92,7 +95,6 @@ async function generateStudentId(transaction) {
 }
 async function getStudents(req, res, next) {
     try {
-        const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
         const currentMonth = changeMonths(new Date().getMonth() + 1);
         const currentYear = new Date().getFullYear();
         const month = req.query.month || currentMonth;
@@ -102,70 +104,102 @@ async function getStudents(req, res, next) {
         const offset = (page - 1) * limit;
         const search = String(req.query.search || "").trim();
         const paymentFilter = String(req.query.paymentFilter || "all").trim();
+        const simple = String(req.query.simple || "false") === "true";
+        const includeLeft = String(req.query.includeLeft || "false") === "true";
+        const onlyLeft = String(req.query.onlyLeft || "false") === "true";
         const studentWhere = {
             ...(0, branch_scope_helper_1.withBranchScope)(req),
         };
+        if (onlyLeft) {
+            studentWhere.left_school = { [sequelize_1.Op.ne]: null };
+        }
+        else if (!includeLeft) {
+            studentWhere.left_school = { [sequelize_1.Op.is]: null };
+        }
         if (search) {
             studentWhere[sequelize_1.Op.or] = [
                 { first_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
                 { last_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
-                {
-                    [sequelize_1.Op.and]: [
-                        sequelize_1.Sequelize.where((0, sequelize_1.fn)("concat", (0, sequelize_1.col)("Student.first_name"), " ", (0, sequelize_1.col)("Student.last_name")), { [sequelize_1.Op.iLike]: `%${search}%` }),
-                    ],
-                },
+                sequelize_1.Sequelize.where((0, sequelize_1.fn)("concat", (0, sequelize_1.col)("Student.first_name"), " ", (0, sequelize_1.col)("Student.last_name")), { [sequelize_1.Op.iLike]: `%${search}%` }),
                 { phone_number: { [sequelize_1.Op.iLike]: `%${search}%` } },
                 { father_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
                 { studental_id: { [sequelize_1.Op.iLike]: `%${search}%` } },
             ];
         }
-        const { rows: students, count: totalItems } = await index_1.Student.findAndCountAll({
-            where: studentWhere,
-            include: [
-                {
-                    model: index_3.Group,
-                    as: "groups",
-                    attributes: ["id", "group_subject"],
-                    through: { attributes: [] },
-                    include: [
-                        {
-                            model: index_2.Teacher,
-                            as: "teacher",
-                            attributes: ["id", "first_name", "last_name", "phone_number"],
-                            required: false,
-                        },
-                    ],
-                    required: false,
-                },
-                {
-                    model: student_groups_model_1.default,
-                    as: "studentGroups",
-                    attributes: ["group_id", "paid", "month", "year"],
-                    required: false,
-                    where: {
-                        month,
-                        year,
+        if (simple) {
+            const { count, rows } = await index_1.Student.findAndCountAll({
+                where: studentWhere,
+                attributes: [
+                    "id",
+                    "first_name",
+                    "last_name",
+                    "phone_number",
+                    "came_in_school",
+                    "left_school",
+                    "created_at",
+                ],
+                include: [
+                    {
+                        model: index_3.Group,
+                        as: "groups",
+                        attributes: ["id", "group_subject", "monthly_fee"],
+                        through: { attributes: [] },
+                        required: false,
                     },
-                    include: [
-                        {
-                            model: index_3.Group,
-                            as: "studentGroupParent",
-                            attributes: [],
-                            required: true,
-                            where: (0, branch_scope_helper_1.withBranchScope)(req),
-                        },
-                    ],
+                ],
+                distinct: true,
+                order: [["created_at", "DESC"]],
+                limit,
+                offset,
+            });
+            const totalPages = Math.max(Math.ceil(count / limit), 1);
+            return res.status(200).json({
+                data: rows,
+                pagination: {
+                    page,
+                    limit,
+                    totalItems: count,
+                    totalPages,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1,
                 },
-            ],
-            distinct: true,
-            order: [["created_at", "DESC"]],
-            limit,
-            offset,
-        });
-        const studentsWithGroups = students.map((student) => {
-            const plain = typeof student.get === "function"
-                ? student.get({ plain: true })
-                : student;
+            });
+        }
+        const includeFull = [
+            {
+                model: index_3.Group,
+                as: "groups",
+                attributes: ["id", "group_subject"],
+                through: { attributes: [] },
+                include: [
+                    {
+                        model: index_2.Teacher,
+                        as: "teacher",
+                        attributes: ["id", "first_name", "last_name", "phone_number"],
+                        required: false,
+                    },
+                ],
+                required: false,
+            },
+            {
+                model: student_groups_model_1.default,
+                as: "studentGroups",
+                attributes: ["group_id", "paid", "month", "year"],
+                required: false,
+                where: { month, year },
+                include: [
+                    {
+                        model: index_3.Group,
+                        as: "studentGroupParent",
+                        attributes: [],
+                        required: true,
+                        where: (0, branch_scope_helper_1.withBranchScope)(req),
+                    },
+                ],
+            },
+        ];
+        const mapStudent = (student) => {
+            const plain = typeof student.get === "function" ? student.get({ plain: true }) : student;
             const allGroups = plain.groups?.length || 0;
             const monthStudentGroups = plain.studentGroups || [];
             const totalGroups = monthStudentGroups.length;
@@ -176,28 +210,84 @@ async function getStudents(req, res, next) {
                 paid_groups: paidGroups,
                 all_groups: allGroups,
             };
-        });
-        let filteredStudents = studentsWithGroups;
-        if (paymentFilter !== "all") {
-            filteredStudents = studentsWithGroups.filter((student) => {
-                const totalGroups = student.total_groups || 0;
-                const paidGroups = student.paid_groups || 0;
-                const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
-                const isPartiallyPaid = totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
-                const isUnpaid = totalGroups > 0 && paidGroups === 0;
-                return ((paymentFilter === "fullyPaid" && isFullyPaid) ||
-                    (paymentFilter === "partiallyPaid" && isPartiallyPaid) ||
-                    (paymentFilter === "unpaid" && isUnpaid));
+        };
+        if (paymentFilter === "all") {
+            const totalItems = await index_1.Student.count({
+                where: studentWhere,
+                distinct: true,
+                col: "id",
+            });
+            const studentIdsRows = await index_1.Student.findAll({
+                where: studentWhere,
+                attributes: ["id"],
+                order: [["created_at", "DESC"]],
+                limit,
+                offset,
+                raw: true,
+            });
+            const studentIds = studentIdsRows.map((s) => s.id);
+            if (studentIds.length === 0) {
+                return res.status(200).json({
+                    data: [],
+                    pagination: {
+                        page,
+                        limit,
+                        totalItems,
+                        totalPages: Math.max(Math.ceil(totalItems / limit), 1),
+                        hasNextPage: page < Math.ceil(totalItems / limit),
+                        hasPrevPage: page > 1,
+                    },
+                });
+            }
+            const students = await index_1.Student.findAll({
+                where: {
+                    id: { [sequelize_1.Op.in]: studentIds },
+                },
+                include: includeFull,
+                order: [["created_at", "DESC"]],
+            });
+            const studentsMap = new Map(students.map((student) => [student.id, mapStudent(student)]));
+            const orderedStudents = studentIds
+                .map((id) => studentsMap.get(id))
+                .filter(Boolean);
+            const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+            return res.status(200).json({
+                data: orderedStudents,
+                pagination: {
+                    page,
+                    limit,
+                    totalItems,
+                    totalPages,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1,
+                },
             });
         }
-        const totalFilteredItems = paymentFilter === "all" ? totalItems : filteredStudents.length;
-        const totalPages = Math.max(Math.ceil(totalFilteredItems / limit), 1);
+        const allStudents = await index_1.Student.findAll({
+            where: studentWhere,
+            include: includeFull,
+            order: [["created_at", "DESC"]],
+        });
+        const studentsWithGroups = allStudents.map(mapStudent);
+        const filteredStudents = studentsWithGroups.filter((student) => {
+            const totalGroups = student.total_groups || 0;
+            const paidGroups = student.paid_groups || 0;
+            const isFullyPaid = totalGroups > 0 && paidGroups === totalGroups;
+            const isPartiallyPaid = totalGroups > 0 && paidGroups > 0 && paidGroups < totalGroups;
+            const isUnpaid = totalGroups > 0 && paidGroups === 0;
+            return ((paymentFilter === "fullyPaid" && isFullyPaid) ||
+                (paymentFilter === "partiallyPaid" && isPartiallyPaid) ||
+                (paymentFilter === "unpaid" && isUnpaid));
+        });
+        const totalItems = filteredStudents.length;
+        const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+        const paginatedStudents = filteredStudents.slice(offset, offset + limit);
         return res.status(200).json({
-            data: filteredStudents,
+            data: paginatedStudents,
             pagination: {
                 page,
                 limit,
-                totalItems: totalFilteredItems,
+                totalItems,
                 totalPages,
                 hasNextPage: page < totalPages,
                 hasPrevPage: page > 1,
@@ -310,6 +400,16 @@ async function createStudent(req, res, next) {
         const { first_name, last_name, father_name, mother_name, birth_date, phone_number, group_ids, parents_phone_number, telegram_user_id, came_in_school, img_url, left_school, } = req.body;
         if (!group_ids || !Array.isArray(group_ids) || group_ids.length === 0) {
             return next(base_error_1.BaseError.BadRequest(400, lang_1.default.t("group_ids_required", { lng: lang })));
+        }
+        const existingStudent = await index_1.Student.findOne({
+            where: {
+                first_name,
+                last_name,
+                branch_id: branchId,
+            },
+        });
+        if (existingStudent) {
+            return next(base_error_1.BaseError.BadRequest(400, "Bu ism va familiyadagi o'quvchi allaqachon mavjud"));
         }
         const t = await database_config_1.default.transaction();
         let student;
@@ -564,7 +664,6 @@ async function deleteStudent(req, res, next) {
                 where: { pupil_id: student.dataValues.id },
             });
             await index_1.Appeal.destroy({ where: { pupil_id: student.dataValues.id } });
-            await index_1.Payment.destroy({ where: { pupil_id: student.dataValues.id } });
             await student.destroy({ transaction: t });
             await t.commit();
             res
@@ -578,6 +677,40 @@ async function deleteStudent(req, res, next) {
     }
     catch (error) {
         console.error("Error in deleteStudent:", error);
+        next(error);
+    }
+}
+async function markStudentAsLeft(req, res, next) {
+    try {
+        const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+        const student = await index_1.Student.findOne({
+            where: (0, branch_scope_helper_1.withBranchScope)(req, { id: req.params.id }),
+        });
+        if (!student) {
+            return next(base_error_1.BaseError.BadRequest(404, lang_1.default.t("student_not_found", { lng: lang })));
+        }
+        const today = new Date().toISOString().slice(0, 10);
+        const leftDate = req.body?.left_school || today;
+        await student.update({ left_school: leftDate });
+        res.status(200).json(student);
+    }
+    catch (error) {
+        next(error);
+    }
+}
+async function restoreStudent(req, res, next) {
+    try {
+        const lang = req.headers["accept-language"]?.split(",")[0] || "uz";
+        const student = await index_1.Student.findOne({
+            where: (0, branch_scope_helper_1.withBranchScope)(req, { id: req.params.id }),
+        });
+        if (!student) {
+            return next(base_error_1.BaseError.BadRequest(404, lang_1.default.t("student_not_found", { lng: lang })));
+        }
+        await student.update({ left_school: null });
+        res.status(200).json(student);
+    }
+    catch (error) {
         next(error);
     }
 }
@@ -936,7 +1069,7 @@ async function makeAttendance(req, res, next) {
         const [startHours, startMinutes] = foundGroup.dataValues.start_time.split(":").map(Number);
         const [endHours, endMinutes] = foundGroup.dataValues.end_time.split(":").map(Number);
         const classStart = luxon_1.DateTime.fromObject({ year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: startHours, minute: startMinutes }, { zone: "Asia/Tashkent" }).minus({ minutes: 10 }); // 10 daqiqa oldin
-        const classEnd = luxon_1.DateTime.fromObject({ year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: endHours, minute: endMinutes }, { zone: "Asia/Tashkent" }).plus({ hours: 1 }); // 1 soat qo'shimcha
+        const classEnd = luxon_1.DateTime.fromObject({ year: inputDate.year, month: inputDate.month, day: inputDate.day, hour: endHours, minute: endMinutes }, { zone: "Asia/Tashkent" }).plus({ hours: 2 }); // 2 soat qo'shimcha
         const now = luxon_1.DateTime.now().setZone("Asia/Tashkent");
         // Check if admin has extended the time for this group
         const extension = await extend_attendance_model_1.AttendanceExtension.findOne({
@@ -959,7 +1092,7 @@ async function makeAttendance(req, res, next) {
                 const diff = now.diff(classEnd, ["hours", "minutes"]);
                 const hours = diff.hours;
                 const minutes = Math.round(diff.minutes);
-                return next(base_error_1.BaseError.BadRequest(400, `Dars tugagach bir soat qo'shimcha vaqtdan ${hours} soat ${minutes} daqiqa o'tdi. Yo'qlama qilish mumkin emas.`));
+                return next(base_error_1.BaseError.BadRequest(400, `Dars tugagach ikki soat qo'shimcha vaqtdan ${hours} soat ${minutes} daqiqa o'tdi. Yo'qlama qilish mumkin emas. Admin bilan bog'laning`));
             }
         }
         // Create attendance transaction
@@ -992,9 +1125,6 @@ async function makeAttendance(req, res, next) {
                     reason: status === "present" ? null : reason || "unexcused",
                     note: status === "present" ? null : note || null,
                 }, { transaction: t });
-                if (status === "present") {
-                    await foundStudent.update({ came_in_school: now.toISO() }, { transaction: t });
-                }
             }
             await t.commit();
             res.status(201).json({
@@ -1338,5 +1468,82 @@ async function getOverallAttendanceStats(req, res, next) {
     }
     catch (err) {
         next(err);
+    }
+}
+async function getGroupMissedAttendanceDates(req, res, next) {
+    try {
+        const groupId = req.params.groupId;
+        if (!groupId) {
+            return next(base_error_1.BaseError.BadRequest(400, "groupId majburiy"));
+        }
+        const group = await index_3.Group.findOne({
+            where: (0, branch_scope_helper_1.withBranchScope)(req, { id: groupId }),
+            attributes: ["id", "days", "created_at"],
+        });
+        if (!group) {
+            return next(base_error_1.BaseError.BadRequest(404, "Guruh topilmadi"));
+        }
+        const groupDaysRaw = String(group.dataValues.days || "");
+        const classDayNames = groupDaysRaw
+            .split("-")
+            .map((d) => d.trim().toUpperCase())
+            .filter(Boolean);
+        if (classDayNames.length === 0) {
+            return res.status(200).json({ dates: [] });
+        }
+        const dayNameToWeekday = {
+            YAKSHANBA: 7,
+            DUSHANBA: 1,
+            SESHANBA: 2,
+            CHORSHANBA: 3,
+            PAYSHANBA: 4,
+            JUMA: 5,
+            SHANBA: 6,
+        };
+        const classWeekdays = classDayNames
+            .map((day) => dayNameToWeekday[day])
+            .filter((v) => !!v);
+        if (classWeekdays.length === 0) {
+            return res.status(200).json({ dates: [] });
+        }
+        const groupCreatedAt = luxon_1.DateTime.fromJSDate(group.dataValues.created_at).setZone(groupTimeZone).startOf("day");
+        const today = luxon_1.DateTime.now().setZone(groupTimeZone).startOf("day");
+        const takenAttendances = await Models_1.Attendance.findAll({
+            where: {
+                group_id: groupId,
+                date: {
+                    [sequelize_1.Op.between]: [groupCreatedAt.toISODate(), today.toISODate()],
+                },
+            },
+            attributes: ["date"],
+            raw: true,
+        });
+        const takenDateSet = new Set(takenAttendances
+            .map((a) => {
+            if (!a.date)
+                return null;
+            return typeof a.date === "string"
+                ? a.date
+                : luxon_1.DateTime.fromJSDate(a.date).setZone(groupTimeZone).toISODate();
+        })
+            .filter(Boolean));
+        const missedDates = [];
+        let cursor = groupCreatedAt;
+        while (cursor <= today) {
+            const isClassDay = classWeekdays.includes(cursor.weekday);
+            if (isClassDay) {
+                const dateKey = cursor.toISODate();
+                if (dateKey && !takenDateSet.has(dateKey)) {
+                    missedDates.push(dateKey);
+                }
+            }
+            cursor = cursor.plus({ days: 1 });
+        }
+        return res.status(200).json({
+            dates: missedDates,
+        });
+    }
+    catch (error) {
+        next(error);
     }
 }

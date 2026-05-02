@@ -64,7 +64,7 @@ exports.monthsInUzbek = {
     7: "Iyul",
     8: "Avgust",
     9: "Sentyabr",
-    10: "Oktabr",
+    10: "Oktyabr",
     11: "Noyabr",
     12: "Dekabr",
 };
@@ -74,27 +74,69 @@ function getMonthsInWord(monthNumber) {
 }
 async function getPayments(req, res, next) {
     try {
-        const where = (0, branch_scope_helper_1.withBranchScope)(req);
-        const payments = await index_1.Payment.findAll({
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const limit = Math.max(Number(req.query.limit) || 10, 1);
+        const offset = (page - 1) * limit;
+        const search = String(req.query.search || "").trim();
+        const year = String(req.query.year || "all").trim();
+        const month = String(req.query.month || "all").trim();
+        const where = {
+            ...(0, branch_scope_helper_1.withBranchScope)(req),
+        };
+        if (month !== "all") {
+            where.for_which_month = month;
+        }
+        if (year !== "all") {
+            where[sequelize_1.Op.and] = [
+                ...(where[sequelize_1.Op.and] || []),
+                sequelize_1.Sequelize.where(sequelize_1.Sequelize.fn("DATE_PART", "year", sequelize_1.Sequelize.col("Payment.created_at")), Number(year)),
+            ];
+        }
+        const studentInclude = {
+            model: index_1.Student,
+            as: "student",
+            attributes: ["id", "first_name", "last_name", "phone_number"],
+            required: false,
+        };
+        if (search) {
+            studentInclude.required = true;
+            studentInclude.where = {
+                [sequelize_1.Op.or]: [
+                    { first_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
+                    { last_name: { [sequelize_1.Op.iLike]: `%${search}%` } },
+                    sequelize_1.Sequelize.where(sequelize_1.Sequelize.fn("concat", sequelize_1.Sequelize.col("student.first_name"), " ", sequelize_1.Sequelize.col("student.last_name")), { [sequelize_1.Op.iLike]: `%${search}%` }),
+                    { phone_number: { [sequelize_1.Op.iLike]: `%${search}%` } },
+                ],
+            };
+        }
+        const { count, rows } = await index_1.Payment.findAndCountAll({
             where,
             include: [
-                {
-                    model: index_1.Student,
-                    as: "student",
-                    attributes: ["first_name", "last_name", "phone_number"],
-                },
+                studentInclude,
                 {
                     model: index_1.Group,
                     as: "paymentGroup",
                     attributes: ["id", "group_subject"],
+                    required: false,
                 },
             ],
             order: [["created_at", "DESC"]],
+            limit,
+            offset,
+            distinct: true,
         });
-        if (payments.length === 0) {
-            return next(base_error_1.BaseError.BadRequest(404, lang_1.default.t("payment_notFound")));
-        }
-        res.status(200).json(payments);
+        const totalPages = Math.max(Math.ceil(count / limit), 1);
+        return res.status(200).json({
+            data: rows,
+            pagination: {
+                page,
+                limit,
+                totalItems: count,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            },
+        });
     }
     catch (e) {
         next(e);
@@ -125,51 +167,41 @@ async function getGroupMonthlyPaymentSummary(req, res, next) {
         const year = now.getFullYear();
         const monthNum = now.getMonth() + 1;
         const monthName = exports.monthsInUzbek[monthNum] || "Yanvar";
-        // Guruhdagi o'quvchilar
-        const students = await index_1.Student.findAll({
-            attributes: ['id'],
-            include: [{
-                    model: index_1.StudentGroup,
-                    as: "studentGroups",
-                    where: { group_id: groupId },
-                    required: true,
-                    attributes: [],
-                }],
+        const studentGroups = await index_1.StudentGroup.findAll({
+            where: { group_id: groupId },
+            attributes: ["student_id"],
             raw: true,
         });
-        const studentIds = students.map((s) => s.id);
-        let summaryResult = {
-            month: monthName,
-            year,
-            total_paid: 0,
-            paid_count: 0,
-            total_students: studentIds.length,
-            monthly_fee: null,
-        };
-        if (studentIds.length === 0) {
-            return res.json({ success: true, ...summaryResult });
-        }
-        // Guruh ma'lumotini olish (monthly_fee uchun)
-        const group = await index_1.Group.findByPk(groupId, { attributes: ['monthly_fee'], raw: true });
-        if (group) {
-            summaryResult.monthly_fee = group.monthly_fee;
-        }
-        // To'lovlar summasi va soni
-        const summary = await index_1.Payment.findOne({
+        const uniqueStudentIds = [...new Set(studentGroups.map((sg) => sg.student_id))];
+        const group = await index_1.Group.findByPk(groupId, {
+            attributes: ["monthly_fee"],
+            raw: true,
+        });
+        const totalPaid = await index_1.Payment.sum("payment_amount", {
             where: {
                 group_id: groupId,
                 for_which_month: monthName,
-                pupil_id: { [sequelize_1.Op.in]: studentIds },
+                pupil_id: { [sequelize_1.Op.in]: uniqueStudentIds },
             },
-            attributes: [
-                [sequelize_1.Sequelize.fn('SUM', sequelize_1.Sequelize.col('payment_amount')), 'total'],
-                [sequelize_1.Sequelize.fn('COUNT', sequelize_1.Sequelize.col('id')), 'count'],
-            ],
-            raw: true,
         });
-        summaryResult.total_paid = summary?.total ? Math.round(Number(summary.total)) : 0;
-        summaryResult.paid_count = summary?.count ? Number(summary.count) : 0;
-        return res.json({ success: true, ...summaryResult });
+        const paidCount = await index_1.Payment.count({
+            where: {
+                group_id: groupId,
+                for_which_month: monthName,
+                pupil_id: { [sequelize_1.Op.in]: uniqueStudentIds },
+            },
+            distinct: true,
+            col: "pupil_id",
+        });
+        return res.json({
+            success: true,
+            month: monthName,
+            year,
+            total_paid: totalPaid ? Math.round(Number(totalPaid)) : 0,
+            paid_count: paidCount || 0,
+            total_students: uniqueStudentIds.length,
+            monthly_fee: group?.monthly_fee ?? null,
+        });
     }
     catch (err) {
         console.error("getGroupMonthlyPaymentSummary xatosi:", err);
@@ -248,6 +280,7 @@ async function createPayment(req, res, next) {
                 comment,
                 shouldBeConsideredAsPaid,
                 branch_id: studentBranchId,
+                reserve_data: student
             }, { transaction: t });
             if (paymentAmount === monthlyFee || shouldBeConsideredAsPaid) {
                 await index_1.StudentGroup.update({ paid: true }, {
@@ -462,7 +495,7 @@ async function deletePayment(req, res, next) {
             return next(base_error_1.BaseError.BadRequest(404, lang_1.default.t("payment_notFound")));
         const foundGroup = await index_1.StudentGroup.findOne({
             where: {
-                student_id: payment.dataValues.pupil_id,
+                student_id: payment.dataValues.pupil_id || payment.dataValues.reserve_data?.id,
                 group_id: payment.dataValues.group_id,
                 month: payment.dataValues.for_which_month,
                 year: new Date().getFullYear(),
@@ -562,7 +595,7 @@ async function getYearlyPayments(req, res, next) {
         }, {});
         const monthNames = [
             "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
-            "Iyul", "Avgust", "Sentyabr", "Oktabr", "Noyabr", "Dekabr"
+            "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"
         ];
         const monthly = Array.from({ length: 12 }, (_, i) => {
             const month = String(i + 1).padStart(2, "0");

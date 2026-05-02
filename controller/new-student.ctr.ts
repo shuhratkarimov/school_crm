@@ -19,10 +19,18 @@ async function getNewStudents(req: any, res: Response, next: NextFunction) {
 async function registerNewStudentPublic(req: Request, res: Response, next: NextFunction) {
   try {
     const { token } = req.params;
-    const { first_name, last_name, phone } = req.body;
+    const {
+      first_name,
+      last_name,
+      father_name,
+      birth_date,
+      phone,
+      parents_phone_number,
+      came_in_school,
+    } = req.body;
 
     if (!first_name?.trim() || !last_name?.trim() || !phone?.trim()) {
-      return next(BaseError.BadRequest(400, "Barcha maydonlar kiritilishi shart"));
+      return next(BaseError.BadRequest(400, "Ism, familiya va telefon majburiy"));
     }
 
     const link = await RegistrationLink.findOne({
@@ -34,7 +42,11 @@ async function registerNewStudentPublic(req: Request, res: Response, next: NextF
     const student = await NewStudent.create({
       first_name: first_name.trim(),
       last_name: last_name.trim(),
+      father_name: father_name?.trim() || null,
+      birth_date: birth_date || null,
       phone,
+      parents_phone_number: parents_phone_number?.trim() || null,
+      came_in_school: came_in_school || null,
       subject: link.get("subject"),
       branch_id: link.get("branch_id"),
     });
@@ -48,7 +60,21 @@ async function registerNewStudentPublic(req: Request, res: Response, next: NextF
 async function updateNewStudent(req: any, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { interviewed } = req.body;
+    const updates: any = {};
+    const allowed = [
+      "interviewed",
+      "approved",
+      "first_name",
+      "last_name",
+      "father_name",
+      "birth_date",
+      "phone",
+      "parents_phone_number",
+      "came_in_school",
+    ];
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
 
     const student = await NewStudent.findOne({
       where: withBranchScope(req, { id }),
@@ -58,7 +84,7 @@ async function updateNewStudent(req: any, res: Response, next: NextFunction) {
       return next(BaseError.BadRequest(404, "Yangi o`quvchi topilmadi (yoki ruxsat yo‘q)"));
     }
 
-    await student.update({ interviewed });
+    await student.update(updates);
     res.json(student);
   } catch (error) {
     next(error);

@@ -66,7 +66,7 @@ export const monthsInUzbek: Record<number, string> = {
   7: "Iyul",
   8: "Avgust",
   9: "Sentyabr",
-  10: "Oktabr",
+  10: "Oktyabr",
   11: "Noyabr",
   12: "Dekabr",
 };
@@ -720,7 +720,7 @@ async function getYearlyPayments(req: Request, res: Response, next: NextFunction
 
     const monthNames = [
       "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
-      "Iyul", "Avgust", "Sentyabr", "Oktabr", "Noyabr", "Dekabr"
+      "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"
     ];
 
     const monthly = Array.from({ length: 12 }, (_, i) => {

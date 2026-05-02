@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserSettings = exports.UserNotification = exports.TeacherBalance = exports.Achievement = exports.TeacherPayment = exports.RegistrationLink = exports.NewStudent = exports.Note = exports.Expense = exports.Branch = exports.TestResult = exports.Test = exports.StudentGroup = exports.Schedule = exports.Room = exports.NotificationToCenter = exports.Notification = exports.Center = exports.User = exports.AttendanceRecord = exports.Attendance = exports.Appeal = exports.Payment = exports.Student = exports.Group = exports.Teacher = void 0;
+exports.Feedback = exports.UserSettings = exports.UserNotification = exports.TeacherBalance = exports.Achievement = exports.TeacherPayment = exports.RegistrationLink = exports.NewStudent = exports.Note = exports.Expense = exports.Branch = exports.TestResult = exports.Test = exports.StudentGroup = exports.Schedule = exports.Room = exports.NotificationToCenter = exports.Notification = exports.Center = exports.User = exports.AttendanceRecord = exports.Attendance = exports.Appeal = exports.Payment = exports.Student = exports.Group = exports.Teacher = void 0;
 const appeal_model_1 = __importDefault(require("./appeal_model"));
 exports.Appeal = appeal_model_1.default;
 const group_model_1 = __importDefault(require("./group_model"));
@@ -55,6 +55,8 @@ const user_settings_model_1 = __importDefault(require("./user_settings.model"));
 exports.UserSettings = user_settings_model_1.default;
 const user_notification_model_1 = __importDefault(require("./user_notification_model"));
 exports.UserNotification = user_notification_model_1.default;
+const feedback_model_1 = __importDefault(require("./feedback_model"));
+exports.Feedback = feedback_model_1.default;
 // 1. Teacher ↔ Group
 teacher_model_1.default.hasMany(group_model_1.default, {
     foreignKey: "teacher_id",
@@ -317,4 +319,35 @@ user_model_1.User.hasMany(user_notification_model_1.default, {
 user_notification_model_1.default.belongsTo(user_model_1.User, {
     foreignKey: "user_id",
     as: "user",
+});
+// Feedback -> Branch
+feedback_model_1.default.belongsTo(branches_model_1.default, {
+    foreignKey: "branch_id",
+    as: "branch",
+});
+branches_model_1.default.hasMany(feedback_model_1.default, {
+    foreignKey: "branch_id",
+    as: "feedbacks",
+});
+// Feedback -> User
+feedback_model_1.default.belongsTo(user_model_1.User, {
+    foreignKey: "sender_id",
+    as: "userSender",
+    constraints: false,
+});
+user_model_1.User.hasMany(feedback_model_1.default, {
+    foreignKey: "sender_id",
+    as: "userFeedbacks",
+    constraints: false,
+});
+// Feedback -> Teacher
+feedback_model_1.default.belongsTo(teacher_model_1.default, {
+    foreignKey: "sender_id",
+    as: "teacherSender",
+    constraints: false,
+});
+teacher_model_1.default.hasMany(feedback_model_1.default, {
+    foreignKey: "sender_id",
+    as: "teacherFeedbacks",
+    constraints: false,
 });

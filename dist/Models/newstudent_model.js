@@ -22,15 +22,35 @@ NewStudent.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false
     },
+    father_name: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true
+    },
+    birth_date: {
+        type: sequelize_1.DataTypes.DATEONLY,
+        allowNull: true
+    },
     phone: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false
+    },
+    parents_phone_number: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true
+    },
+    came_in_school: {
+        type: sequelize_1.DataTypes.DATEONLY,
+        allowNull: true
     },
     subject: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false
     },
     interviewed: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    approved: {
         type: sequelize_1.DataTypes.BOOLEAN,
         defaultValue: false
     },

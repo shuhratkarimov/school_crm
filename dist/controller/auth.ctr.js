@@ -159,7 +159,7 @@ async function login(req, res, next) {
             const secretKey = process.env.ACCESS_SECRET_KEY;
             if (!secretKey)
                 throw new Error("ACCESS_SECRET_KEY is not defined");
-            const expiresIn = process.env.ACCESS_EXPIRING_TIME || "15m";
+            const expiresIn = process.env.ACCESS_EXPIRING_TIME || "1d";
             return jsonwebtoken_1.default.sign(payload, secretKey, { expiresIn });
         };
         const generateRefreshToken = (payload) => {
@@ -178,7 +178,7 @@ async function login(req, res, next) {
                 httpOnly: true,
                 secure: isSecure,
                 sameSite: "lax",
-                maxAge: 60 * 60 * 1000,
+                maxAge: 24 * 60 * 60 * 1000,
             });
             res.cookie("refreshtoken", refreshtoken, {
                 httpOnly: true,
@@ -383,7 +383,7 @@ async function directorLogin(req, res, next) {
             const secretKey = process.env.ACCESS_SECRET_KEY;
             if (!secretKey)
                 throw new Error("ACCESS_SECRET_KEY is not defined");
-            const expiresIn = process.env.ACCESS_EXPIRING_TIME || "15m";
+            const expiresIn = process.env.ACCESS_EXPIRING_TIME || "1d";
             return jsonwebtoken_1.default.sign(payload, secretKey, { expiresIn });
         };
         const generateRefreshToken = (payload) => {

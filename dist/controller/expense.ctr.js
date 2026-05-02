@@ -102,7 +102,7 @@ const getMonthlyExpenses = async (req, res, next) => {
         }, {});
         const monthNames = [
             "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
-            "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"
+            "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"
         ];
         const result = Array.from({ length: 12 }, (_, i) => {
             const month = String(i + 1).padStart(2, "0");

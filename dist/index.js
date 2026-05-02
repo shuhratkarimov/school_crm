@@ -37,6 +37,8 @@ const missing_classes_cron_1 = require("./Utils/missing-classes.cron");
 const daily_report_cron_1 = require("./Utils/daily-report.cron");
 const weekly_report_cron_1 = require("./Utils/weekly-report.cron");
 const reports_routes_1 = require("./router/reports.routes");
+const platform_review_routes_1 = __importDefault(require("./router/platform_review.routes"));
+const feedback_routes_1 = require("./router/feedback.routes");
 dotenv_1.default.config();
 const PORT = process.env.PORT || 3000;
 const app = (0, express_1.default)();
@@ -51,6 +53,8 @@ const allowedOrigins = [
     'https://register.intellectualprogress.uz',
     'http://teacher.intellectualprogress.uz',
     'https://teacher.intellectualprogress.uz',
+    'http://director.intellectualprogress.uz',
+    'https://director.intellectualprogress.uz',
     'http://193.181.208.209:8080',
     'http://localhost:5173',
 ];
@@ -79,6 +83,8 @@ app.use("/superadmin", superadmin_routes_1.default);
 app.use(settings_routes_1.SettingsRouter);
 app.use(user_notifications_routes_1.UserNotificationRouter);
 app.use(reports_routes_1.ReportsRouter);
+app.use(feedback_routes_1.router);
+app.use(platform_review_routes_1.default);
 (0, daily_report_cron_1.startDailyReportNotifier)();
 (0, weekly_report_cron_1.startWeeklyReportNotifier)();
 (0, missing_classes_cron_1.startAttendanceMissingNotifier)();
