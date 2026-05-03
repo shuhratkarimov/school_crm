@@ -156,7 +156,7 @@ export default function StudentRegistration() {
     "SIFATLI DARS",
     "ZAMONAVIY METODIKALAR",
     "TAJRIBALI USTOZLAR",
-    "INDIVIDUAL YONDA",
+    "INDIVIDUAL YONDASHUV",
     "TEZKOR NATIJA",
     "INTENSIV KURSLAR",
     "AMALIY MASHG‘ULOT",
