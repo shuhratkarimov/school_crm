@@ -24,6 +24,7 @@ import TeacherBalance from "./teacher-balance.model";
 import UserSettings from "./user_settings.model";
 import UserNotification from "./user_notification_model";
 import Feedback from "./feedback_model";
+import { Article, ArticleLike, ArticleComment, ArticleRequest } from "./article_model";
 
 // 1. Teacher ↔ Group
 Teacher.hasMany(Group, {
@@ -371,6 +372,30 @@ Teacher.hasMany(Feedback, {
   constraints: false,
 });
 
+/* ============== Articles ============== */
+Article.hasMany(ArticleLike, {
+  foreignKey: "article_id",
+  as: "likes",
+  onDelete: "CASCADE",
+});
+ArticleLike.belongsTo(Article, { foreignKey: "article_id", as: "article" });
+
+Article.hasMany(ArticleComment, {
+  foreignKey: "article_id",
+  as: "comments",
+  onDelete: "CASCADE",
+});
+ArticleComment.belongsTo(Article, { foreignKey: "article_id", as: "article" });
+
+Teacher.hasMany(ArticleLike, { foreignKey: "teacher_id", as: "articleLikes" });
+ArticleLike.belongsTo(Teacher, { foreignKey: "teacher_id", as: "teacher" });
+
+Teacher.hasMany(ArticleComment, { foreignKey: "teacher_id", as: "articleComments" });
+ArticleComment.belongsTo(Teacher, { foreignKey: "teacher_id", as: "teacher" });
+
+Teacher.hasMany(ArticleRequest, { foreignKey: "teacher_id", as: "articleRequests" });
+ArticleRequest.belongsTo(Teacher, { foreignKey: "teacher_id", as: "teacher" });
+
 export {
   Teacher,
   Group,
@@ -399,4 +424,8 @@ export {
   UserNotification,
   UserSettings,
   Feedback,
+  Article,
+  ArticleLike,
+  ArticleComment,
+  ArticleRequest,
 };

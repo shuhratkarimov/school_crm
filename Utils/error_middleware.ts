@@ -8,7 +8,7 @@ import { QueryFailedError } from "typeorm";
 
 
 export default function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
-  console.error("Error Middleware Triggered:", err); // Xatolikni logga yozish
+  console.error(`Error Middleware Triggered: [${req.method} ${req.originalUrl}]`, err); // URL bilan birga logla
 
   // BaseError sinfidagi xatoliklarni qaytarish
   if (err instanceof BaseError) {

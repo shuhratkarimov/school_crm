@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -35,6 +36,7 @@ import { startWeeklyReportNotifier } from './Utils/weekly-report.cron';
 import { ReportsRouter } from './router/reports.routes';
 import PlatformReviewRouter from './router/platform_review.routes';
 import { router as FeedbackRouter } from './router/feedback.routes';
+import ArticleRouter from './router/article.routes';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -42,8 +44,12 @@ const app = express();
 
 // Middlewares
 app.use(i18nextMiddleware.handle(i18next));
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads"), {
+  maxAge: "7d",
+  fallthrough: true,
+}));
 const allowedOrigins = [
   'http://admin.intellectualprogress.uz',
   'https://admin.intellectualprogress.uz',
@@ -57,7 +63,7 @@ const allowedOrigins = [
   'http://localhost:5173',
 ];
 app.use(cors({ credentials: true, origin: allowedOrigins }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // Routes
 app.use(StudentsRouter);
@@ -84,6 +90,7 @@ app.use(UserNotificationRouter)
 app.use(ReportsRouter)
 app.use(FeedbackRouter)
 app.use(PlatformReviewRouter)
+app.use(ArticleRouter)
 
 startDailyReportNotifier();
 startWeeklyReportNotifier();

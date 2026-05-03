@@ -1,0 +1,149 @@
+
+> 2-dars@1.0.0 ts-dev
+> npx ts-node-dev --respawn --transpile-only server.ts
+
+[INFO] 15:58:09 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.7.3)
+Server running on 3000
+Database connected successfully!
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /admin/articles/db73177c-5d98-4fbe-a51d-1ef6d7b653ab] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+[INFO] 16:09:36 Restarting: C:\Users\Admin\Desktop\Projects\CRM\backend\controller\article.ctr.ts has been modified
+Server running on 3000
+Database connected successfully!
+[INFO] 16:09:44 Restarting: C:\Users\Admin\Desktop\Projects\CRM\backend\controller\article.ctr.ts has been modified
+Server running on 3000
+Database connected successfully!
+Error Middleware Triggered: [GET /admin/articles/db73177c-5d98-4fbe-a51d-1ef6d7b653ab] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /admin/articles/db73177c-5d98-4fbe-a51d-1ef6d7b653ab] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+[INFO] 16:28:01 Restarting: C:\Users\Admin\Desktop\Projects\CRM\backend\controller\article.ctr.ts has been modified
+Server running on 3000
+Database connected successfully!
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /get-profile] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}
+Error Middleware Triggered: [GET /director-panel/settings] BaseError: User not found
+    at Function.BadRequest (C:\Users\Admin\Desktop\Projects\CRM\backend\Utils\base_error.ts:13:12)
+    at authMiddleware (C:\Users\Admin\Desktop\Projects\CRM\backend\middlewares\auth-guard.middleware.ts:23:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  status: 401,
+  errors: undefined
+}

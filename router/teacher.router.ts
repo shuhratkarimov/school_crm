@@ -1,7 +1,9 @@
 import { authMiddleware } from "../middlewares/auth-guard.middleware";
 import { roleMiddleware } from "../middlewares/role.middleware";
 import { accessScopeMiddleware } from "../middlewares/access-scope.middleware";
-import { createPayment, getTeacherData, getTeacherDashboardStudentPayments, getTeacherGroups, getTeachers, getTeacherSalaries, getTeacherBalance, getTeacherPayments, getOneTeacher, teacherLogin, teacherLogout, updateTeacher, deleteTeacher, createTeacher } from "../controller/teacher.ctr";
+import { teacherAuthMiddleware } from "../middlewares/teacher-auth.middleware";
+import { uploadProfileImage } from "../middlewares/upload.middleware";
+import { createPayment, getTeacherData, getTeacherDashboardStudentPayments, getTeacherGroups, getTeachers, getTeacherSalaries, getTeacherBalance, getTeacherPayments, getOneTeacher, teacherLogin, teacherLogout, updateTeacher, deleteTeacher, createTeacher, getMyTeacherProfile, updateMyTeacherProfile, changeMyTeacherPassword, uploadMyTeacherImage } from "../controller/teacher.ctr";
 import { Router, RequestHandler } from "express";
 
 const TeacherRouter: Router = Router();
@@ -12,6 +14,12 @@ TeacherRouter.post("/teacher_logout", teacherLogout as RequestHandler);
 TeacherRouter.get("/get_teacher_data", getTeacherData as RequestHandler);
 TeacherRouter.get("/get_teacher_groups", getTeacherGroups as RequestHandler);
 TeacherRouter.get("/get_teacher_dashboard_student_payments", getTeacherDashboardStudentPayments as RequestHandler);
+
+// ✅ Teacher's own profile (self-service)
+TeacherRouter.get("/teacher/profile", teacherAuthMiddleware, getMyTeacherProfile as RequestHandler);
+TeacherRouter.put("/teacher/profile", teacherAuthMiddleware, updateMyTeacherProfile as RequestHandler);
+TeacherRouter.put("/teacher/password", teacherAuthMiddleware, changeMyTeacherPassword as RequestHandler);
+TeacherRouter.post("/teacher/profile/upload-image", teacherAuthMiddleware, uploadProfileImage, uploadMyTeacherImage as RequestHandler);
 
 // pastdagi admin endpointlar shu yerdan keyin:
 TeacherRouter.get("/get_teachers", authMiddleware,

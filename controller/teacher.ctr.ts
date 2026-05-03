@@ -607,6 +607,84 @@ async function teacherLogout(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+async function uploadMyTeacherImage(req: any, res: Response, next: NextFunction): Promise<Response | void> {
+  try {
+    if (!req.file) return next(BaseError.BadRequest(400, "Rasm yuborilmadi"));
+    const url = `/uploads/profiles/${req.file.filename}`;
+    res.status(201).json({ url });
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function getMyTeacherProfile(req: any, res: Response, next: NextFunction): Promise<Response | void> {
+  try {
+    const teacher = await Teacher.findByPk(req.teacher.id, {
+      attributes: { exclude: ["password"] },
+    });
+    if (!teacher) return next(BaseError.BadRequest(404, "Ustoz topilmadi"));
+    res.json(teacher);
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function updateMyTeacherProfile(req: any, res: Response, next: NextFunction): Promise<Response | void> {
+  try {
+    const { first_name, last_name, username, img_url } = req.body || {};
+    const teacher = await Teacher.findByPk(req.teacher.id);
+    if (!teacher) return next(BaseError.BadRequest(404, "Ustoz topilmadi"));
+
+    if (typeof username === "string" && username.trim() && username !== (teacher as any).username) {
+      const existing = await Teacher.findOne({ where: { username: username.trim() } });
+      if (existing && (existing as any).id !== (teacher as any).id) {
+        return next(BaseError.BadRequest(409, "Bu username allaqachon band"));
+      }
+    }
+
+    await teacher.update({
+      ...(first_name !== undefined && { first_name: String(first_name).trim() }),
+      ...(last_name !== undefined && { last_name: String(last_name).trim() }),
+      ...(username !== undefined && { username: String(username).trim() }),
+      ...(img_url !== undefined && { img_url }),
+    });
+
+    const fresh = await Teacher.findByPk(req.teacher.id, {
+      attributes: { exclude: ["password"] },
+    });
+    res.json(fresh);
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function changeMyTeacherPassword(req: any, res: Response, next: NextFunction): Promise<Response | void> {
+  try {
+    const { old_password, new_password } = req.body || {};
+    if (!old_password || !new_password) {
+      return next(BaseError.BadRequest(400, "Eski va yangi parol majburiy"));
+    }
+    if (String(new_password).length < 6) {
+      return next(BaseError.BadRequest(400, "Yangi parol kamida 6 ta belgi bo'lsin"));
+    }
+
+    const teacher = await Teacher.findByPk(req.teacher.id);
+    if (!teacher) return next(BaseError.BadRequest(404, "Ustoz topilmadi"));
+
+    const stored = (teacher as any).password;
+    if (!stored) return next(BaseError.BadRequest(400, "Parol o'rnatilmagan"));
+
+    const ok = await bcryptjs.compare(String(old_password), stored);
+    if (!ok) return next(BaseError.BadRequest(400, "Eski parol noto'g'ri"));
+
+    const hashed = await bcryptjs.hash(String(new_password), 12);
+    await teacher.update({ password: hashed });
+    res.json({ message: "Parol o'zgartirildi" });
+  } catch (e) {
+    next(e);
+  }
+}
+
 export {
   getTeachers,
   getOneTeacher,
@@ -622,5 +700,9 @@ export {
   getTeacherData,
   getTeacherDashboardStudentPayments,
   teacherLogout,
-  getTeacherSalaries
+  getTeacherSalaries,
+  getMyTeacherProfile,
+  updateMyTeacherProfile,
+  changeMyTeacherPassword,
+  uploadMyTeacherImage
 };
