@@ -284,7 +284,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   setFormData((prev) => ({ ...prev, subject: e.target.value }))
                 }
                 placeholder="Masalan: Dashboardda grafik noto‘g‘ri chiqyapti"
-                className="w-full  border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-[#104292]"
+                className="w-full bg-white text-gray-900 placeholder:text-gray-400 border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-[#104292]"
               />
             </div>
 
@@ -300,7 +300,7 @@ export default function FeedbackModal({ open, onClose, senderType = "user" }) {
                   setFormData((prev) => ({ ...prev, message: e.target.value }))
                 }
                 placeholder="Muammoni yoki taklifingizni batafsil yozing..."
-                className="w-full  border border-gray-300 px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-[#104292]"
+                className="w-full bg-white text-gray-900 placeholder:text-gray-400 border border-gray-300 px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-[#104292]"
               />
             </div>
 

@@ -27,6 +27,111 @@
   }
 }
 
+/* ============================================================
+   Stories-style ring pulse — used on TeacherDashboard logo
+   when there's a new unseen article
+   ============================================================ */
+@keyframes story-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.55); }
+  50%      { box-shadow: 0 0 0 8px rgba(236, 72, 153, 0); }
+}
+.story-pulse { animation: story-glow 1.8s ease-in-out infinite; }
+
+/* ============================================================
+   Markdown article body — used in TeacherArticles detail view
+   ============================================================ */
+.article-body { font-size: 1rem; line-height: 1.75; word-wrap: break-word; }
+.article-body > * + * { margin-top: 0.9rem; }
+.article-body h1 { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-top: 1.4rem; }
+.article-body h2 { font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-top: 1.3rem; }
+.article-body h3 { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-top: 1.2rem; }
+.article-body h4 { font-size: 1rem;    font-weight: 700; color: #0f172a; margin-top: 1.1rem; }
+.article-body p  { color: #334155; }
+.article-body strong { color: #0f172a; font-weight: 700; }
+.article-body em { font-style: italic; }
+.article-body a { color: #4f46e5; text-decoration: underline; }
+.article-body a:hover { color: #4338ca; }
+.article-body ul { list-style: disc;     padding-left: 1.4rem; }
+.article-body ol { list-style: decimal;  padding-left: 1.4rem; }
+.article-body li { margin-top: 0.25rem; color: #334155; }
+.article-body blockquote {
+  border-left: 4px solid #c7d2fe;
+  padding: 0.25rem 0 0.25rem 1rem;
+  color: #475569;
+  background: #f8fafc;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+.article-body code {
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+  font-size: 0.9em;
+  color: #be185d;
+}
+.article-body pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.9rem 1rem;
+  border-radius: 0.6rem;
+  overflow-x: auto;
+}
+.article-body pre code { background: transparent; color: inherit; padding: 0; }
+.article-body img { max-width: 100%; height: auto; border-radius: 0.6rem; }
+.article-body hr { border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+.article-body table { width: 100%; border-collapse: collapse; }
+.article-body th, .article-body td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.article-body th { background: #f8fafc; font-weight: 700; }
+
+/* ============================================================
+   Marquee — horizontal scrolling ribbon
+   Used on StudentRegistration left panel
+   ============================================================ */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes marquee-x-reverse {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+.marquee {
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2.5rem;
+  padding-right: 2.5rem;
+  animation: marquee-x 45s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track-reverse {
+  animation-name: marquee-x-reverse;
+}
+
+.marquee-track-fast {
+  animation-duration: 20s;
+}
+
+.marquee:hover .marquee-track,
+.marquee:hover .marquee-track-reverse,
+.marquee:hover .marquee-track-fast {
+  animation-play-state: paused;
+}
+
 /* Smooth transitions */
 * {
   @apply transition-colors duration-200;
@@ -52,6 +157,34 @@ body {
   font-weight: 500;
   transition: background-color 0.3s, color 0.3s;
   /* Yumshoq o'tish effekti */
+}
+
+/* Force input controls (time, date, number) to follow the app theme,
+   not the OS color-scheme — prevents dark-rendered inputs in light mode */
+html,
+body.light {
+  color-scheme: light;
+}
+
+html.dark,
+body.dark {
+  color-scheme: dark;
+}
+
+/* Light mode: force inputs/selects/textareas to white bg + dark text
+   regardless of OS color-scheme. Skips elements that already declare
+   their own bg (so explicit utilities like bg-blue-50, bg-transparent,
+   bg-white/50 keep working) and skips checkbox/radio. */
+body.light input:not([class*="bg-"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+body.light select:not([class*="bg-"]),
+body.light textarea:not([class*="bg-"]) {
+  background-color: #ffffff;
+  color: #1f2937;
+}
+
+body.light input::placeholder,
+body.light textarea::placeholder {
+  color: #9ca3af;
 }
 
 /* Light theme */

@@ -9,6 +9,8 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  Lightbulb,
+  User,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import API_URL from "../conf/api";
@@ -20,8 +22,10 @@ export default function TeacherSidebar() {
 
   const menuItems = [
     { id: "dashboard", label: "Bosh sahifa", icon: BookOpen, path: "/teacher/dashboard" },
+    { id: "articles", label: "Foydali maqolalar", icon: Lightbulb, path: "/teacher/articles" },
     { id: "test-results", label: "Test natijalari", icon: FileText, path: "/teacher/test-results" },
     { id: "payments", label: "To'lovlar", icon: CreditCard, path: "/teacher/payments" },
+    { id: "profile", label: "Profilim", icon: User, path: "/teacher/profile" },
   ];
 
   const isActive = (path) => {

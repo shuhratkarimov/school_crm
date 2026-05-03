@@ -54,7 +54,9 @@ function TeacherAttendance() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       await Promise.all([fetchGroup(), fetchStudents()]);
+      setLoading(false);
     };
     fetchData();
   }, [groupId]);
@@ -92,7 +94,6 @@ function TeacherAttendance() {
 
   const fetchGroup = async () => {
     try {
-      setLoading(true);
       const res = await fetch(`${API_URL}/get_one_teacher_group/${groupId}`, {
         credentials: "include"
       });
@@ -101,14 +102,11 @@ function TeacherAttendance() {
       setGroup(data.group);
     } catch (err) {
       toast.error("Guruh olinmadi");
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchStudents = async () => {
     try {
-      setLoading(true);
       const res = await fetch(
         `${API_URL}/get_one_group_students_for_teacher?group_id=${groupId}`,
         { credentials: "include" }
@@ -119,14 +117,11 @@ function TeacherAttendance() {
       setStudents(filteredStudents);
     } catch (err) {
       toast.error("O'quvchilar olinmadi");
-    } finally {
-      setLoading(false);
     }
   };
 
   const checkClassDateAndFetchAttendance = async () => {
     try {
-      setLoading(true);
       const date = selectedDate.toISOString().slice(0, 10);
 
       if (date > new Date().toISOString().slice(0, 10)) {
@@ -178,8 +173,6 @@ function TeacherAttendance() {
       console.error("Error fetching attendance:", err);
       toast.error("Davomatni yuklashda xatolik");
       setHistory(null);
-    } finally {
-      setLoading(false);
     }
   };
 

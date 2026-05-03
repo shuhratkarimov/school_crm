@@ -30,6 +30,19 @@ export const BASE_ORIGIN = getBaseOrigin();
 export const API_URL = `${BASE_ORIGIN}`;
 export const SOCKET_URL = BASE_ORIGIN;
 
+export const resolveImgUrl = (url) => {
+  if (!url) return "";
+  if (
+    url.startsWith("data:") ||
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("blob:")
+  ) {
+    return url;
+  }
+  return `${BASE_ORIGIN}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
 export const directorEndpoints = {
   getDashboardStats: `${API_URL}/director-panel/dashboard/stats`,
   getRevenueChart: `${API_URL}/director-panel/dashboard/revenue`,

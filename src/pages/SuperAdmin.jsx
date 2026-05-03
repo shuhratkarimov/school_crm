@@ -5,12 +5,14 @@ import {
   Shield, Building2, Users, Pencil, Trash, Plus, KeyRound,
   UserCog, School, Briefcase, ChevronDown, ChevronUp,
   X, Save, Search, AlertTriangle, UserPlus,
-  MessageSquare, Bug, Eye, CheckCircle2, Clock3
+  MessageSquare, Bug, Eye, CheckCircle2, Clock3, BookOpen
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import API_URL from "../conf/api";
 
 export default function SuperAdmin() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAssignDirectorModalOpen, setIsAssignDirectorModalOpen] = useState(false);
@@ -594,6 +596,12 @@ export default function SuperAdmin() {
             className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95"
           >
             <UserCog size={20} /> Director tayinlash
+          </button>
+          <button
+            onClick={() => navigate("/cpanel/articles")}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95"
+          >
+            <BookOpen size={20} /> Maqolalar boshqaruvi
           </button>
         </div>
 

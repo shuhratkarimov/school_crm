@@ -218,11 +218,11 @@ export default function LinkGenerator() {
                           className="text-gray-600 cursor-pointer hover:underline break-all mt-1"
                           onClick={() =>
                             link.token &&
-                            copyToClipboard(makePublicLink(link.token))
+                            copyToClipboard(makePublicLinkLocal(link.token))
                           }
                         >
                           {link.token
-                            ? makePublicLink(link.token)
+                            ? makePublicLinkLocal(link.token)
                             : "Token yo‘q (migration qiling)"}
                         </p>
                       </div>
@@ -231,7 +231,7 @@ export default function LinkGenerator() {
                         <button
                           onClick={() =>
                             link.token &&
-                            copyToClipboard(makePublicLink(link.token))
+                            copyToClipboard(makePublicLinkLocal(link.token))
                           }
                           className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 transition"
                           title="Nusxalash"

@@ -145,10 +145,57 @@ export default function StudentRegistration() {
     "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
   const labelClass = "block mb-1.5 text-sm font-medium text-slate-700"
 
+  const tickerWords = [
+    "O'QUVCHILAR NATIJALARI",
+    "YUQORI NATIJALAR",
+    "MILLIY SERTIFIKATLAR",
+    "YUQORI IELTS NATIJALARI",
+    "TOP UNIVERSITETLAR",
+    "OTMGA KIRISH",
+    "GRANT YUTUQLARI",
+    "SIFATLI DARS",
+    "ZAMONAVIY METODIKALAR",
+    "TAJRIBALI USTOZLAR",
+    "INDIVIDUAL YONDA",
+    "TEZKOR NATIJA",
+    "INTENSIV KURSLAR",
+    "AMALIY MASHG‘ULOT",
+    "KAFOLATLANGAN NATIJA",
+    "MENTORLIK TIZIMI",
+    "REAL NATIJALAR",
+    "BITIRUVCHILAR MUVAFFAQIYATI",
+    "YUQORI BALL",
+    "PROFESSIONAL TA'LIM",
+  ]
+
+  const gradientCycle = [
+    "linear-gradient(135deg, #a7f3d0 0%, #c4b5fd 50%, #fbcfe8 100%)",
+    "linear-gradient(135deg, #fcd34d 0%, #f9a8d4 50%, #93c5fd 100%)",
+    "linear-gradient(135deg, #6ee7b7 0%, #67e8f9 50%, #c084fc 100%)",
+    "linear-gradient(135deg, #fda4af 0%, #fcd34d 50%, #86efac 100%)",
+    "linear-gradient(135deg, #a5b4fc 0%, #f0abfc 50%, #fde68a 100%)",
+    "linear-gradient(135deg, #5eead4 0%, #818cf8 50%, #f472b6 100%)",
+    "linear-gradient(135deg, #fb923c 0%, #f472b6 50%, #a78bfa 100%)",
+    "linear-gradient(135deg, #a7f3d0 0%, #c4b5fd 50%, #fbcfe8 100%)",
+  ]
+
+  const tickerImages = [
+    { src: "/lenta/ielts.png", alt: "ielts" },
+    { src: "/lenta/psch.png", alt: "psch" },
+    { src: "/lenta/cefr.png", alt: "cefr" },
+    { src: "/lenta/dtm.png", alt: "dtm" },
+    { src: "/lenta/sat.png", alt: "sat" },
+    { src: "/lenta/brtc.png", alt: "brtc" },
+  ]
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-stretch">
-      {/* Left side: brand panel */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 relative overflow-hidden">
+      {/* Left side: rotating logo */}
+      <motion.div
+        className="hidden lg:flex w-1/2 relative overflow-hidden items-center justify-center"
+        animate={{ background: gradientCycle }}
+        transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+      >
         <div className="absolute inset-0 opacity-20">
           <motion.div
             animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
@@ -158,51 +205,128 @@ export default function StudentRegistration() {
           <motion.div
             animate={{ scale: [1.2, 1, 1.2], rotate: [0, -90, 0] }}
             transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-            className="absolute bottom-20 -right-20 w-96 h-96 bg-teal-300 rounded-full blur-3xl"
+            className="absolute bottom-20 -right-20 w-96 h-96 bg-white rounded-full blur-3xl"
           />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <Sparkles size={24} className="text-white" />
-            </div>
-            <span className="text-xl font-semibold">Progress</span>
-          </div>
-
-          <div>
-            <h1 className="text-5xl font-bold leading-tight mb-6">
-              Bilim olish<br />
-              <span className="text-emerald-200">yangi sayohat</span>
-            </h1>
-            <p className="text-lg text-emerald-50 leading-relaxed max-w-md">
-              Ariza topshiring va biz tezda siz bilan bog‘lanamiz. Sizga eng mos ta‘lim
-              dasturini taklif qilamiz.
-            </p>
-
-            <div className="mt-10 grid grid-cols-3 gap-4">
-              {[
-                { num: "500+", txt: "O‘quvchi" },
-                { num: "30+", txt: "Yo‘nalish" },
-                { num: "98%", txt: "Mamnunlik" },
-              ].map((s) => (
-                <div key={s.txt} className="rounded-2xl bg-white/10 backdrop-blur-sm p-4">
-                  <div className="text-2xl font-bold">{s.num}</div>
-                  <div className="text-sm text-emerald-100">{s.txt}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="text-sm text-emerald-100/80">
-            © {new Date().getFullYear()} Progress Education
+        {/* Top image marquee */}
+        <div className="marquee absolute top-8 left-0 right-0 z-20">
+          <div className="marquee-track marquee-track-fast">
+            {[...tickerImages, ...tickerImages, ...tickerImages].map((img, i) => (
+              <div
+                key={`top-img-${i}`}
+                className="flex-shrink-0 h-24 px-4 py-2 rounded-2xl bg-white/70 backdrop-blur-sm border border-white/80 shadow-md flex items-center justify-center hover:bg-white hover:scale-105 transition-all duration-300"
+              >
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  loading="lazy"
+                  className="h-full w-auto object-contain"
+                />
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+
+        {/* Rotating logo */}
+        <div
+          className="relative z-10"
+          style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
+        >
+          <motion.img
+            src="/logo.png"
+            alt="Progress"
+            animate={{ rotateY: 360 }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            style={{
+              transformStyle: "preserve-3d",
+              backfaceVisibility: "visible",
+              filter: "drop-shadow(0 25px 35px rgba(0,0,0,0.45)) drop-shadow(0 0 20px rgba(0,0,0,0.2))",
+            }}
+            className="w-96 h-96 object-contain"
+          />
+        </div>
+
+        {/* Bottom marquee — reverse direction */}
+        <div className="marquee absolute bottom-8 left-0 right-0 z-20">
+          <div className="marquee-track marquee-track-reverse text-sm font-bold text-slate-800/80">
+            {[...tickerWords, ...tickerWords].map((w, i) => (
+              <span
+                key={`bot-${i}`}
+                className="inline-flex items-center gap-3 px-5 py-2 bg-white/40 backdrop-blur-sm rounded-full border border-white/60 shadow-sm hover:bg-white/70 hover:scale-105 transition-all duration-300 cursor-default"
+              >
+                <CheckCircle size={14} className="text-purple-700" />
+                {w}
+              </span>
+            ))}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Right side: form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
+      <div className="w-full lg:w-1/2 relative flex flex-col lg:block">
+        {/* Mobile-only animated gradient background */}
+        <motion.div
+          className="lg:hidden absolute inset-0 z-0"
+          animate={{ background: gradientCycle }}
+          transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+        />
+        {/* Mobile-only blur orbs */}
+        <div className="lg:hidden absolute inset-0 opacity-25 z-0 pointer-events-none overflow-hidden">
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute top-10 -left-20 w-72 h-72 bg-white rounded-full blur-3xl"
+          />
+          <motion.div
+            animate={{ scale: [1.2, 1, 1.2], rotate: [0, -90, 0] }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute bottom-10 -right-20 w-72 h-72 bg-white rounded-full blur-3xl"
+          />
+        </div>
+
+        {/* Mobile-only top image marquee */}
+        <div className="lg:hidden relative z-10 marquee py-3 mt-2">
+          <div className="marquee-track marquee-track-fast">
+            {[...tickerImages, ...tickerImages, ...tickerImages].map((img, i) => (
+              <div
+                key={`mtop-img-${i}`}
+                className="flex-shrink-0 h-16 px-3 py-1.5 rounded-xl bg-white/70 backdrop-blur-sm border border-white/80 shadow-sm flex items-center justify-center"
+              >
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  loading="lazy"
+                  className="h-full w-auto object-contain"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative z-10 lg:h-full">
         <div className="w-full max-w-lg">
+          {/* Mobile-only rotating logo — fixed slot so rotation/scale doesn't shift layout */}
+          <div className="lg:hidden flex justify-center mb-4">
+            <div
+              className="relative w-44 h-44"
+              style={{ perspective: "600px", transformStyle: "preserve-3d" }}
+            >
+              <motion.img
+                src="/logo.png"
+                alt="Progress"
+                animate={{ rotateY: 360 }}
+                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                style={{
+                  transformStyle: "preserve-3d",
+                  backfaceVisibility: "visible",
+                  filter: "drop-shadow(0 12px 18px rgba(0,0,0,0.35))",
+                }}
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+          </div>
+
           <AnimatePresence mode="wait">
             {isSuccess ? (
               <motion.div
@@ -390,7 +514,7 @@ export default function StudentRegistration() {
                               value={formData.phone}
                               onChange={handleChange}
                               placeholder="90 123 45 67"
-                              className="w-full px-3 py-3 outline-none text-slate-900 placeholder-slate-400"
+                              className="w-full px-3 py-3 outline-none text-slate-900 bg-white placeholder-slate-400"
                             />
                           </div>
                           {errors.phone && (
@@ -400,8 +524,8 @@ export default function StudentRegistration() {
 
                         <div>
                           <label className={labelClass}>Ota-ona telefon raqami *</label>
-                          <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100 transition-all">
-                            <div className="flex items-center gap-1.5 px-3 py-3 bg-slate-50 border-r border-slate-200 text-slate-600 text-sm">
+                          <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100 bg-white transition-all">
+                            <div className="flex items-center gap-1.5 px-3 py-3 border-r border-slate-200 text-slate-600 text-sm">
                               <Phone size={16} className="text-slate-400" />
                               +998
                             </div>
@@ -411,7 +535,7 @@ export default function StudentRegistration() {
                               value={formData.parents_phone_number}
                               onChange={handleChange}
                               placeholder="90 123 45 67"
-                              className="w-full px-3 py-3 outline-none text-slate-900 placeholder-slate-400"
+                              className="w-full px-3 py-3 outline-none text-slate-900 bg-white placeholder-slate-400"
                             />
                           </div>
                           {errors.parents_phone_number && (
@@ -474,6 +598,22 @@ export default function StudentRegistration() {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+        </div>
+
+        {/* Mobile-only bottom text marquee */}
+        <div className="lg:hidden relative z-10 marquee py-3 mb-2">
+          <div className="marquee-track marquee-track-reverse text-xs font-semibold text-slate-800/80">
+            {[...tickerWords, ...tickerWords].map((w, i) => (
+              <span
+                key={`mbot-${i}`}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/40 backdrop-blur-sm rounded-full border border-white/60 shadow-sm"
+              >
+                <CheckCircle size={12} className="text-purple-700" />
+                {w}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

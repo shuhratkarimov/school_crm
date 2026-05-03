@@ -425,7 +425,11 @@ export default function Attendance() {
       ]);
 
       if (teachersResponse.ok) {
-        setTeachers(await teachersResponse.json());
+        const teachersData = await teachersResponse.json();
+        const teachersList = Array.isArray(teachersData)
+          ? teachersData
+          : (Array.isArray(teachersData?.data) ? teachersData.data : []);
+        setTeachers(teachersList);
       } else {
         setTeachers([]);
         setErrors((prev) => ({ ...prev, teachers: "O'qituvchilar mavjud emas" }));
@@ -434,7 +438,10 @@ export default function Attendance() {
 
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
-        setStudents(studentsData.data);
+        const studentsList = Array.isArray(studentsData)
+          ? studentsData
+          : (Array.isArray(studentsData?.data) ? studentsData.data : []);
+        setStudents(studentsList);
       } else {
         setStudents([]);
         setErrors((prev) => ({ ...prev, students: "O'quvchilar mavjud emas" }));
@@ -442,7 +449,11 @@ export default function Attendance() {
       }
 
       if (roomsResponse.ok) {
-        setRooms(await roomsResponse.json());
+        const roomsData = await roomsResponse.json();
+        const roomsList = Array.isArray(roomsData)
+          ? roomsData
+          : (Array.isArray(roomsData?.data) ? roomsData.data : []);
+        setRooms(roomsList);
       } else {
         setRooms([]);
         setErrors((prev) => ({ ...prev, rooms: "Xonalar mavjud emas" }));
@@ -1012,7 +1023,7 @@ export default function Attendance() {
               <Calendar className="text-[#104292]" size={24} />
             </div>
             <div>
-              <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Guruhlar va davomat tizimi</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-white">Guruhlar va davomat tizimi</h1>
             </div>
           </div>
         </div>
@@ -1020,9 +1031,9 @@ export default function Attendance() {
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3 px-2 sm:px-0">
         <div className="lg:col-span-1 lg:sticky lg:top-6 h-fit self-start">
-          <div className="bg-white/80 backdrop-blur-sm shadow-xl p-6 max-h-[calc(100vh-48px)] overflow-y-auto border border-white/20">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl p-6 max-h-[calc(100vh-48px)] overflow-y-auto border border-white/20 dark:border-gray-700/40">
             <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-700 flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                 <Users className="text-blue-600" size={20} />
                 Guruhlar
               </h2>
@@ -1042,7 +1053,7 @@ export default function Attendance() {
               />
               <input
                 type="text"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 text-gray-900"
                 placeholder="Guruhni qidirish..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -1056,15 +1067,15 @@ export default function Attendance() {
 
                 if (!todayClass) {
                   statusEl = "Bugun dars yo‘q";
-                  statusClass = "bg-gray-100 text-gray-600";
+                  statusClass = "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
                   statusIcon = <Coffee size={14} />;
                 } else if (group.todayStatus === "loading") {
                   statusEl = "Yuklanmoqda...";
-                  statusClass = "bg-gray-100 text-gray-400";
+                  statusClass = "bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500";
                   statusIcon = <Timer size={14} />;
                 } else if (group.todayStatus === "done") {
                   statusEl = "Davomat qilingan";
-                  statusClass = "bg-green-100 text-green-700";
+                  statusClass = "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
                   statusIcon = <Check size={14} />;
                 } else if (group.todayStatus === "no_attendance") {
                   const now = new Date();
@@ -1078,15 +1089,15 @@ export default function Attendance() {
 
                   if (now < start) {
                     statusEl = `Dars ${group.start_time.slice(0, 5)} da boshlanadi`;
-                    statusClass = "bg-yellow-100 text-yellow-700";
+                    statusClass = "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
                     statusIcon = <Clock size={14} />;
                   } else if (now >= start && now <= end) {
                     statusEl = "Dars davom etmoqda";
-                    statusClass = "bg-blue-100 text-blue-700";
+                    statusClass = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
                     statusIcon = <BellRing size={14} />;
                   } else {
                     statusEl = "Davomat qilinmagan";
-                    statusClass = "bg-red-100 text-red-700";
+                    statusClass = "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
                     statusIcon = <AlertCircle size={14} />;
                   }
                 }
@@ -1094,7 +1105,7 @@ export default function Attendance() {
                 return (
                   <div key={group.id} className="mb-4">
                     <div
-                      className={`bg-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 ${selectedGroup?.id === group.id
+                      className={`bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 ${selectedGroup?.id === group.id
                           ? "border-blue-600"
                           : "border-transparent"
                         }`}
@@ -1102,7 +1113,7 @@ export default function Attendance() {
                     >
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-3">
-                          <h3 className="font-bold text-lg text-gray-800">
+                          <h3 className="font-bold text-lg text-gray-800 dark:text-white">
                             {group.group_subject}
                           </h3>
                           <span
@@ -1113,7 +1124,7 @@ export default function Attendance() {
                           </span>
                         </div>
 
-                        <div className="space-y-2 text-sm text-gray-600 mb-3">
+                        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-blue-600" />
                             <span>{formatDaysForDisplay(group.days) || "Belgilanmagan"}</span>
@@ -1126,9 +1137,9 @@ export default function Attendance() {
                           </div>
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                           <button
-                            className="p-2 bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                            className="p-2 bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               openExtendModal(group);
@@ -1138,7 +1149,7 @@ export default function Attendance() {
                             <Timer size={16} />
                           </button>
                           <button
-                            className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                            className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               openEditModal(group);
@@ -1148,7 +1159,7 @@ export default function Attendance() {
                             <Pen size={16} />
                           </button>
                           <button
-                            className="p-2 bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                            className="p-2 bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               showDeleteToast(group.id);
@@ -1172,14 +1183,14 @@ export default function Attendance() {
             )}
 
             {!groupsLoading && groups.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                <Users size={48} className="mx-auto mb-3 text-gray-300" />
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                <Users size={48} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                 <p>{searchTerm ? "Bunday guruh topilmadi" : errors.groups || "Hali guruh mavjud emas"}</p>
               </div>
             )}
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <button
                   disabled={currentPage === 1 || groupsLoading}
                   onClick={() => {
@@ -1187,13 +1198,13 @@ export default function Attendance() {
                     setCurrentPage(newPage);
                     fetchGroupsPage(newPage, searchTerm);
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-600 disabled:opacity-40 hover:bg-gray-200 transition-colors rounded"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors rounded"
                 >
                   ← Oldingi
                 </button>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {currentPage} / {totalPages}
-                  <span className="text-gray-400 ml-1">({totalGroups} ta guruh)</span>
+                  <span className="text-gray-400 dark:text-gray-500 ml-1">({totalGroups} ta guruh)</span>
                 </span>
                 <button
                   disabled={currentPage === totalPages || groupsLoading}
@@ -1202,7 +1213,7 @@ export default function Attendance() {
                     setCurrentPage(newPage);
                     fetchGroupsPage(newPage, searchTerm);
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-600 disabled:opacity-40 hover:bg-gray-200 transition-colors rounded"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors rounded"
                 >
                   Keyingi →
                 </button>
@@ -1213,18 +1224,18 @@ export default function Attendance() {
 
         {/* Selected Group Details */}
         <div
-          className="lg:col-span-2 bg-white/80 backdrop-blur-sm shadow-xl p-6 border border-white/20"
+          className="lg:col-span-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl p-6 border border-white/20 dark:border-gray-700/40"
         >
           {selectedGroup ? (
             <>
               {/* Header with actions */}
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                     <BookOpen className="text-blue-600" size={24} />
                     {selectedGroup.group_subject}
                   </h2>
-                  <p className="text-gray-500 text-sm mt-1">Guruh ma'lumotlari va davomat</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Guruh ma'lumotlari va davomat</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -1320,18 +1331,18 @@ export default function Attendance() {
               {/* Attendance Summary */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div
-                  className="bg-white p-4 shadow-md border border-gray-100"
+                  className="bg-white dark:bg-gray-800 p-4 shadow-md border border-gray-100 dark:border-gray-700"
                 >
-                  <h3 className="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
                     <Award className="text-yellow-500" size={18} />
                     Haftalik davomat
                   </h3>
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-3xl font-bold text-gray-800">
+                      <p className="text-3xl font-bold text-gray-800 dark:text-white">
                         {attendanceSummary?.week?.percent ?? "—"}%
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {attendanceSummary?.week?.present ?? 0} / {attendanceSummary?.week?.total ?? 0}
                       </p>
                     </div>
@@ -1356,18 +1367,18 @@ export default function Attendance() {
                 </div>
 
                 <div
-                  className="bg-white p-4 shadow-md border border-gray-100"
+                  className="bg-white dark:bg-gray-800 p-4 shadow-md border border-gray-100 dark:border-gray-700"
                 >
-                  <h3 className="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
                     <Award className="text-indigo-500" size={18} />
                     Oylik davomat
                   </h3>
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-3xl font-bold text-gray-800">
+                      <p className="text-3xl font-bold text-gray-800 dark:text-white">
                         {attendanceSummary?.month?.percent ?? "—"}%
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {attendanceSummary?.month?.present ?? 0} / {attendanceSummary?.month?.total ?? 0}
                       </p>
                     </div>
@@ -1411,13 +1422,13 @@ export default function Attendance() {
 
               {/* Students Table */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
                   <Users size={20} className="text-blue-600" />
                   Guruhdagi o‘quvchilar
                 </h3>
 
                 {groupStudents.length > 0 ? (
-                  <div className="overflow-x-auto border border-gray-200">
+                  <div className="overflow-x-auto border border-gray-200 dark:border-gray-700">
                     <table className="w-full">
                       <thead>
                         <tr className="bg-[#104292] text-white">
@@ -1437,28 +1448,28 @@ export default function Attendance() {
                           return (
                             <tr
                               key={student.id}
-                              className="border-b hover:bg-gray-50 transition-colors"
+                              className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors dark:text-gray-200"
                             >
                               <td className="p-3">{index + 1}</td>
-                              <td className="p-3 font-medium text-gray-800">
+                              <td className="p-3 font-medium text-gray-800 dark:text-white">
                                 {student.first_name} {student.last_name}
                               </td>
-                              <td className="p-3 text-gray-600">
+                              <td className="p-3 text-gray-600 dark:text-gray-400">
                                 <div className="flex items-center gap-2">
-                                  <Phone size={14} className="text-gray-400" />
+                                  <Phone size={14} className="text-gray-400 dark:text-gray-500" />
                                   {student.phone_number || "N/A"}
                                 </div>
                               </td>
                               <td className="p-3 text-center">
-                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${isPresent ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${isPresent ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
                                   {isPresent ? <Check size={12} /> : <X size={12} />}
                                   {isPresent ? "Bor" : "Yo‘q"}
                                 </span>
                               </td>
-                              <td className="p-3 text-center text-gray-600">
+                              <td className="p-3 text-center text-gray-600 dark:text-gray-400">
                                 {attRecord?.reason ? (attRecord.reason === "excused" ? "Sababli" : "Sababsiz") : "-"}
                               </td>
-                              <td className="p-3 text-center text-gray-600">
+                              <td className="p-3 text-center text-gray-600 dark:text-gray-400">
                                 {attRecord?.note || "-"}
                               </td>
                             </tr>
@@ -1468,9 +1479,9 @@ export default function Attendance() {
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-12 bg-gray-50">
-                    <Users size={48} className="mx-auto mb-3 text-gray-300" />
-                    <p className="text-gray-500 font-medium">Bu guruhda o‘quvchilar mavjud emas</p>
+                  <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50">
+                    <Users size={48} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Bu guruhda o‘quvchilar mavjud emas</p>
                   </div>
                 )}
               </div>
@@ -1484,11 +1495,11 @@ export default function Attendance() {
 
                     return (
                       <div key={idx} className="space-y-2">
-                        <div className="flex justify-between text-sm font-medium text-gray-700">
+                        <div className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
                           <span>Davomat foizi</span>
                           <span>{percent}%</span>
                         </div>
-                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div className="h-full bg-[#104292]" style={{ width: `${percent}%` }} />
                         </div>
                       </div>
@@ -1499,9 +1510,9 @@ export default function Attendance() {
             </>
           ) : (
             <div
-              className="h-[60vh] flex flex-col items-center justify-center text-gray-400"
+              className="h-[60vh] flex flex-col items-center justify-center text-gray-400 dark:text-gray-500"
             >
-              <Users size={80} className="mb-4 text-gray-300" />
+              <Users size={80} className="mb-4 text-gray-300 dark:text-gray-600" />
               <p className="text-xl font-medium mb-2">Guruh tanlanmagan</p>
               <p className="text-sm">Iltimos, chap tomondan guruhni tanlang</p>
             </div>
@@ -1516,7 +1527,7 @@ export default function Attendance() {
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
           >
             <div
-              className="bg-white shadow-2xl w-full max-w-lg overflow-hidden"
+              className="bg-white dark:bg-gray-800 shadow-2xl w-full max-w-lg overflow-hidden"
             >
               <div className="bg-green-700 text-white px-6 py-4 flex justify-between items-center">
                 <div className="flex items-center gap-3">
@@ -1532,15 +1543,15 @@ export default function Attendance() {
               </div>
 
               <div className="p-6 space-y-5">
-                <div className="bg-blue-50 p-4 flex items-center gap-3">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 flex items-center gap-3">
                   <Users className="text-blue-600" size={20} />
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 dark:text-gray-200">
                     <span className="font-semibold">{groupStudents.length}</span> ta o‘quvchiga yuboriladi
                   </p>
                 </div>
 
                 <textarea
-                  className="w-full border border-gray-300 p-4 min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className="w-full border border-gray-300 bg-white text-gray-900 p-4 min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   placeholder="Xabar matnini kiriting..."
                   value={smsText}
                   onChange={e => setSmsText(e.target.value)}
@@ -1548,16 +1559,16 @@ export default function Attendance() {
                 />
 
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Belgilar:</span>
-                  <span className={`font-medium ${smsText.length > 140 ? 'text-orange-500' : 'text-gray-700'}`}>
+                  <span className="text-gray-500 dark:text-gray-400">Belgilar:</span>
+                  <span className={`font-medium ${smsText.length > 140 ? 'text-orange-500' : 'text-gray-700 dark:text-gray-300'}`}>
                     {smsText.length} / 160
                   </span>
                 </div>
               </div>
 
-              <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+              <div className="bg-gray-50 dark:bg-gray-900/40 px-6 py-4 flex justify-end gap-3">
                 <button
-                  className="px-5 py-2 border border-gray-300 hover:bg-gray-100 transition-colors"
+                  className="px-5 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => setSmsModalOpen(false)}
                 >
                   Bekor qilish
@@ -1582,7 +1593,7 @@ export default function Attendance() {
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
           >
             <div
-              className="bg-white shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+              className="bg-white dark:bg-gray-800 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
             >
               <div className="bg-[#104292] text-white px-6 py-4">
                 <div className="flex items-center justify-between">
@@ -1603,12 +1614,12 @@ export default function Attendance() {
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                 <form onSubmit={addGroup} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Guruh nomi <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       value={formData.group_subject}
                       onChange={(e) => setFormData({ ...formData, group_subject: e.target.value })}
                       placeholder="Masalan: Matematika 1-guruh"
@@ -1618,11 +1629,11 @@ export default function Attendance() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         O'qituvchi <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                         value={formData.teacher_id}
                         onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
                         required
@@ -1641,11 +1652,11 @@ export default function Attendance() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Xona <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                         value={formData.room_id}
                         onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
                         required
@@ -1665,7 +1676,7 @@ export default function Attendance() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Dars kunlari <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1673,8 +1684,8 @@ export default function Attendance() {
                         <label
                           key={day}
                           className={`flex items-center gap-2 p-3 border cursor-pointer transition-all duration-200 ${formData.days.includes(day)
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-300 hover:border-gray-400"
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:text-white"
+                            : "border-gray-300 dark:border-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500"
                             }`}
                         >
                           <input
@@ -1686,7 +1697,7 @@ export default function Attendance() {
                           <div
                             className={`w-5 h-5 border flex items-center justify-center transition-colors ${formData.days.includes(day)
                               ? "border-blue-500 bg-blue-500 text-white"
-                              : "border-gray-400"
+                              : "border-gray-400 dark:border-gray-500"
                               }`}
                           >
                             {formData.days.includes(day) && <Check size={14} />}
@@ -1702,12 +1713,12 @@ export default function Attendance() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Boshlanish vaqti <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         value={formData.start_time}
                         onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                         required
@@ -1715,12 +1726,12 @@ export default function Attendance() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Tugash vaqti <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         value={formData.end_time}
                         onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                         required
@@ -1729,12 +1740,12 @@ export default function Attendance() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Oylik to'lov summasi (so'm) <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       value={formData.monthly_fee}
                       onChange={(e) => setFormData({ ...formData, monthly_fee: e.target.value })}
                       placeholder="Masalan: 225000"
@@ -1743,11 +1754,11 @@ export default function Attendance() {
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                       type="button"
                       onClick={() => setAddModal(false)}
-                      className="px-6 py-2 border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
+                      className="px-6 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium"
                     >
                       Bekor qilish
                     </button>
@@ -1774,7 +1785,7 @@ export default function Attendance() {
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
           >
             <div
-              className="bg-white shadow-2xl w-full max-w-md overflow-hidden"
+              className="bg-white dark:bg-gray-800 shadow-2xl w-full max-w-md overflow-hidden"
             >
               <div className="bg-[#104292] text-white px-6 py-4">
                 <div className="flex items-center justify-between">
@@ -1792,13 +1803,13 @@ export default function Attendance() {
               </div>
 
               <div className="p-6 space-y-4">
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   <span className="font-semibold">{selectedGroupForExtension?.group_subject}</span> guruhi uchun davomat vaqtini uzaytiring
                 </p>
 
                 {extensionInfo && extensionInfo.extended_until && extensionInfo.extended_until > new Date().toISOString() && (
-                  <div className="bg-blue-50 border border-blue-200 p-4">
-                    <div className="flex items-center gap-2 text-blue-700 mb-2">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-2">
                       <Check size={16} />
                       <span className="font-medium">Joriy uzaytirish mavjud:</span>
                     </div>
@@ -1819,7 +1830,7 @@ export default function Attendance() {
                       }
 
                       return (
-                        <p className="text-sm text-blue-600">
+                        <p className="text-sm text-blue-600 dark:text-blue-300">
                           {prefix}
                           {date.getDate()}-{monthsUZ[date.getMonth()].toLowerCase()} soat {date.getHours()}:00 gacha
                         </p>
@@ -1830,12 +1841,12 @@ export default function Attendance() {
 
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Sana <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
-                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                       value={extensionData.date}
                       onChange={(e) => setExtensionData({ ...extensionData, date: e.target.value })}
                       required
@@ -1844,12 +1855,12 @@ export default function Attendance() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Vaqt <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="time"
-                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                       value={extensionData.time}
                       onChange={(e) => setExtensionData({ ...extensionData, time: e.target.value })}
                       required
@@ -1857,18 +1868,18 @@ export default function Attendance() {
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 p-4">
-                  <p className="text-sm text-yellow-800 flex items-center gap-2">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
                     <AlertCircle size={16} />
                     Tanlangan vaqtgacha yo'qlama qilish mumkin bo'ladi
                   </p>
                 </div>
               </div>
 
-              <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+              <div className="bg-gray-50 dark:bg-gray-900/40 px-6 py-4 flex justify-end gap-3">
                 <button
                   type="button"
-                  className="px-5 py-2 border border-gray-300 hover:bg-gray-100 transition-colors"
+                  className="px-5 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => setExtendModal(false)}
                 >
                   Bekor qilish
@@ -1895,7 +1906,7 @@ export default function Attendance() {
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
           >
             <div
-              className="bg-white shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+              className="bg-white dark:bg-gray-800 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
             >
               <div className="bg-[#104292] text-white px-6 py-4">
                 <div className="flex items-center justify-between">
@@ -1915,12 +1926,12 @@ export default function Attendance() {
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                 <form onSubmit={updateGroup} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Guruh nomi <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                       value={editFormData.group_subject}
                       onChange={(e) => setEditFormData({ ...editFormData, group_subject: e.target.value })}
                       required
@@ -1929,11 +1940,11 @@ export default function Attendance() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         O'qituvchi <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200 bg-white"
                         value={editFormData.teacher_id}
                         onChange={(e) => setEditFormData({ ...editFormData, teacher_id: e.target.value })}
                         required
@@ -1951,11 +1962,11 @@ export default function Attendance() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Xona <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200 bg-white"
+                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200 bg-white"
                         value={editFormData.room_id}
                         onChange={(e) => setEditFormData({ ...editFormData, room_id: e.target.value })}
                         required
@@ -1974,7 +1985,7 @@ export default function Attendance() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Dars kunlari <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1983,7 +1994,7 @@ export default function Attendance() {
                           key={day}
                           className={`flex items-center gap-2 p-3 border cursor-pointer transition-all duration-200 ${editFormData.days.includes(day)
                             ? "border-[#104292] bg-[#104292] text-white"
-                            : "border-gray-300 hover:border-gray-400"
+                            : "border-gray-300 dark:border-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500"
                             }`}
                         >
                           <input
@@ -1995,7 +2006,7 @@ export default function Attendance() {
                           <div
                             className={`w-5 h-5 border flex items-center justify-center transition-colors ${editFormData.days.includes(day)
                               ? "border-[#104292] bg-[#104292] text-white"
-                              : "border-gray-400"
+                              : "border-gray-400 dark:border-gray-500"
                               }`}
                           >
                             {editFormData.days.includes(day) && <Check size={14} />}
@@ -2008,12 +2019,12 @@ export default function Attendance() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Boshlanish vaqti <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                         value={editFormData.start_time}
                         onChange={(e) => setEditFormData({ ...editFormData, start_time: e.target.value })}
                         required
@@ -2021,12 +2032,12 @@ export default function Attendance() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Tugash vaqti <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="time"
-                        className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                         value={editFormData.end_time}
                         onChange={(e) => setEditFormData({ ...editFormData, end_time: e.target.value })}
                         required
@@ -2035,12 +2046,12 @@ export default function Attendance() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Oylik to'lov summasi (so'm) <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200"
                       value={editFormData.monthly_fee}
                       onChange={(e) => setEditFormData({ ...editFormData, monthly_fee: e.target.value })}
                       placeholder="Masalan: 200000"
@@ -2049,10 +2060,10 @@ export default function Attendance() {
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                       type="button"
-                      className="px-6 py-2 border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
+                      className="px-6 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium"
                       onClick={() => setEditModal(false)}
                     >
                       Bekor qilish
@@ -2083,7 +2094,7 @@ export default function Attendance() {
           </div>
         )}
       </AnimatePresence>
-      <p className="mt-4 italic"><span className="font-bold"><span className="text-red-500 text-2xl">* </span>Eslatma:</span> Tanlangan guruhdagi boshqa kunni tanlash tugmasi bosilganida, qizil dumaloq aylana ko'rinishida ushbu guruh tashkil qilingan kundan boshlab to hozirgacha dars o'tilishi kerak bo'lgan, lekin ustoz tomonidan yo'qlama qilinmagan kunlarni ko'rish mumkin.</p>
+      <p className="mt-4 italic text-gray-700 dark:text-gray-300"><span className="font-bold"><span className="text-red-500 text-2xl">* </span>Eslatma:</span> Tanlangan guruhdagi boshqa kunni tanlash tugmasi bosilganida, qizil dumaloq aylana ko'rinishida ushbu guruh tashkil qilingan kundan boshlab to hozirgacha dars o'tilishi kerak bo'lgan, lekin ustoz tomonidan yo'qlama qilinmagan kunlarni ko'rish mumkin.</p>
     </div>
   );
 }

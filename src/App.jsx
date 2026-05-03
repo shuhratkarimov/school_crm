@@ -33,6 +33,9 @@ const NewStudentsAdmin = lazy(() => import("./pages/NewStudentsAdmin"));
 const LeftStudents = lazy(() => import("./pages/LeftStudents"));
 const LinkGenerator = lazy(() => import("./pages/LinkGenerator"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"))
+const AdminArticles = lazy(() => import("./pages/AdminArticles"));
+const TeacherArticles = lazy(() => import("./pages/TeacherArticles"));
+const TeacherProfile = lazy(() => import("./pages/TeacherProfile"));
 const CPanelLogin = lazy(() => import("./pages/CPanelLogin"));
 const DirectorLogin = lazy(() => import("./pages/DirectorLogin"));
 const DirectorDashboard = lazy(() => import("./pages/DirectorDashboard.jsx"));
@@ -563,6 +566,14 @@ function App() {
               }
             />
             <Route
+              path="/cpanel/articles"
+              element={
+                <CPanelRoute isAuthenticated={cpanelAuthenticated}>
+                  <AdminArticles />
+                </CPanelRoute>
+              }
+            />
+            <Route
               path="/teacher"
               element={
                 <TeacherRoute isAuthenticated={teacherAuthenticated}>
@@ -575,6 +586,8 @@ function App() {
               <Route path="attendance/:groupId" element={<TeacherAttendance />} />
               <Route path="test-results" element={<TeacherTestResults />} />
               <Route path="payments" element={<PaymentReports />} />
+              <Route path="articles" element={<TeacherArticles />} />
+              <Route path="profile" element={<TeacherProfile />} />
             </Route>
             <Route path="*" element={<LottieNotFound />} />
           </Routes>

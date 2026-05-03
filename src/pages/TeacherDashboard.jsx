@@ -57,6 +57,8 @@ function TeacherDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const [latestArticle, setLatestArticle] = useState(null);
+  const [hasUnseenArticle, setHasUnseenArticle] = useState(false);
   const {
     open,
     setOpen,
@@ -79,7 +81,32 @@ function TeacherDashboard() {
   useEffect(() => {
     fetchTeacherData();
     fetchGroups();
+    fetchLatestArticle();
   }, []);
+
+  const fetchLatestArticle = async () => {
+    try {
+      const res = await fetch(`${API_URL}/teacher/articles`, { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data.articles || [];
+      if (list.length === 0) return;
+      const latest = list[0];
+      setLatestArticle(latest);
+      const seenId = localStorage.getItem("last_seen_article_id");
+      setHasUnseenArticle(seenId !== String(latest.id));
+    } catch {}
+  };
+
+  const handleStoryClick = () => {
+    if (latestArticle) {
+      localStorage.setItem("last_seen_article_id", String(latestArticle.id));
+      setHasUnseenArticle(false);
+      navigate(`/teacher/articles?article=${latestArticle.id}`);
+    } else {
+      navigate("/teacher/articles");
+    }
+  };
 
   const fetchTeacherData = async () => {
     try {
@@ -179,15 +206,25 @@ function TeacherDashboard() {
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 rounded-2xl shadow-lg">
-                {greeting.includes("tong") ? (
-                  <Sun className="w-8 h-8 text-white" />
-                ) : greeting.includes("kech") ? (
-                  <Moon className="w-8 h-8 text-white" />
-                ) : (
-                  <Sparkles className="w-8 h-8 text-white" />
+              <button
+                type="button"
+                onClick={handleStoryClick}
+                aria-label={hasUnseenArticle ? "Yangi maqola" : "Maqolalar"}
+                className={`relative p-[3px] rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 ${
+                  hasUnseenArticle
+                    ? "bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 story-pulse"
+                    : "bg-gradient-to-r from-green-600 to-green-600"
+                }`}
+              >
+                <span className="block bg-white p-[2px] rounded-full">
+                  <img src="/logobg.png" alt="logo" className="w-14 h-14 rounded-full block"/>
+                </span>
+                {hasUnseenArticle && (
+                  <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full border-2 border-white flex items-center justify-center">
+                    !
+                  </span>
                 )}
-              </div>
+              </button>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
                   {greeting}, {teacherData?.first_name}!
@@ -443,9 +480,7 @@ function TeacherDashboard() {
         {/* Footer */}
         <footer className="text-center text-gray-500 text-sm mt-12">
           <p className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
             © {new Date().getFullYear()} "Intellectual Progress Star" o'quv markazi
-            <Sparkles className="w-4 h-4 text-indigo-600" />
           </p>
           <p className="mt-1">Ustozlar uchun maxsus platforma</p>
         </footer>

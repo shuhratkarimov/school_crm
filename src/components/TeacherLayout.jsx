@@ -44,7 +44,7 @@ function TeacherLayout() {
     <div className="min-h-screen min-h-dvh flex flex-col md:flex-row bg-gray-100">
       <TeacherSidebar />
 
-      <div className="flex-1 p-4 sm:p-6 md:p-8 pb-[90px] md:pb-8 overflow-x-hidden relative">
+      <div className="flex-1 px-4 sm:px-6 md:p-8 pt-14 pb-4 sm:pb-6 md:pt-8 overflow-x-hidden relative">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.key}
