@@ -37,7 +37,7 @@ import { registerLocale } from "react-datepicker";
 import uz from "date-fns/locale/uz";
 import "../index.css";
 import API_URL from "../conf/api";
-
+import { AsyncPaginate } from "react-select-async-paginate";
 registerLocale("uz", uz);
 
 const uzWeekdays = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
@@ -89,6 +89,8 @@ export default function Attendance() {
     end_time: "",
     monthly_fee: "",
   });
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [editSelectedTeacher, setEditSelectedTeacher] = useState(null);
   const [addModal, setAddModal] = useState(false);
   const [attendance, setAttendance] = useState({});
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -120,11 +122,24 @@ export default function Attendance() {
     "YAKSHANBA",
   ];
 
-  const toDateKey = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+  const loadTeachers = async (search, loadedOptions, { page }) => {
+    const res = await fetch(
+      `${API_URL}/get_teachers?search=${search}&page=${page}&limit=10`,
+      { credentials: "include" }
+    );
+
+    const data = await res.json();
+
+    return {
+      options: data.data.map(t => ({
+        value: t.id,
+        label: `${t.first_name} ${t.last_name} (${t.subject})`
+      })),
+      hasMore: page < data.totalPages,
+      additional: {
+        page: page + 1
+      }
+    };
   };
 
   const handleSendSMStoGroup = async () => {
@@ -412,10 +427,7 @@ export default function Attendance() {
       setLoading(true);
       setErrors({ groups: "", teachers: "", students: "", rooms: "" });
 
-      const [teachersResponse, studentsResponse, roomsResponse] = await Promise.all([
-        fetch(`${API_URL}/get_teachers`, {
-          credentials: "include",
-        }).catch(() => ({ ok: false })),
+      const [studentsResponse, roomsResponse] = await Promise.all([
         fetch(`${API_URL}/get_students`, {
           credentials: "include",
         }).catch(() => ({ ok: false })),
@@ -423,18 +435,6 @@ export default function Attendance() {
           credentials: "include",
         }).catch(() => ({ ok: false })),
       ]);
-
-      if (teachersResponse.ok) {
-        const teachersData = await teachersResponse.json();
-        const teachersList = Array.isArray(teachersData)
-          ? teachersData
-          : (Array.isArray(teachersData?.data) ? teachersData.data : []);
-        setTeachers(teachersList);
-      } else {
-        setTeachers([]);
-        setErrors((prev) => ({ ...prev, teachers: "O'qituvchilar mavjud emas" }));
-        toast.error("O'qituvchilar mavjud emas");
-      }
 
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
@@ -460,12 +460,10 @@ export default function Attendance() {
         toast.error("Xonalar mavjud emas");
       }
     } catch (err) {
-      setTeachers([]);
       setStudents([]);
       setRooms([]);
       setErrors({
         groups: "",
-        teachers: "O'qituvchilar mavjud emas",
         students: "O'quvchilar mavjud emas",
         rooms: "Xonalar mavjud emas",
       });
@@ -712,8 +710,17 @@ export default function Attendance() {
     );
   };
 
+
+  
+
   const openEditModal = (group) => {
+    console.log(group);
+    
     setEditingGroup(group);
+    setEditSelectedTeacher({
+      value: group.teacher_id,
+      label: group.teacher.first_name + " " + group.teacher.last_name
+    });
     const parsedDays = group.days ? group.days.split("-").map((d) => d.trim().toUpperCase()) : [];
     setEditFormData({
       group_subject: group.group_subject,
@@ -1106,8 +1113,8 @@ export default function Attendance() {
                   <div key={group.id} className="mb-4">
                     <div
                       className={`bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 ${selectedGroup?.id === group.id
-                          ? "border-blue-600"
-                          : "border-transparent"
+                        ? "border-blue-600"
+                        : "border-transparent"
                         }`}
                       onClick={() => handleGroupSelect(group)}
                     >
@@ -1632,22 +1639,21 @@ export default function Attendance() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         O'qituvchi <span className="text-red-500">*</span>
                       </label>
-                      <select
-                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={formData.teacher_id}
-                        onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                        required
-                        disabled={teachers.length === 0}
-                      >
-                        <option value="">O'qituvchi tanlang</option>
-                        {teachers.map((teacher) => (
-                          <option key={teacher.id} value={teacher.id}>
-                            {teacher.first_name} {teacher.last_name} ({teacher.subject})
-                          </option>
-                        ))}
-                      </select>
-                      {teachers.length === 0 && (
-                        <p className="text-red-500 text-xs mt-1">O'qituvchilar mavjud emas</p>
+                      <AsyncPaginate
+                        loadOptions={loadTeachers}
+                        additional={{ page: 1 }}
+                        value={selectedTeacher}
+                        onChange={(selected) => {
+                          setSelectedTeacher(selected); // 👈 MUHIM
+                          setFormData({ ...formData, teacher_id: selected?.value });
+                        }}
+                        placeholder="O‘qituvchini qidiring..."
+                        debounceTimeout={400}
+                      />
+                      {!formData.teacher_id && (
+                        <p className="text-red-500 text-xs mt-1">
+                          O‘qituvchi tanlanmagan
+                        </p>
                       )}
                     </div>
 
@@ -1943,22 +1949,20 @@ export default function Attendance() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         O'qituvchi <span className="text-red-500">*</span>
                       </label>
-                      <select
-                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#104292] focus:border-transparent transition-all duration-200 bg-white"
-                        value={editFormData.teacher_id}
-                        onChange={(e) => setEditFormData({ ...editFormData, teacher_id: e.target.value })}
-                        required
-                        disabled={teachers.length === 0}
-                      >
-                        <option value="">
-                          {errors.teachers ? "O'qituvchilar yo'q" : "Tanlang"}
-                        </option>
-                        {teachers.map((teacher) => (
-                          <option key={teacher.id} value={teacher.id}>
-                            {`${teacher.first_name} ${teacher.last_name} (${teacher.subject})`}
-                          </option>
-                        ))}
-                      </select>
+                      <AsyncPaginate
+                        loadOptions={loadTeachers}
+                        additional={{ page: 1 }}
+                        value={editSelectedTeacher}
+                        onChange={(selected) => {
+                          setEditSelectedTeacher(selected);
+                          setEditFormData({
+                            ...editFormData,
+                            teacher_id: selected?.value
+                          });
+                        }}
+                        placeholder="O‘qituvchini qidiring..."
+                        debounceTimeout={400}
+                      />
                     </div>
 
                     <div>
