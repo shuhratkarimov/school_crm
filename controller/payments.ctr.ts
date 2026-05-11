@@ -1,6 +1,5 @@
 import e, { NextFunction, Request, Response } from "express";
 import { Group, Payment, Student, StudentGroup, User, UserNotification, UserSettings } from "../Models/index";
-import { ICreatePaymentDto } from "../DTO/payment/create_payment_dto";
 import { IUpdatePaymentDto } from "../DTO/payment/update_payment_dto";
 import { BaseError } from "../Utils/base_error";
 import i18next from "../Utils/lang";
@@ -493,18 +492,33 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
     if (!foundGroup) {
       return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
     }
-    let studentGroup = await StudentGroup.findOne({
-      where: { student_id: payment.dataValues.pupil_id, group_id: payment.dataValues.group_id, month: payment.dataValues.for_which_month },
-    });
-    if (!studentGroup) {
-      studentGroup = await StudentGroup.create({
-        student_id: payment.dataValues.pupil_id,
-        group_id: payment.dataValues.group_id,
-        month: payment.dataValues.for_which_month,
-        year: payment.dataValues.year,
-        paid: false,
-        shouldBeConsideredAsPaid: shouldBeConsideredAsPaid || false,
+
+    const studentExists = payment.dataValues.pupil_id
+      ? await Student.findByPk(payment.dataValues.pupil_id)
+      : null;
+
+    let studentGroup = null;
+
+    if (studentExists) {
+      studentGroup = await StudentGroup.findOne({
+        where: {
+          student_id: payment.dataValues.pupil_id,
+          group_id: payment.dataValues.group_id,
+          month: payment.dataValues.for_which_month,
+        },
       });
+
+      if (!studentGroup) {
+        studentGroup = await StudentGroup.create({
+          student_id: payment.dataValues.pupil_id,
+          group_id: payment.dataValues.group_id,
+          month: payment.dataValues.for_which_month,
+          year: payment.dataValues.year,
+          paid: false,
+          shouldBeConsideredAsPaid:
+            shouldBeConsideredAsPaid || false,
+        });
+      }
     }
 
     if (for_which_month) {
@@ -520,24 +534,34 @@ async function updatePayment(req: Request, res: Response, next: NextFunction): P
       }
     }
     if (payment_amount && payment_amount === foundGroup.dataValues.monthly_fee) {
-      await studentGroup.update({ paid: true });
+      if (studentGroup) {
+        await studentGroup.update({ paid: true });
+      }
     } else if (payment_amount) {
-      await studentGroup.update({ paid: false });
+      if (studentGroup) {
+        await studentGroup.update({ paid: false });
+      }
     }
     if (shouldBeConsideredAsPaid) {
-      await studentGroup.update({ paid: shouldBeConsideredAsPaid });
+      if (studentGroup) {
+        await studentGroup.update({ paid: shouldBeConsideredAsPaid });
+      }
     }
     if (payment_amount) {
       if (payment_amount > foundGroup.dataValues.monthly_fee) {
         return next(BaseError.BadRequest(400, "Guruh to'lovidan katta summa kiritildi!"));
       }
       if (payment_amount == foundGroup.dataValues.monthly_fee) {
-        await studentGroup.update({ paid: true });
-        const foundStudent = await Student.findByPk(payment.dataValues.pupil_id);
-        if (!foundStudent) {
-          return next(BaseError.BadRequest(404, "O'quvchi topilmadi!"));
+        if (studentGroup) {
+          await studentGroup.update({ paid: true });
         }
-        await foundStudent.update({ paid_groups: foundStudent.dataValues.paid_groups + 1 });
+        const foundStudent = await Student.findByPk(payment.dataValues.pupil_id);
+        if (foundStudent) {
+          await foundStudent.update({
+            paid_groups:
+              foundStudent.dataValues.paid_groups + 1
+          });
+        }
       }
       const amountDifference = payment_amount - payment.dataValues.payment_amount;
       await updateTeacherBalance(
@@ -605,24 +629,34 @@ async function deletePayment(req: Request, res: Response, next: NextFunction): P
 
     const foundGroup = await StudentGroup.findOne({
       where: {
-        student_id: payment.dataValues.pupil_id || payment.dataValues.reserve_data?.id,
+        student_id:
+          payment.dataValues.pupil_id ||
+          payment.dataValues.reserve_data?.id,
+
         group_id: payment.dataValues.group_id,
+
         month: payment.dataValues.for_which_month,
-        year: new Date().getFullYear(),
+
+        year: new Date(payment.dataValues.created_at).getFullYear(),
       },
     });
-    if (!foundGroup) {
-      return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
-    }
-    if (foundGroup.dataValues.paid) {
+
+    if (foundGroup?.dataValues?.paid) {
       await foundGroup.update({ paid: false });
     }
-    const groupTeacher = await Group.findByPk(foundGroup.dataValues.group_id);
 
-    if (!groupTeacher) {
-      return next(BaseError.BadRequest(404, "Guruh topilmadi!"));
+    const groupTeacher = await Group.findByPk(
+      payment.dataValues.group_id
+    );
+
+    if (groupTeacher) {
+      await updateTeacherBalance(
+        groupTeacher.dataValues.teacher_id,
+        Math.round(payment.dataValues.payment_amount).toString(),
+        false
+      );
     }
-    await updateTeacherBalance(groupTeacher.dataValues.teacher_id, Math.round(payment.dataValues.payment_amount).toString(), false);
+
     await payment.destroy();
     res.status(200).json({ message: i18next.t("payment_deleted") });
   } catch (error: any) {
