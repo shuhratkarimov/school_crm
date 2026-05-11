@@ -418,6 +418,7 @@ function Payments() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             pupil_id: editFormData.pupil_id,
+            group_id: editFormData.group_id,
             payment_amount: Number(editFormData.payment_amount),
             payment_type: editFormData.payment_type,
             received: editFormData.received,
@@ -430,22 +431,10 @@ function Payments() {
       );
 
       if (response.ok) {
-        const updatedPayment = await response.json();
-        const student = studentResults.find((s) => s.id === editFormData.pupil_id);
-        const paymentWithStudent = {
-          ...updatedPayment,
-          student: student || {
-            first_name: "N/A",
-            last_name: "N/A",
-            phone_number: "N/A",
-          },
-        };
-        setPayments(
-          payments.map((p) =>
-            p.id === editFormData.id ? paymentWithStudent : p
-          )
-        );
-        toast.success(`To'lov muvaffaqiyatli yangilandi`);
+        await fetchData();
+      
+        toast.success("To'lov muvaffaqiyatli yangilandi");
+      
         setIsEditModalOpen(false);
       } else {
         const errorData = await response.json();
@@ -1348,17 +1337,17 @@ function Payments() {
                     required
                   >
                     <option value="">Guruhni tanlang</option>
-                    {editFormData.pupil_id &&
-                      getStudentGroups(editFormData.pupil_id).map((groupId) => {
-                        const group = groups.find((g) => g.id === groupId);
-                        return (
-                          group && (
-                            <option key={group.id} value={group.id}>
-                              {group.group_subject}
-                            </option>
-                          )
-                        );
-                      })}
+                    {editFormData.group_id && (
+                      (() => {
+                        const group = groups.find((g) => g.id === editFormData.group_id);
+
+                        return group ? (
+                          <option key={group.id} value={group.id}>
+                            {group.group_subject}
+                          </option>
+                        ) : null;
+                      })()
+                    )}
                   </select>
                   <ChevronDown size={20} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
