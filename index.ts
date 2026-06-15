@@ -37,6 +37,7 @@ import { ReportsRouter } from './router/reports.routes';
 import PlatformReviewRouter from './router/platform_review.routes';
 import { router as FeedbackRouter } from './router/feedback.routes';
 import ArticleRouter from './router/article.routes';
+import { ExportRouter } from './router/export.router';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -91,6 +92,7 @@ app.use(ReportsRouter)
 app.use(FeedbackRouter)
 app.use(PlatformReviewRouter)
 app.use(ArticleRouter)
+app.use(ExportRouter)
 
 startDailyReportNotifier();
 startWeeklyReportNotifier();
