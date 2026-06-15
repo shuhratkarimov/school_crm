@@ -32,6 +32,7 @@ const StudentRegistration = lazy(() => import("./pages/StudentRegistration"));
 const NewStudentsAdmin = lazy(() => import("./pages/NewStudentsAdmin"));
 const LeftStudents = lazy(() => import("./pages/LeftStudents"));
 const LinkGenerator = lazy(() => import("./pages/LinkGenerator"));
+const ExportData = lazy(() => import("./pages/ExportData"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"))
 const AdminArticles = lazy(() => import("./pages/AdminArticles"));
 const TeacherArticles = lazy(() => import("./pages/TeacherArticles"));
@@ -548,6 +549,19 @@ function App() {
                     <div className="main-content">
                       <Header setIsAuthenticated={setIsAuthenticated} />
                       <LeftStudents />
+                    </div>
+                  </div>
+                </PrivateRoute>
+              }
+            />
+            <Route path="/export"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <div className="main-content">
+                      <Header setIsAuthenticated={setIsAuthenticated} />
+                      <ExportData />
                     </div>
                   </div>
                 </PrivateRoute>

@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Link as LinkIcon,
+  Download,
   HelpCircle,
   LogOut,
   Sun,
@@ -212,6 +213,7 @@ function Sidebar() {
           badge: notInterviewedStudents,
         },
         { path: "/link-generator", label: "Havola yaratuvchi", icon: LinkIcon },
+        { path: "/export", label: "Ma'lumotlarni yuklab olish", icon: Download },
       ],
     },
   ];
